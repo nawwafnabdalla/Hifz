@@ -99,6 +99,12 @@ describe('Qur’an text integrity', () => {
     expect(juzOf(78, 1)).toBe(30)
   })
 
+  it('has juz boundaries identical to Tanzil\u2019s own metadata', () => {
+    const tz = JSON.parse(readFileSync(join(root, 'data/crosscheck/juz-starts-tanzil.json'), 'utf8')).juzStarts as number[][]
+    const gen = JSON.parse(readFileSync(join(root, 'src/data/generated/quran.json'), 'utf8')).juzStarts as number[][]
+    expect(gen).toEqual(tz)
+  })
+
   it('has a complete English translation aligned ayah-for-ayah', async () => {
     const t = await loadTranslation()
     expect(t).toHaveLength(114)

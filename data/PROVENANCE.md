@@ -60,6 +60,13 @@ Page (Madinah, 604) and juz boundaries come from `quran-meta@7.0.0` (MIT), build
 Not hosted or redistributed. Per-ayah files are *linked* from third-party hosts (see `src/lib/audio/sources.ts`); some of those hosts
 state no licence. See the Settings → About screen and `docs/AUDIO.md`.
 
+## Review pack
+
+`docs/TEXT_REVIEW.md` documents the six whitespace corrections word by word against both independent sources, and lists every
+remaining matter that needs a qualified reader (vowel-mark conventions, 323 ayahs with differing stop signs, page table, rendering).
+Supporting data: `data/review/*.csv`. Juz boundaries are additionally checked against Tanzil's metadata
+(`data/crosscheck/juz-starts-tanzil.json`, enforced by a test).
+
 ## Known limits
 
 * Not a substitute for a printed mushaf or a qualified teacher; the app should say so wherever correctness matters.

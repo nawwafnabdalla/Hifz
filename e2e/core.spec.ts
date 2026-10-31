@@ -146,3 +146,17 @@ test.describe('continuity and long ayahs', () => {
     await page.screenshot({ path: 'test-results/shots/09-phrase-editor.png' })
   })
 })
+
+test('after a first accurate recall, the details sheet shows the next review about a day later', async ({ page }) => {
+  await mockAudio(page); await freshStart(page)
+  await page.goto('/review/112/1/1?ctx=free')
+  await page.getByTestId('reveal').click(); await page.getByTestId('grade-independent').click()
+  await page.goto('/quran/112?a=1')
+  await page.getByTestId('selection-bar').getByText('details').click()
+  const text = await page.getByTestId('next-review').innerText()
+  expect(text).toMatch(/next review/i)
+  expect(text).not.toMatch(/Due now/)
+  // Today reports that it falls due within a day.
+  await page.goto('/')
+  await expect(page.getByText(/1 ayahs will fall due in the next 7 days|will fall due/)).toBeVisible()
+})

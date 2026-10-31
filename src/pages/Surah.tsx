@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useApp } from '@/app/store'
 import { Passage, Medallion, AyahWords } from '@/components/Arabic'
@@ -12,6 +12,7 @@ import { labelGrade } from '@/lib/engine/derive'
 import { agoText } from '@/lib/engine/planner'
 import { rangePath, rangeTitle } from '@/lib/format'
 import { ayahKey } from '@/lib/engine/types'
+import { dueAt } from '@/lib/engine/memory'
 
 const PAGE = 40
 
@@ -39,7 +40,13 @@ export function SurahPage() {
   const [mapOpen, setMapOpen] = useState(info.count <= 80)
 
   useEffect(() => { if (study && !tr) void loadTranslation().then((t) => setTr(t[n - 1] ?? null)) }, [study, tr, n])
-  useEffect(() => { setShown(PAGE); setSel(null); setListen(false); setMapOpen(surahInfo(n).count <= 80); window.scrollTo(0, 0) }, [n])
+  const prevN = useRef(n)
+  useEffect(() => {
+    // Reset only when moving to a different surah, never on first mount (that would drop a deep-linked ?a= selection).
+    if (prevN.current === n) return
+    prevN.current = n
+    setShown(PAGE); setSel(null); setListen(false); setMapOpen(surahInfo(n).count <= 80); window.scrollTo(0, 0)
+  }, [n])
   useEffect(() => { if (sel && sel[1] > shown) setShown(Math.ceil(sel[1] / PAGE) * PAGE) }, [sel, shown])
   useEffect(() => { if (sel && sp.get('a')) document.querySelector(`[data-ayah="${sel[0]}"]`)?.scrollIntoView({ block: 'center' }) }, [sp, sel])
 
@@ -159,6 +166,7 @@ export function SurahPage() {
                   <div className="card-flat p-3"><dt className="eyebrow">Estimated recall</dt><dd className="tabular mt-1 text-lg">{one.demonstrated || one.stage === 'claimed' ? `${Math.round(one.retrievability * 100)}%` : '–'}</dd><dd className="text-xs text-muted">from a default model</dd></div>
                   <div className="card-flat p-3"><dt className="eyebrow">Verified on its own</dt><dd className="mt-1 text-lg">{one.verifiedIndividually ? 'Yes' : 'Not yet'}</dd><dd className="text-xs text-muted">passage recall alone is weaker proof</dd></div>
                   <div className="card-flat p-3"><dt className="eyebrow">Last recalled</dt><dd className="mt-1">{mem?.lastSuccessAt ? agoText(mem.lastSuccessAt, now) : '–'}</dd></div>
+                  <div className="card-flat p-3" data-testid="next-review"><dt className="eyebrow">Next review</dt><dd className="mt-1">{mem && mem.firstDemonstratedAt !== null ? (dueAt(mem) <= now ? 'Due now' : new Date(dueAt(mem)).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : '–'}</dd><dd className="text-xs text-muted">when estimated recall reaches 90%</dd></div>
                   <div className="card-flat p-3"><dt className="eyebrow">Flow</dt><dd className="mt-1 capitalize">{flow?.rating ?? 'not practised'}</dd><dd className="text-xs text-muted">separate from memory</dd></div>
                 </dl>
                 {mem?.lastOutcome && <p className="text-ink-2">Last attempt: {labelGrade(mem.lastOutcome)}. Forgotten {mem.lapses}×, needed prompting {mem.prompts}×.</p>}
