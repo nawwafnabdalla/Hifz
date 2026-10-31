@@ -11,6 +11,7 @@ import type { Plan, PlanItem } from '@/lib/engine/planner'
 import { assignArm, armOfAyah, isActive, newExperiment, withAssignment } from '@/lib/engine/experiment'
 import { computePlan } from '@/lib/plan'
 import { corpus } from '@/lib/quran/data'
+import { initScriptFont, setScriptSetting } from '@/lib/quran/script'
 import { newId } from '@/lib/store/db'
 
 export const db = new HifzDB()
@@ -87,6 +88,7 @@ function applyTheme(s: Settings) {
   if (s.theme === 'system') delete root.dataset.theme
   else root.dataset.theme = s.theme
   root.style.setProperty('--arabic-scale', String(s.arabicScale))
+  setScriptSetting(s.script)
   try { localStorage.setItem('hifz.theme', s.theme) } catch { /* private mode */ }
 }
 
@@ -126,6 +128,7 @@ export const useApp = create<State>((set, get) => {
       initDone = true
       const snap = await loadAll(db)
       applyTheme(snap.settings)
+      void initScriptFont()
       let session: ActiveSession | null = null
       try { const raw = localStorage.getItem(SESSION_KEY); if (raw) session = JSON.parse(raw) as ActiveSession } catch { session = null }
       set({ snap, derived: rebuild(snap), ready: true, now: Date.now(), session })

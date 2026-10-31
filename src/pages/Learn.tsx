@@ -180,7 +180,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'recall' && !repair && (
         <section className="enter" data-testid="stage-recall">
-          <RecallCard key={`r-${ayah}`} range={single} context={context} listenedFirst={listened} title={`Ayah ${ayah} from memory`} onDone={(e) => { if (e.grade === 'prompted' || e.grade === 'failed') setRepair(true); else nextAyah() }} />
+          <RecallCard key={`r-${ayah}`} range={single} context={context} listenedFirst={listened} title={`Ayah ${ayah} from memory`} onDone={(e, info) => { if ((e.grade === 'prompted' || e.grade === 'failed') && !info?.repaired) setRepair(true); else nextAyah() }} />
         </section>
       )}
       {stage === 'recall' && repair && (

@@ -7,6 +7,7 @@ import type { AyahRef } from '@/lib/engine/types'
 import { useApp } from '@/app/store'
 import { Icon } from './Icon'
 import { Sheet } from './ui'
+import { AudioCredits, ReciterCheck } from './ReciterCheck'
 
 let player: AyahPlayer | null = null
 export function getPlayer(): AyahPlayer {
@@ -110,7 +111,7 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
       </div>
       <div className="mt-1.5 flex items-center justify-between gap-2 pl-1">
         <div className="min-w-0 truncate text-xs text-muted" aria-live="polite" data-testid="audio-status">{line}</div>
-        <button className="chip flex-none" aria-pressed={echo} onClick={() => void patch({ practiceMode: echo ? 'listen' : 'echo' })} data-testid="echo-toggle" aria-label="Echo mode: leave a pause to recite after each ayah"><Icon name="mic" size={14} />Echo</button>
+        <button className="chip flex-none" aria-pressed={echo} onClick={() => void patch(echo ? { practiceMode: 'listen' } : { practiceMode: 'echo', repeatEach: Math.max(settings.repeatEach, 3) })} data-testid="echo-toggle" aria-label="Echo mode: leave a pause to recite after each ayah"><Icon name="mic" size={14} />Echo</button>
       </div>
 
       {override && (
@@ -159,7 +160,9 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
             )
           })}
         </ul>
-        <p className="mt-3 text-xs text-muted">Your choice is saved to your account and used on every device. The dot shows what this device has actually observed: green = a verse file played, grey = not checked yet, red = none available. Audio streams from third-party hosts and is never stored by the app.</p>
+        <div className="mt-4"><ReciterCheck /></div>
+        <p className="mt-3 text-xs text-muted">Your choice is saved to your account and used on every device. The dot shows what this device has actually observed: green = a verse file played, grey = not checked yet, red = none available.</p>
+        <div className="mt-2"><AudioCredits /></div>
       </Sheet>
 
       <Sheet open={practice} onClose={() => setPractice(false)} title="Audio practice">
@@ -168,7 +171,7 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
             <div className="eyebrow mb-2">Mode</div>
             <div className="grid grid-cols-2 gap-2">
               <button className="chip justify-center" aria-pressed={!echo} onClick={() => void patch({ practiceMode: 'listen' })}>Listen</button>
-              <button className="chip justify-center" aria-pressed={echo} onClick={() => void patch({ practiceMode: 'echo' })}>Echo: listen, then recite</button>
+              <button className="chip justify-center" aria-pressed={echo} onClick={() => void patch({ practiceMode: 'echo', repeatEach: Math.max(settings.repeatEach, 3) })}>Echo: listen, then recite</button>
             </div>
             <p className="mt-2 text-xs text-muted">Echo leaves a silence after each ayah for you to recite it yourself. The silence is built from the ayah’s real recording length, so a three-word ayah and a long ayah each get a fitting pause.</p>
           </div>

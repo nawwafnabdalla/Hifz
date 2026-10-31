@@ -48,11 +48,13 @@ export const SOURCES: Record<Endpoint['source'], AudioSource> = {
 }
 
 export const RECITERS: Reciter[] = [
-  // The reciter the owner asked for by name. Verse-by-verse candidates are tried in order; none of these
-  // file names could be verified from the build environment, so the app confirms them on-device.
+  // The reciters the owner asked for by name. Verse-by-verse candidates are tried in order. The two EveryAyah folders are the exact
+  // directories the owner found (https://everyayah.com/data/MaherAlMuaiqly128kbps/ and .../Yasser_Ad-Dussary_128kbps/); EveryAyah's
+  // file convention is <folder>/<SSS><AAA>.mp3. Neither the folders nor any file could be fetched from the build environment, so the
+  // app proves them on the device (see check.ts) and shows what it observed; a directory listing is never treated as playback.
   { id: 'turki', name: 'Badr Al-Turki', arabic: 'بدر التركي', style: 'Murattal', endpoints: [], mp3quran: ['بدر التركي', 'Badr Al-Turki', 'Badr Alturki', 'Badr Al Turki'], note: 'Full-surah recordings via MP3Quran. No verse-by-verse source known.' },
   { id: 'dossary', name: 'Yasser Al-Dossary', arabic: 'ياسر الدوسري', style: 'Murattal', endpoints: [{ source: 'everyayah', ref: 'Yasser_Ad-Dussary_128kbps' }], mp3quran: ['ياسر الدوسري', 'Yasser Al-Dosari', 'Yasser Ad-Dussary', 'Yasser Al-Dossary'] },
-  { id: 'maher', name: 'Maher Al-Mu’aiqly', arabic: 'ماهر المعيقلي', style: 'Murattal', endpoints: [{ source: 'everyayah', ref: 'MaherAlMuaiqly128kbps' }, { source: 'everyayah', ref: 'Maher_AlMuaiqly_128kbps' }, { source: 'islamicnetwork', ref: 'ar.mahermuaiqly' }], mp3quran: ['ماهر المعيقلي', 'Maher Al-Muaiqly', 'Maher Almuaiqly', 'Maher Al Muaiqly'] },
+  { id: 'maher', name: 'Maher Al-Mu’aiqly', arabic: 'ماهر المعيقلي', style: 'Murattal', endpoints: [{ source: 'everyayah', ref: 'MaherAlMuaiqly128kbps' }, { source: 'islamicnetwork', ref: 'ar.mahermuaiqly' }], mp3quran: ['ماهر المعيقلي', 'Maher Al-Muaiqly', 'Maher Almuaiqly', 'Maher Al Muaiqly'] },
   { id: 'alafasy', name: 'Mishary Alafasy', style: 'Murattal', endpoints: [{ source: 'everyayah', ref: 'Alafasy_128kbps' }, { source: 'islamicnetwork', ref: 'ar.alafasy' }], note: 'Clear, moderate pace. A good default.' },
   { id: 'husary', name: 'Mahmoud Khalil Al-Husary', style: 'Murattal', endpoints: [{ source: 'everyayah', ref: 'Husary_128kbps' }, { source: 'islamicnetwork', ref: 'ar.husary' }], note: 'Slow and precise.' },
   { id: 'husary-muallim', name: 'Al-Husary (teaching)', style: 'Teaching', endpoints: [{ source: 'everyayah', ref: 'Husary_Muallim_128kbps' }], note: 'Slow recitation with pauses, designed for learners.' },

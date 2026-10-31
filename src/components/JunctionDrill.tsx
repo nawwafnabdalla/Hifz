@@ -17,7 +17,6 @@ export function JunctionDrill({ range, onDone }: { range: Range; onDone: () => v
   const t0 = useRef(Date.now())
   const k = pairs[i]
   if (k === undefined) return <div className="px-4 text-center text-sm text-ink-2">Pick at least two ayahs to practise a transition.</div>
-  const tail = wordsOfAyah(range.surah, k).slice(-3)
   const next = wordsOfAyah(range.surah, k + 1)
 
   async function grade(g: Grade) {
@@ -31,11 +30,11 @@ export function JunctionDrill({ range, onDone }: { range: Range; onDone: () => v
       <div className="mb-3 text-center"><div className="eyebrow">Transition {i + 1} of {pairs.length}</div><h2 className="font-display mt-1 text-xl">Ayah {k} → {k + 1}</h2><p className="mt-1 text-sm text-ink-2">Say the ending, then carry straight on into the next ayah.</p></div>
       <div className="card px-4 py-6">
         <p className="arabic center" lang="ar" dir="rtl">
-          <span className="text-muted">… </span><PlainWords words={tail} /> <Medallion n={k} />
+          <span className="text-muted">… </span><PlainWords surah={range.surah} ayah={k} from={Math.max(0, wordsOfAyah(range.surah, k).length - 3)} to={wordsOfAyah(range.surah, k).length - 1} /> <Medallion n={k} />
         </p>
         <div className="my-3 flex items-center justify-center text-brass"><Icon name="down" /></div>
         <p className="arabic center" lang="ar" dir="rtl" aria-label={`Ayah ${k + 1}`}>
-          {shown ? <><PlainWords words={next} /> <Medallion n={k + 1} /></> : <span className="inline-flex items-center gap-2 text-muted"><span className="mask" style={{ width: '3.2em' }} /><span className="mask" style={{ width: '2em' }} /><span className="mask" style={{ width: '2.6em' }} /><span className="text-sm font-sans">{arabicIndic(k + 1)}</span></span>}
+          {shown ? <><PlainWords surah={range.surah} ayah={k + 1} from={0} to={next.length - 1} /> <Medallion n={k + 1} /></> : <span className="inline-flex items-center gap-2 text-muted"><span className="mask" style={{ width: '3.2em' }} /><span className="mask" style={{ width: '2em' }} /><span className="mask" style={{ width: '2.6em' }} /><span className="text-sm font-sans">{arabicIndic(k + 1)}</span></span>}
         </p>
       </div>
       {!shown ? <button className="btn btn-primary btn-lg mt-4 w-full" onClick={() => setShown(true)} data-testid="junction-reveal"><Icon name="eye" size={18} /> Show what follows</button> : (

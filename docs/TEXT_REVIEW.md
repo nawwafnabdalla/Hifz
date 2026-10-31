@@ -123,6 +123,15 @@ These are not bugs I can resolve by comparing software sources; each needs someo
    (`tests/fonts.test.ts`) now fails if any character in the text lacks a glyph in the shipped fonts. A reader should still check that these
    marks (the open tanween forms) look right on an iPhone, since the two faces differ slightly.
 
+9. **Comparison with the Complex's own text (added with the Madinah script).** The official KFGQPC Hafs v3.0 text was obtained via the CC BY 4.0
+   `quran-text` dataset and compared ayah by ayah (`docs/TYPOGRAPHY.md`). Result: vowel marks and signs agree with the official text in 6,233 of 6,236 ayahs
+   after a documented open-tanween mapping, with 937 ayahs differing only in kashida seats; **stop signs match in 6,233 of 6,236** (the 323 earlier
+   disagreements were with the QUL dataset, not the Complex). The 3 genuine differences, **2:72, 15:7 and 52:37**, need a qualified reader:
+   * **15:7**: the official text writes the word joined; our whitespace erratum split it. The other five errata are confirmed by the official text. **Recommend reverting the 15:7 erratum.**
+   * **52:37**: the official text has the small *low* seen (U+06E3); our source has the small high seen (U+06DC).
+   * **2:72**: the hamza is spelled differently (official: ء with sukun).
+   No canonical text has been changed for any of these. They are listed for your approval.
+
 ## 3. What is, and is not, claimed
 
 * Claimed and tested: 114 surahs, 6,236 ayahs, Hafs numbering; letters and word spacing agree with two independent sources; the

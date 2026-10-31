@@ -118,6 +118,8 @@ export interface Settings {
   newPerDayCap: number
   /** Whether to propose a new-memorisation chunk at all. */
   planNew: boolean
+  /** 'madinah' draws the official King Fahd Complex text in its own font; 'simple' draws the canonical text in Amiri Quran. */
+  script: 'madinah' | 'simple'
   /** 'listen' plays the recitation; 'echo' leaves a silence for you to recite after each ayah. */
   practiceMode: 'listen' | 'echo'
   /** Silence after each ayah in echo mode, as a multiple of that ayah's own recording length. 0 = wait for a tap. */
@@ -146,6 +148,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showStreaks: false,
   newPerDayCap: 10,
   planNew: true,
+  script: 'madinah',
   practiceMode: 'listen',
   echoPause: 1.5,
   repeatEach: 1,

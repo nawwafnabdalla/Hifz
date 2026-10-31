@@ -70,6 +70,14 @@
   }
 }
 
+/* The King Fahd Glorious Quran Printing Complex's own font, shipped as the unmodified file (its licence forbids modification, so no
+   subsetting or conversion). Licence text: data/fonts/KFGQPC-EULA.txt. Used only when the font has loaded (see lib/quran/script.ts). */
+@font-face {
+  font-family: "KFGQPC HAFS Uthmanic Script";
+  src: url("./assets/fonts/UthmanicHafs-v-3.0.ttf") format("truetype");
+  font-display: block;
+}
+
 @theme inline {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
@@ -228,3 +236,15 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 
 /* Words containing a character Amiri Quran lacks (U+065E). Kept to whole words so a word never splits across two fonts. */
 .arabic .alt { font-family: "Amiri", "Amiri Quran", "Noto Naskh Arabic", serif; }
+
+/* ── Madinah Mushaf script ─────────────────────────────────────────────── */
+:root[data-script="madinah"] .arabic {
+  font-family: "KFGQPC HAFS Uthmanic Script", "Amiri Quran", serif;
+  font-size: calc(clamp(1.75rem, 6.7vw, 2.4rem) * var(--arabic-scale, 1));
+  line-height: 2.3;
+  word-spacing: 0.02em;
+  font-feature-settings: normal;     /* the font's own ligatures and mark positioning, untouched */
+}
+:root[data-script="madinah"] .arabic .w,
+:root[data-script="madinah"] .arabic .alt { font-family: inherit; }
+.arabic .endmark { color: var(--brass); font-size: 0.82em; margin-inline: 0.12em; white-space: nowrap; }

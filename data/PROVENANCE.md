@@ -60,6 +60,12 @@ Page (Madinah, 604) and juz boundaries come from `quran-meta@7.0.0` (MIT), build
 Not hosted or redistributed. Per-ayah files are *linked* from third-party hosts (see `src/lib/audio/sources.ts`); some of those hosts
 state no licence. See the Settings → About screen and `docs/AUDIO.md`.
 
+## Madinah display layer (additional, does not replace the above)
+`src/data/generated/mushaf-display.json` holds the official KFGQPC Hafs v3.0 text (from `@quran.ws/text@0.1.0`, CC BY 4.0, integrity-pinned in
+`scripts/build-mushaf-display.mjs`), aligned word for word with the canonical text and used only for drawing. `data/crosscheck/qpc-v3-ayah-hashes.json`
+holds the hash of every official ayah; tests require the shipped display text to match them and to share letters with the canonical text word by word.
+Details, licensing and findings: `docs/TYPOGRAPHY.md`, `docs/THIRD_PARTY.md`.
+
 ## Review pack
 
 `docs/TEXT_REVIEW.md` documents the six whitespace corrections word by word against both independent sources, and lists every

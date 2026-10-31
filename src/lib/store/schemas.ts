@@ -95,6 +95,7 @@ export const settingsSchema = z.object({
   showStreaks: z.boolean(),
   newPerDayCap: z.number().int().min(0).max(60),
   planNew: z.boolean(),
+  script: z.enum(['madinah', 'simple']),
   practiceMode: z.enum(['listen', 'echo']),
   echoPause: z.union([z.literal(0), z.literal(1), z.literal(1.5), z.literal(2)]),
   repeatEach: z.number().int().min(1).max(20),

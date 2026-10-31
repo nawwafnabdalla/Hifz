@@ -32,7 +32,7 @@ export default defineConfig({
       workbox: {
         // App shell, bundled Qur'an text and fonts are precached so the reader,
         // planner and logging work offline. Audio is deliberately NOT cached.
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,ttf,json}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//],

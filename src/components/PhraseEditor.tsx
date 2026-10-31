@@ -3,12 +3,14 @@ import { Sheet } from './ui'
 import { wordsOfAyah } from '@/lib/quran/data'
 import { suggestBoundaries } from '@/lib/engine/phrases'
 import { wordFontClass } from './Arabic'
+import { drawnWord, useMushaf } from '@/lib/quran/script'
 
 /** Tap between words to place or remove a practice break. Suggestions come from the text's stop signs, conservatively. */
 export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }: {
   open: boolean; onClose: () => void; surah: number; ayah: number; boundaries: number[]; onSave: (b: number[]) => void
 }) {
   const words = wordsOfAyah(surah, ayah)
+  const mushaf = useMushaf()
   const [b, setB] = useState<number[]>(boundaries)
   useEffect(() => { if (open) setB(boundaries) }, [open, boundaries])
   const has = (i: number) => b.includes(i)
@@ -20,7 +22,7 @@ export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }:
         <p className="arabic" lang="ar" dir="rtl" style={{ fontSize: 'calc(1.5rem * var(--arabic-scale, 1))', lineHeight: 2.6 }}>
           {words.map((w, i) => (
             <span key={i}>
-              <span className={`w${wordFontClass(w)}`}>{w}</span>
+              <span className={`w${mushaf ? '' : wordFontClass(w)}`}>{drawnWord(surah, ayah, i, w, mushaf)}</span>
               {i < words.length - 1 && (
                 <button onClick={() => toggle(i)} aria-pressed={has(i)} aria-label={`${has(i) ? 'Remove' : 'Add'} break after word ${i + 1}`}
                   className={`mx-0.5 inline-block h-[1.1em] align-middle rounded-full transition-all ${has(i) ? 'w-[0.5em] bg-brass' : 'w-[0.5em] bg-transparent hover:bg-line'}`} style={{ verticalAlign: 'middle' }} />

@@ -40,7 +40,7 @@ export const nextReveal = (current: number, total: number) => Math.min(total, cu
  * what keeps passage results from over-crediting individual ayahs.
  */
 export function RecallCard({ range, context, listenedFirst, onDone, title, fixedCue }: {
-  range: Range; context: PracticeContext; listenedFirst?: boolean; onDone: (e: ReviewEvent) => void; title?: string; fixedCue?: Cue
+  range: Range; context: PracticeContext; listenedFirst?: boolean; onDone: (e: ReviewEvent, info?: { repaired: boolean }) => void; title?: string; fixedCue?: Cue
 }) {
   const logReview = useApp((s) => s.logReview)
   const logFlow = useApp((s) => s.logFlow)
@@ -114,9 +114,9 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
         <RungPractice surah={range.surah} ayah={range.start} words={words} phrases={phrases} boundaries={boundaries} from={repair.from} to={repair.to} resetKey="repair" focusOnly={words.length > 28}
           onRate={async (rating: FlowRating, s) => {
             await logFlow({ surah: range.surah, ayah: range.start, fromPhrase: repair.from, toPhrase: repair.to, phraseCount: phrases.length, rating, reps: s.reps, durationMs: s.durationMs })
-            if (rating === 'natural') onDone(repair.event)
+            if (rating === 'natural') onDone(repair.event, { repaired: true })
           }} />
-        <button className="btn btn-ghost mt-3 w-full" onClick={() => onDone(repair.event)} data-testid="repair-skip">Done for now</button>
+        <button className="btn btn-ghost mt-3 w-full" onClick={() => onDone(repair.event, { repaired: true })} data-testid="repair-skip">Done for now</button>
         <p className="mt-2 text-center text-xs text-muted">Until it feels natural it stays marked as tricky and is practised first next time.</p>
       </div>
     )

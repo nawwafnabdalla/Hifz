@@ -2,7 +2,8 @@ import { useRef, useState } from 'react'
 import { useApp } from '@/app/store'
 import { Header, Sheet } from '@/components/ui'
 import { Icon } from '@/components/Icon'
-import { RECITERS, candidateUrls } from '@/lib/audio/sources'
+import { AudioCredits, ReciterCheck } from '@/components/ReciterCheck'
+import { RECITERS } from '@/lib/audio/sources'
 import { INTEGRITY } from '@/lib/quran/data'
 import { cloudConfigured } from '@/lib/store/remote'
 import { shortDate } from '@/lib/format'
@@ -17,20 +18,6 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   return <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`relative h-7 w-12 rounded-full transition-colors ${on ? 'bg-accent' : 'bg-line'}`}><span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} /></button>
 }
 
-type Probe = { source: string; url: string; state: 'testing' | 'ok' | 'fail' }
-function testUrl(url: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const a = new Audio()
-    const done = (ok: boolean) => { clearTimeout(t); a.src = ''; resolve(ok) }
-    const t = setTimeout(() => done(false), 9000)
-    a.preload = 'metadata'
-    a.addEventListener('loadedmetadata', () => done(true))
-    a.addEventListener('error', () => done(false))
-    a.src = url
-    a.load()
-  })
-}
-
 export function SettingsPage() {
   const { snap, sync, user, authLoading, patchSettings, signIn, signUp, signOut, syncNow, exportJson, importJson, eraseLocal, eraseRemoteAndLocal, say } = useApp()
   const s = snap.settings
@@ -38,7 +25,6 @@ export function SettingsPage() {
   const [pw, setPw] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [probes, setProbes] = useState<Probe[]>([])
   const [about, setAbout] = useState(false)
   const [confirm, setConfirm] = useState<null | 'local' | 'all'>(null)
   const file = useRef<HTMLInputElement>(null)
@@ -56,12 +42,6 @@ export function SettingsPage() {
     document.body.appendChild(a); a.click(); a.remove()
     setTimeout(() => URL.revokeObjectURL(a.href), 4000)
     say('Backup downloaded')
-  }
-  async function runProbe() {
-    const c = candidateUrls(s.reciter, 1, 1).map((x) => ({ source: x.source, url: x.url, state: 'testing' as const }))
-    if (!c.length) { setProbes([{ source: 'No verse-by-verse source is known for this reciter', url: 'none', state: 'fail' }]); return }
-    setProbes(c)
-    await Promise.all(c.map(async (p, i) => { const ok = await testUrl(p.url); setProbes((cur) => cur.map((x, j) => (j === i ? { ...x, state: ok ? 'ok' : 'fail' } : x))) }))
   }
 
   return (
@@ -98,17 +78,14 @@ export function SettingsPage() {
 
       <Section title="Reading">
         <Row label="Appearance"><div className="flex gap-1.5">{(['system', 'light', 'dark'] as const).map((t) => <button key={t} className="chip capitalize" aria-pressed={s.theme === t} onClick={() => void patchSettings({ theme: t })}>{t}</button>)}</div></Row>
+        <Row label="Script" hint="Madinah Mushaf uses the King Fahd Complex font and text. If it can’t load, the simple script is used."><div className="flex gap-1.5">{([['madinah', 'Mushaf'], ['simple', 'Simple']] as const).map(([v, l]) => <button key={v} className="chip" aria-pressed={s.script === v} onClick={() => void patchSettings({ script: v })} data-testid={`script-${v}`}>{l}</button>)}</div></Row>
         <Row label="Arabic size" hint="Applies everywhere"><input type="range" min={0.9} max={1.6} step={0.05} value={s.arabicScale} onChange={(e) => void patchSettings({ arabicScale: +e.target.value })} aria-label="Arabic text size" /></Row>
         <Row label="Show translation" hint="Saheeh International"><Toggle on={s.translation} onChange={(v) => void patchSettings({ translation: v })} label="Show translation" /></Row>
       </Section>
 
       <Section title="Audio">
         <Row label="Reciter"><select className="h-10 max-w-[12rem] rounded-lg border border-line bg-bg px-2" value={s.reciter} onChange={(e) => void patchSettings({ reciter: e.target.value })} aria-label="Reciter">{RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Row>
-        <div className="p-4">
-          <button className="btn btn-quiet w-full" onClick={() => void runProbe()} data-testid="audio-check"><Icon name="headphones" size={16} />Check audio on this device</button>
-          {probes.length > 0 && <ul className="mt-3 space-y-1.5 text-sm" data-testid="audio-probes">{probes.map((p) => <li key={p.url} className="flex items-center justify-between gap-3"><span className="truncate text-ink-2">{p.source}</span><span className={p.state === 'ok' ? 'text-accent' : p.state === 'fail' ? 'text-clay' : 'text-muted'}>{p.state === 'testing' ? 'testing…' : p.state === 'ok' ? 'reachable' : 'could not load'}</span></li>)}</ul>}
-          <p className="mt-2 text-xs text-muted">Audio streams from third-party hosts and is never stored by the app. If one host fails, the next is tried automatically.</p>
-        </div>
+        <div className="space-y-3 p-4"><ReciterCheck /><AudioCredits /></div>
       </Section>
 
       <Section title="Your data">
@@ -132,7 +109,8 @@ export function SettingsPage() {
         <div className="space-y-3 text-sm text-ink-2">
           <p><b>Arabic:</b> Hafs Uthmani from the Noble Qur’an Encyclopedia (via <code>quran-json@3.1.2</code>, pinned and checksummed). Compared letter-for-letter with two independent sources (Tanzil v1.1 and Tarteel’s QUL): <b>{INTEGRITY.ayahs.toLocaleString()} of {INTEGRITY.ayahs.toLocaleString()}</b> agree.</p>
           <p><b>{INTEGRITY.errata.length} whitespace-only corrections</b> are applied where the primary source disagreed with both others on word spacing: {INTEGRITY.errata.map((e) => `${e.surah}:${e.ayah}`).join(', ')}. No letter, vowel or sign is ever altered. They are pending review by a qualified reader.</p>
-          <p><b>Translation:</b> Saheeh International (via Tanzil, personal use). <b>Fonts:</b> Amiri Quran (SIL OFL). <b>Audio:</b> linked from EveryAyah and Islamic Network; not hosted by this app, and those hosts state no licence, so please use it for personal study.</p>
+          <p><b>Madinah Mushaf script:</b> the official text and font of the <a className="underline" href="https://fonts.qurancomplex.gov.sa/" target="_blank" rel="noopener noreferrer">King Fahd Glorious Quran Printing Complex</a> (KFGQPC Uthmanic Hafs v3.0), delivered unmodified under the font’s own licence (free to use and distribute; not to be sold or altered). The official text reaches the app through the CC BY 4.0 <i>quran-text</i> dataset from quran.ws. It is checked word for word against the stored text; the stored text itself is never altered.</p>
+          <p><b>Translation:</b> Saheeh International (via Tanzil, personal use). <b>Simple script:</b> Amiri Quran and Amiri (SIL OFL). <b>Audio:</b> streamed from EveryAyah and MP3Quran; not hosted by this app. EveryAyah publishes no licence, so please use it for personal study and credit the reciters.</p>
           <p className="break-all text-xs">Text checksum (sha256): {INTEGRITY.generatedTextSha256}</p>
         </div>
       </Sheet>

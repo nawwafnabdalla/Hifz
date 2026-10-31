@@ -2,6 +2,7 @@
 // re-ordered; hiding is done by replacing a word with a neutral bar in the display only.
 import { useMemo, type CSSProperties, type ReactNode } from 'react'
 import { arabicIndic, wordsOfAyah } from '@/lib/quran/data'
+import { drawnWord, useMushaf } from '@/lib/quran/script'
 import type { Stage } from '@/lib/engine/derive'
 
 export type Cue = 0 | 1 | 2 | 3 | 4
@@ -10,9 +11,16 @@ export type Cue = 0 | 1 | 2 | 3 | 4
 export const ALT_FONT_CHARS = /[\u065E]/
 export const wordFontClass = (w: string) => (ALT_FONT_CHARS.test(w) ? ' alt' : '')
 
-/** A run of words exactly as stored, joined by single spaces, with the per-word font fallback applied. */
-export function PlainWords({ words }: { words: string[] }) {
-  return <>{words.map((w, i) => <span key={i}><span className={`w${wordFontClass(w)}`}>{w}</span>{i < words.length - 1 ? ' ' : ''}</span>)}</>
+/** A run of an ayah's words (inclusive indices) exactly as stored, joined by single spaces, drawn in the active script. */
+export function PlainWords({ surah, ayah, from, to }: { surah: number; ayah: number; from: number; to: number }) {
+  const mushaf = useMushaf()
+  const ws = wordsOfAyah(surah, ayah)
+  const out: ReactNode[] = []
+  for (let i = from; i <= to && i < ws.length; i++) {
+    const w = drawnWord(surah, ayah, i, ws[i]!, mushaf)
+    out.push(<span key={i}><span className={`w${mushaf ? '' : wordFontClass(w)}`}>{w}</span>{i < to && i < ws.length - 1 ? ' ' : ''}</span>)
+  }
+  return <>{out}</>
 }
 
 /** Which word indices stay visible at a given cue level (4 = none, 3 = first word, 2 = every third, 1 = two of three, 0 = all). */
@@ -37,20 +45,23 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
   gaps?: number[]
 }) {
   const words = wordsOfAyah(surah, ayah)
+  const mushaf = useMushaf()
   const gapSet = useMemo(() => new Set(gaps ?? []), [gaps])
   return (
     <>
       {words.map((w, i) => {
         const shown = revealCount !== undefined ? i < revealCount : visibleAt(cue, i)
         const dim = dimOutside && (i < dimOutside[0] || i > dimOutside[1])
+        const drawn = drawnWord(surah, ayah, i, w, mushaf)
+        const alt = mushaf ? '' : wordFontClass(w)
         return (
           <span key={i}>
             {shown ? (
               onWord ? (
-                <span className={`w wordtap${marked === i ? ' marked' : ''}${wordFontClass(w)}`} role="button" tabIndex={0} aria-label={`Word ${i + 1}`} aria-pressed={marked === i} data-word={i}
-                  onClick={() => onWord(i)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onWord(i))}>{w}</span>
+                <span className={`w wordtap${marked === i ? ' marked' : ''}${alt}`} role="button" tabIndex={0} aria-label={`Word ${i + 1}`} aria-pressed={marked === i} data-word={i}
+                  onClick={() => onWord(i)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onWord(i))}>{drawn}</span>
               ) : (
-                <span className={`w${dim ? ' dim' : ''}${wordFontClass(w)}`}>{w}</span>
+                <span className={`w${dim ? ' dim' : ''}${alt}`}>{drawn}</span>
               )
             ) : (
               <span className="mask" style={{ width: `${Math.max(0.9, w.replace(/[ً-ٰٟۖ-ۭ]/g, '').length * 0.42)}em` } as CSSProperties} aria-hidden="true" />
@@ -64,6 +75,9 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
 }
 
 export function Medallion({ n }: { n: number }) {
+  const mushaf = useMushaf()
+  // In the official font the end-of-ayah sign (U+06DD) and its number are drawn by the font itself, as in the printed Mushaf.
+  if (mushaf) return <span className="endmark" lang="ar" aria-label={`ayah ${n}`}>{'\u06DD' + arabicIndic(n)}</span>
   return <span className="medallion" aria-label={`ayah ${n}`}>{arabicIndic(n)}</span>
 }
 

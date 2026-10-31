@@ -33,7 +33,7 @@ export function RungPractice({ surah, ayah, words, phrases, boundaries, from, to
         {focusOnly ? (
           <>
             <p className="mb-1 text-xs text-muted">Long ayah: showing the part you are practising ({span[0] + 1}–{span[1] + 1} of {words.length} words)</p>
-            <p className="arabic center" lang="ar" dir="rtl"><PlainWords words={words.slice(span[0], span[1] + 1)} /></p>
+            <p className="arabic center" lang="ar" dir="rtl"><PlainWords surah={surah} ayah={ayah} from={span[0]} to={span[1]} /></p>
           </>
         ) : (
           <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={surah} ayah={ayah} dimOutside={dimOthers ? span : undefined} gaps={boundaries} /> <Medallion n={ayah} /></p>
