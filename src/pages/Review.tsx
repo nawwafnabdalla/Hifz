@@ -1,5 +1,6 @@
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RecallCard } from '@/components/RecallCard'
+import { JunctionDrill } from '@/components/JunctionDrill'
 import { Icon } from '@/components/Icon'
 import { isValidRef } from '@/lib/quran/data'
 import type { PracticeContext } from '@/lib/engine/types'
@@ -25,7 +26,9 @@ export function ReviewPage() {
       {done ? (
         <div className="enter mt-6 px-4" data-testid="review-done"><div className="card p-6 text-center"><h2 className="font-display text-2xl">Saved</h2><p className="mt-2 text-sm text-ink-2">{rangeTitle(range)} is now part of your history.</p><div className="mt-4 grid gap-2"><button className="btn btn-primary" onClick={() => nav('/')}>Back to Today</button><button className="btn btn-quiet" onClick={() => setDone(false)}>Recite it again</button></div></div></div>
       ) : (
-        <RecallCard key={String(done)} range={range} context={ctx} onDone={() => setDone(true)} />
+        sp.get('mode') === 'junction' && end > start
+          ? <JunctionDrill range={range} onDone={() => setDone(true)} />
+          : <RecallCard key={String(done)} range={range} context={ctx} onDone={() => setDone(true)} />
       )}
     </div>
   )

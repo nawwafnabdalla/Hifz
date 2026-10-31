@@ -36,9 +36,10 @@ export function SurahPage() {
   const [listen, setListen] = useState(false)
   const [goal, setGoal] = useState(false)
   const [detail, setDetail] = useState(false)
+  const [mapOpen, setMapOpen] = useState(info.count <= 80)
 
   useEffect(() => { if (study && !tr) void loadTranslation().then((t) => setTr(t[n - 1] ?? null)) }, [study, tr, n])
-  useEffect(() => { setShown(PAGE); setSel(null); setListen(false); window.scrollTo(0, 0) }, [n])
+  useEffect(() => { setShown(PAGE); setSel(null); setListen(false); setMapOpen(surahInfo(n).count <= 80); window.scrollTo(0, 0) }, [n])
   useEffect(() => { if (sel && sel[1] > shown) setShown(Math.ceil(sel[1] / PAGE) * PAGE) }, [sel, shown])
   useEffect(() => { if (sel && sp.get('a')) document.querySelector(`[data-ayah="${sel[0]}"]`)?.scrollIntoView({ block: 'center' }) }, [sp, sel])
 
@@ -68,8 +69,8 @@ export function SurahPage() {
         <button className="btn btn-ghost btn-sm -ml-3" onClick={() => nav('/quran')}><Icon name="left" size={18} />Qur’an</button>
         <div className="mt-1 text-center">
           <div className="eyebrow">Surah {info.n} · {info.type === 'meccan' ? 'Meccan' : 'Medinan'} · {info.count} ayahs · Juz {juzOf(n, 1)} · p. {pageOf(n, 1)}</div>
-          <h1 lang="ar" dir="rtl" className="mt-2 font-[family-name:var(--font-arabic)] text-[2.7rem] leading-[1.5] text-ink">{info.ar}</h1>
-          <div className="font-display -mt-1 text-xl">{info.tr}</div>
+          <h1 lang="ar" dir="rtl" className="mt-3 font-[family-name:var(--font-arabic)] text-[2.6rem] leading-[2] text-ink">{info.ar}</h1>
+          <div className="font-display mt-1 text-xl">{info.tr}</div>
           <div className="text-sm text-muted">{info.en}</div>
         </div>
         <Divider className="mx-auto mt-4 max-w-xs" />
@@ -77,12 +78,19 @@ export function SurahPage() {
 
       <section className="mt-4 px-5">
         <div className="card-flat p-3">
-          <div className="flex flex-wrap gap-[3px]" role="list" aria-label="Ayah-by-ayah progress">
-            {Array.from({ length: info.count }, (_, i) => i + 1).map((a) => { const s = status(n, a); const on = sel && a >= sel[0] && a <= sel[1]; return (
-              <button key={a} role="listitem" aria-label={`Ayah ${a}: ${s.stage.replace('_', ' ')}`} onClick={() => { onTap(a) }} className={`h-4 w-4 rounded-[4px] ${on ? 'ring-2 ring-ink' : ''}`} style={cellStyle(s.stage, s.retrievability)} />
-            ) })}
-          </div>
-          <div className="mt-3"><Legend /></div>
+          <button className="flex w-full items-center justify-between text-sm font-semibold text-ink-2" onClick={() => setMapOpen((o) => !o)} aria-expanded={mapOpen}>
+            <span>Ayah-by-ayah map <span className="font-normal text-muted">· {info.count} ayahs</span></span><Icon name={mapOpen ? 'up' : 'down'} size={18} />
+          </button>
+          {mapOpen && (
+            <>
+              <div className="mt-3 flex flex-wrap gap-[3px]" role="list" aria-label="Ayah-by-ayah progress">
+                {Array.from({ length: info.count }, (_, i) => i + 1).map((a) => { const s = status(n, a); const on = sel && a >= sel[0] && a <= sel[1]; return (
+                  <button key={a} role="listitem" aria-label={`Ayah ${a}: ${s.stage.replace('_', ' ')}`} onClick={() => { onTap(a) }} className={`${info.count > 80 ? 'h-3.5 w-3.5' : 'h-4 w-4'} rounded-[4px] ${on ? 'ring-2 ring-ink' : ''}`} style={cellStyle(s.stage, s.retrievability)} />
+                ) })}
+              </div>
+              <div className="mt-3"><Legend /></div>
+            </>
+          )}
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
           <div className="flex gap-2"><button className="chip" aria-pressed={!study} onClick={() => setStudy(false)}>Mushaf</button><button className="chip" aria-pressed={study} onClick={() => setStudy(true)} data-testid="study-mode">Study</button></div>
@@ -129,10 +137,11 @@ export function SurahPage() {
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSel(null)} aria-label="Clear selection"><Icon name="x" size={16} /></button>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className={`grid gap-2 ${sel![1] > sel![0] ? 'grid-cols-5' : 'grid-cols-4'}`}>
               <button className="btn btn-quiet flex-col !gap-0.5 !py-2" onClick={() => setListen((l) => !l)} data-testid="act-listen"><Icon name="headphones" size={18} /><span className="text-[0.7rem]">Listen</span></button>
               <button className="btn btn-primary flex-col !gap-0.5 !py-2" onClick={() => nav(rangePath('learn', range))} data-testid="act-learn"><Icon name="wave" size={18} /><span className="text-[0.7rem]">Learn</span></button>
               <button className="btn btn-quiet flex-col !gap-0.5 !py-2" onClick={() => nav(rangePath('review', range, '?ctx=free'))} data-testid="act-recall"><Icon name="eyeoff" size={18} /><span className="text-[0.7rem]">Recall</span></button>
+              {sel![1] > sel![0] && <button className="btn btn-quiet flex-col !gap-0.5 !py-2" onClick={() => nav(rangePath('review', range, '?mode=junction'))} data-testid="act-connect"><Icon name="link" size={18} /><span className="text-[0.7rem]">Connect</span></button>}
               <button className="btn btn-quiet flex-col !gap-0.5 !py-2" onClick={() => setGoal(true)} data-testid="act-goal"><Icon name="target" size={18} /><span className="text-[0.7rem]">Goal</span></button>
             </div>
           </div>

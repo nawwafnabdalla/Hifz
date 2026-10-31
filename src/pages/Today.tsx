@@ -22,7 +22,7 @@ function ItemCard({ item, open, onToggle, onStart }: { item: PlanItem; open: boo
           <span className="font-display mt-1.5 block text-[1.25rem] leading-snug">{rangeTitle(item.range)}</span>
           <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
             <span lang="ar" dir="rtl" className="font-[family-name:var(--font-arabic)] text-sm text-ink-2">{sInfo.ar}</span>
-            <span>· {item.ayahs} ayah{item.ayahs > 1 ? 's' : ''}</span><span>· ~{minutesLabel(item.estMinutes)}</span>
+            <span>· {item.ayahs} ayah{item.ayahs > 1 ? 's' : ''}</span><span>· {item.estMinutes < 1 ? '' : '~'}{minutesLabel(item.estMinutes)}</span>
           </span>
         </button>
         <button className="btn btn-quiet btn-sm" onClick={onStart} aria-label={`Start ${rangeTitle(item.range)} now`}><Icon name="play" size={14} /></button>

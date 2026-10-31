@@ -65,6 +65,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const rung = rungs[Math.min(rungIdx, rungs.length - 1)]!
   const wordSpan: [number, number] = [phrases[rung.from]!.from, phrases[rung.to]!.to]
   const single = { surah: range.surah, start: ayah, end: ayah }
+  // Very long ayahs: show only the phrases in play so the controls stay on screen.
+  const focusOnly = !methodA && words.length > 28 && rung.kind !== 'full'
 
   const resetFlow = () => { setRungIdx(0); setReps(0); flowStart.current = Date.now() }
   const nextAyah = () => {
@@ -117,7 +119,14 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           </div>
           <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((rungIdx + 1) / rungs.length) * 100}%` }} /></div>
           <div className="card px-4 py-6 text-center">
-            <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} dimOutside={methodA ? undefined : wordSpan} gaps={boundaries} /> <Medallion n={ayah} /></p>
+            {focusOnly ? (
+              <>
+                <p className="mb-1 text-xs text-muted">Long ayah: showing the part you are practising ({wordSpan[0] + 1}–{wordSpan[1] + 1} of {words.length} words)</p>
+                <p className="arabic center" lang="ar" dir="rtl">{words.slice(wordSpan[0], wordSpan[1] + 1).join(' ')}</p>
+              </>
+            ) : (
+              <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} dimOutside={methodA ? undefined : wordSpan} gaps={boundaries} /> <Medallion n={ayah} /></p>
+            )}
           </div>
           {phrases.length > 1 && !methodA && (
             <div className="mt-2 flex items-center justify-center gap-1.5" aria-hidden="true">

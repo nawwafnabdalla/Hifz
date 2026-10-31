@@ -115,4 +115,4 @@ export function Empty({ title, children, action }: { title: string; children?: R
   )
 }
 
-export const minutesLabel = (m: number) => (m < 1 ? 'under a minute' : `${Math.round(m)} min`)
+export const minutesLabel = (m: number) => (m < 1 ? '<1 min' : `${Math.round(m)} min`)

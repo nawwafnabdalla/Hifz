@@ -116,3 +116,33 @@ test.describe('core hifz loop', () => {
     await expect(page.getByTestId('audio-bar')).toContainText(/Islamic Network/, { timeout: 15000 })
   })
 })
+
+test.describe('continuity and long ayahs', () => {
+  test.beforeEach(async ({ page }) => { await mockAudio(page); await freshStart(page) })
+
+  test('a transition drill records continuity without verifying either ayah', async ({ page }) => {
+    await page.goto('/quran/112')
+    await page.getByRole('listitem', { name: /^Ayah 1:/ }).click()
+    await page.getByRole('listitem', { name: /^Ayah 3:/ }).click()
+    await page.getByTestId('act-connect').click()
+    await expect(page.getByTestId('junction-drill')).toBeVisible()
+    await page.getByTestId('junction-reveal').click()
+    await page.getByTestId('junction-smooth').click()
+    await page.getByTestId('junction-reveal').click()
+    await page.getByTestId('junction-smooth').click()
+    await expect(page.getByTestId('review-done')).toBeVisible()
+    await page.goto('/progress')
+    await expect(page.getByTestId('coverage').locator('div.font-display').first()).toHaveText('0')   // nothing "recalled"
+  })
+
+  test('a very long ayah gets a conservative phrase ladder that keeps controls on screen', async ({ page }) => {
+    await page.goto('/learn/2/282/282')           // the longest ayah (128 words)
+    await page.getByTestId('to-flow').click()
+    await expect(page.getByTestId('stage-flow')).toBeVisible()
+    await expect(page.getByText(/Long ayah: showing the part you are practising/)).toBeVisible()
+    await expect(page.getByTestId('said-it')).toBeInViewport()
+    await page.getByTestId('edit-phrases').click()
+    await expect(page.getByText(/not rulings on where to stop/)).toBeVisible()
+    await page.screenshot({ path: 'test-results/shots/09-phrase-editor.png' })
+  })
+})
