@@ -36,7 +36,9 @@ Reply **retry migration**. A confirmation card from Supabase appears and expires
 
 ---
 
-## Job 2: Publish the app (Cloudflare Pages)
+## Job 2: Publish the app (Cloudflare)
+
+> Cloudflare now often shows its newer *Workers* setup flow ("Set up your application", with a Deploy command `npx wrangler deploy`) instead of the Pages form. That works too: the repo contains `wrangler.jsonc` for it. Keep the project name `hifz` to match. Use the Pages form below only if Cloudflare shows it.
 
 1. Open the Cloudflare dashboard in Safari and sign in. Go to **Workers & Pages**.
 2. Tap **Create** (or **Create application**), choose the **Pages** tab, then **Connect to Git** (if you only see "Workers", look for the small link "Looking to deploy Pages? Get started").
