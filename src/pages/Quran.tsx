@@ -4,6 +4,7 @@ import { useApp } from '@/app/store'
 import { Header, Legend, cellStyle, STAGE_STYLE } from '@/components/ui'
 import { Icon } from '@/components/Icon'
 import { KnownSheet } from '@/components/KnownSheet'
+import { PassagesCard } from '@/components/PassagesCard'
 import { SURAHS, TOTAL_AYAHS } from '@/lib/quran/data'
 import { useRollups } from '@/lib/useStatus'
 import type { Stage } from '@/lib/engine/derive'
@@ -58,6 +59,8 @@ export function QuranPage() {
           </div>
         </div>
       </section>
+
+      <PassagesCard />
 
       <section className="mt-5 px-5">
         <div className="flex items-center gap-2">

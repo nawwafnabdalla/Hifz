@@ -60,3 +60,14 @@ Tell Claude when you reach steps 2 and 8. Claude can read your rows in the datab
 - The scheduler uses default settings and says so; it does not yet learn your personal pace (it starts using your measured pace
   after 5 ayahs learned through the app).
 - Password reset is not built yet. If you forget it, tell Claude.
+
+
+## Next-leap checks on the phone (new)
+- [ ] **Your reciters:** open a surah, Listen, tap the reciter name. Badr Al-Turki, Yasser Al-Dossary and Maher Al-Mu'aiqly are at the top. Pick each and press play.
+  Note, for each: did a verse play (the dot turns green) or does it say it has no verse-by-verse recording?
+- [ ] **Full surah:** for any reciter that says "no verse-by-verse", tap *Play the full surah*. Does it play?
+- [ ] **Echo:** switch Echo on, play an ayah, recite in the pause. Try pause lengths and "Tap". Lock the screen mid-practice: does it carry on?
+- [ ] **Hints:** in a recall, tap *Hint*, then *Show text*. "On my own" should be disabled.
+- [ ] **Slip-to-repair:** after showing the text, tap the word you slipped on, grade, and practise the highlighted joint.
+- [ ] **Letters:** open Ayat al-Kursi (2:255) and a few ayahs with tanween. No empty boxes anywhere?
+- [ ] **Resume:** leave the app mid-learning and reopen. You should land on the same step.

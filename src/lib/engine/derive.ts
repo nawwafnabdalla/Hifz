@@ -12,6 +12,12 @@ export interface JunctionState {
   lastAt: number
   lastOk: boolean | null
 }
+/** True while a transition between two ayahs has gone worse than it has gone well, and has not just been fixed. */
+export function junctionNeedsRepair(j: JunctionState): boolean {
+  const trouble = j.shaky - 0.5 * j.ok
+  return trouble > 0 && (j.lastOk === false || trouble > 0.5)
+}
+
 export interface FlowState {
   surah: number
   ayah: number

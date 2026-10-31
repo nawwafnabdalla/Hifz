@@ -73,7 +73,7 @@
 @theme inline {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
-  --font-arabic: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", serif;
+  --font-arabic: "Amiri Quran", "Amiri", "Noto Naskh Arabic", serif;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -220,3 +220,11 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .arabic .ayah[data-stage="reviewing"] { box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--accent) 50%, transparent); }
 .arabic .ayah[data-stage="strong"] { box-shadow: inset 0 -3px 0 var(--accent); }
 .arabic .ayah[data-stage="needs_repair"] { box-shadow: inset 0 -3px 0 var(--clay); }
+
+/* Tappable words (slip marking) */
+.arabic .wordtap { cursor: pointer; border-radius: 10px; padding: 0 0.12em; transition: background 120ms; }
+.arabic .wordtap:hover { background: color-mix(in oklab, var(--accent) 10%, transparent); }
+.arabic .wordtap.marked { background: color-mix(in oklab, var(--clay) 24%, transparent); box-shadow: inset 0 -3px 0 var(--clay); }
+
+/* Words containing a character Amiri Quran lacks (U+065E). Kept to whole words so a word never splits across two fonts. */
+.arabic .alt { font-family: "Amiri", "Amiri Quran", "Noto Naskh Arabic", serif; }

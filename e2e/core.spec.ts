@@ -15,8 +15,9 @@ test.describe('core hifz loop', () => {
     await page.getByRole('button', { name: 'Juz ʿAmma (78–114)' }).click()
     await page.getByRole('button', { name: /Mark \d+ surahs as known/ }).click()
     await expect(page.getByText(/Marked 37 surahs as known/)).toBeVisible()
-    // Plan now offers to verify rather than assuming the material is solid.
-    await expect(page.getByTestId('plan-item').first()).toHaveAttribute('data-kind', 'verify')
+    // Plan now offers to verify rather than assuming the material is solid, and 37 small checks collapse into one row.
+    await expect(page.getByTestId('plan-group').first()).toHaveAttribute('data-kind', 'verify')
+    await page.getByTestId('plan-group').first().getByRole('button').first().click()
     await page.getByTestId('plan-item').first().getByRole('button', { name: /^(?!Start).*/ }).first().click()
     await expect(page.getByTestId('plan-reasons')).toContainText('marked this as known')
     await page.getByRole('link', { name: /Qur’an/ }).click()

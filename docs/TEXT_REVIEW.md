@@ -117,6 +117,12 @@ These are not bugs I can resolve by comparing software sources; each needs someo
 7. **Translation** (Saheeh International via Tanzil) is not Qur'anic text but is shown beside it. Its terms (personal, verbatim,
    attributed) should be reviewed before any public release.
 
+8. **Font coverage (found and fixed after launch).** Of the 72 distinct characters in the text, **U+065E (fatha with two dots, 1,807 uses)
+   has no glyph in the bundled Amiri Quran font**, so those marks rendered as empty boxes or an arbitrary system fallback. The text is
+   unchanged; words containing U+065E are now drawn in Amiri (the same family, which has the glyph), at word level. A test
+   (`tests/fonts.test.ts`) now fails if any character in the text lacks a glyph in the shipped fonts. A reader should still check that these
+   marks (the open tanween forms) look right on an iPhone, since the two faces differ slightly.
+
 ## 3. What is, and is not, claimed
 
 * Claimed and tested: 114 surahs, 6,236 ayahs, Hafs numbering; letters and word spacing agree with two independent sources; the

@@ -118,7 +118,22 @@ export interface Settings {
   newPerDayCap: number
   /** Whether to propose a new-memorisation chunk at all. */
   planNew: boolean
+  /** 'listen' plays the recitation; 'echo' leaves a silence for you to recite after each ayah. */
+  practiceMode: 'listen' | 'echo'
+  /** Silence after each ayah in echo mode, as a multiple of that ayah's own recording length. 0 = wait for a tap. */
+  echoPause: 0 | 1 | 1.5 | 2
+  repeatEach: number
+  playbackRate: number
+  /** Passages the user has saved for recitation practice (for example, for salah). */
+  passages: SavedPassage[]
   updatedAt: number
+}
+
+export interface SavedPassage {
+  id: string
+  name: string
+  range: Range
+  createdAt: number
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -131,6 +146,11 @@ export const DEFAULT_SETTINGS: Settings = {
   showStreaks: false,
   newPerDayCap: 10,
   planNew: true,
+  practiceMode: 'listen',
+  echoPause: 1.5,
+  repeatEach: 1,
+  playbackRate: 1,
+  passages: [],
   updatedAt: 0,
 }
 

@@ -11,6 +11,22 @@ import { surahInfo } from '@/lib/quran/data'
 
 const PRESETS = [10, 15, 20, 30, 45, 60]
 
+type Row = { type: 'item'; item: PlanItem } | { type: 'group'; kind: PlanItem['kind']; items: PlanItem[] }
+/** Four or more consecutive items of the same kind collapse into one row, so the day does not look like a to-do list. */
+export function groupRows(items: PlanItem[]): Row[] {
+  const rows: Row[] = []
+  let i = 0
+  while (i < items.length) {
+    let j = i
+    while (j + 1 < items.length && items[j + 1]!.kind === items[i]!.kind && !items[j + 1]!.drill === !items[i]!.drill) j++
+    const run = items.slice(i, j + 1)
+    if (run.length >= 4) rows.push({ type: 'group', kind: items[i]!.kind, items: run })
+    else run.forEach((item) => rows.push({ type: 'item', item }))
+    i = j + 1
+  }
+  return rows
+}
+
 function ItemCard({ item, open, onToggle, onStart }: { item: PlanItem; open: boolean; onToggle: () => void; onStart: () => void }) {
   const k = KIND[item.kind]
   const sInfo = surahInfo(item.range.surah)
@@ -18,7 +34,7 @@ function ItemCard({ item, open, onToggle, onStart }: { item: PlanItem; open: boo
     <li className="card enter overflow-hidden" data-testid="plan-item" data-kind={item.kind}>
       <div className="flex items-center gap-3 p-4">
         <button className="min-w-0 flex-1 text-left" onClick={onToggle} aria-expanded={open}>
-          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider ${k.cls}`}>{k.label}</span>
+          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider ${k.cls}`}>{item.drill ? 'Transition drill' : k.label}</span>
           <span className="font-display mt-1.5 block text-[1.25rem] leading-snug">{rangeTitle(item.range)}</span>
           <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
             <span lang="ar" dir="rtl" className="font-[family-name:var(--font-arabic)] text-sm text-ink-2">{sInfo.ar}</span>
@@ -41,6 +57,7 @@ export function TodayPage() {
   const nav = useNavigate()
   const { snap, derived, now, session, patchSettings, startSession } = useApp()
   const [open, setOpen] = useState<string | null>(null)
+  const [groupOpen, setGroupOpen] = useState<string | null>(null)
   const [known, setKnown] = useState(false)
   const [goal, setGoal] = useState(false)
   const [custom, setCustom] = useState(false)
@@ -53,6 +70,7 @@ export function TodayPage() {
   const isCustom = !PRESETS.includes(minutes)
 
   async function begin() {
+    if (session) { nav('/session'); return }
     const s = await startSession(plan)
     if (s) nav('/session')
   }
@@ -97,12 +115,26 @@ export function TodayPage() {
             <>
               <div className="flex items-baseline justify-between"><div className="eyebrow">{plan.items.length} item{plan.items.length > 1 ? 's' : ''}</div><div className="text-sm text-muted tabular">about {minutesLabel(plan.plannedMinutes)} of {plan.budgetMinutes}</div></div>
               <ul className="space-y-3" data-testid="plan-list">
-                {plan.items.map((it) => (
-                  <ItemCard key={it.id} item={it} open={open === it.id} onToggle={() => setOpen(open === it.id ? null : it.id)}
-                    onStart={() => nav(it.kind === 'new' ? rangePath('learn', it.range) : rangePath('review', it.range, `?ctx=${it.kind}`))} />
-                ))}
+                {groupRows(plan.items).map((row) => {
+                  const start = (it: PlanItem) => nav(it.kind === 'new' ? rangePath('learn', it.range) : rangePath('review', it.range, `?ctx=${it.kind}${it.drill ? '&mode=junction' : ''}`))
+                  if (row.type === 'item') return <ItemCard key={row.item.id} item={row.item} open={open === row.item.id} onToggle={() => setOpen(open === row.item.id ? null : row.item.id)} onStart={() => start(row.item)} />
+                  const gid = `group:${row.kind}`
+                  const mins = row.items.reduce((n, i) => n + i.estMinutes, 0)
+                  const k = KIND[row.kind]
+                  return (
+                    <li key={gid} className="card enter overflow-hidden" data-testid="plan-group" data-kind={row.kind}>
+                      <button className="flex w-full items-center justify-between gap-3 p-4 text-left" onClick={() => setGroupOpen(groupOpen === gid ? null : gid)} aria-expanded={groupOpen === gid}>
+                        <span><span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold uppercase tracking-wider ${k.cls}`}>{k.label}</span>
+                          <span className="font-display mt-1.5 block text-[1.2rem] leading-snug">{row.items.length} passages</span>
+                          <span className="text-xs text-muted">{row.items.reduce((n, i) => n + i.ayahs, 0)} ayahs · ~{minutesLabel(mins)} · all in this session</span></span>
+                        <Icon name={groupOpen === gid ? 'up' : 'down'} className="text-muted" />
+                      </button>
+                      {groupOpen === gid && <ul className="space-y-2 border-t border-line bg-bg/60 p-3">{row.items.map((it) => <ItemCard key={it.id} item={it} open={open === it.id} onToggle={() => setOpen(open === it.id ? null : it.id)} onStart={() => start(it)} />)}</ul>}
+                    </li>
+                  )
+                })}
               </ul>
-              <button className="btn btn-primary btn-lg enter-3 !mt-5 w-full" onClick={begin} data-testid="start-session"><Icon name="play" size={16} /> Begin session</button>
+              <button className="btn btn-primary btn-lg enter-3 !mt-5 w-full" onClick={begin} data-testid="start-session"><Icon name="play" size={16} /> {session ? 'Continue session' : 'Begin session'}</button>
             </>
           ) : (
             <div className="card p-6 text-center" data-testid="nothing-due">

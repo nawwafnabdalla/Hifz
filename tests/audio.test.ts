@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { AyahPlayer, type AudioLike } from '@/lib/audio/player'
+import { AyahPlayer, silenceFor, silentClipUrl, type AudioLike } from '@/lib/audio/player'
 import { candidateUrls, RECITERS, SOURCES } from '@/lib/audio/sources'
 import { globalAyahNumber } from '@/lib/quran/data'
 
@@ -8,6 +8,7 @@ class FakeAudio extends EventTarget implements AudioLike {
   playbackRate = 1
   currentTime = 0
   preservesPitch = false
+  duration = 4
   played: string[] = []
   failing = new Set<string>()
   async play() {
@@ -105,5 +106,101 @@ describe('AyahPlayer', () => {
     p.load([{ surah: 1, ayah: 1 }, { surah: 1, ayah: 2 }], { repeatPassage: 'infinite' })
     await flush(); p.stop()
     expect(p.state).toMatchObject({ status: 'idle', current: null })
+  })
+})
+
+
+describe('your three reciters: honest behaviour', () => {
+  let audio: FakeAudio
+  let p: AyahPlayer
+  beforeEach(() => { audio = new FakeAudio(); p = new AyahPlayer(audio) })
+
+  it('a reciter with no verse-by-verse source says so and never plays anyone else', async () => {
+    p.load([{ surah: 20, ayah: 1 }], { reciterId: 'turki' })
+    await flush()
+    expect(audio.played).toHaveLength(0)
+    expect(p.state).toMatchObject({ status: 'error', unavailable: true })
+    expect(p.state.error).toContain('Badr Al-Turki')
+  })
+  it('walks only the selected reciter\u2019s own candidates when one fails', async () => {
+    audio.failing.add('https://everyayah.com/data/MaherAlMuaiqly128kbps/020001.mp3')
+    p.load([{ surah: 20, ayah: 1 }], { reciterId: 'maher' })
+    await flush(); await flush()
+    expect(audio.played.length).toBeGreaterThanOrEqual(2)
+    for (const u of audio.played) expect(u.toLowerCase()).toMatch(/maher/)
+    expect(audio.played.join(' ')).not.toMatch(/alafasy/i)
+  })
+  it('lists Yasser Al-Dossary and Maher Al-Mu\u2019aiqly with Arabic names', () => {
+    expect(RECITERS.find((r) => r.id === 'dossary')!.arabic).toBe('ياسر الدوسري')
+    expect(RECITERS.find((r) => r.id === 'maher')!.arabic).toBe('ماهر المعيقلي')
+    expect(RECITERS.find((r) => r.id === 'turki')!.arabic).toBe('بدر التركي')
+  })
+})
+
+describe('echo: listen, silence, recite', () => {
+  let audio: FakeAudio
+  let p: AyahPlayer
+  beforeEach(() => { audio = new FakeAudio(); p = new AyahPlayer(audio) })
+  const q = [{ surah: 112, ayah: 1 }, { surah: 112, ayah: 2 }]
+
+  it('sizes the silence from the real clip length, with sensible bounds', () => {
+    expect(silenceFor(4, 1.5)).toBe(6)
+    expect(silenceFor(0.2, 1)).toBe(1.5)
+    expect(silenceFor(500, 2)).toBe(60)
+    expect(silenceFor(undefined, 1)).toBeNull()
+    expect(silenceFor(NaN, 1)).toBeNull()
+  })
+  it('plays a silent clip as real audio, then moves on without a timer', async () => {
+    p.load(q, { reciterId: 'alafasy', echoPause: 1.5 })
+    await flush()
+    audio.end(); await flush()
+    expect(p.state.phase).toBe('recite')
+    expect(p.state.silenceSeconds).toBe(6)
+    expect(audio.src.startsWith('blob:')).toBe(true)
+    audio.end(); await flush()
+    expect(p.state.phase).toBe('listen')
+    expect(p.state.index).toBe(1)
+    expect(audio.src).toContain('112002')
+  })
+  it('repeats with a silence after each repetition', async () => {
+    p.load([q[0]!], { reciterId: 'alafasy', echoPause: 1, repeatEach: 2 })
+    await flush()
+    audio.end(); await flush(); audio.end(); await flush()      // listen 1, silence 1
+    expect(p.state.ayahRepeat).toBe(1)
+    audio.end(); await flush()                                    // listen 2 ends -> silence 2
+    expect(p.state.phase).toBe('recite')
+    audio.end(); await flush()                                    // silence 2 ends -> done
+    expect(p.state.status).toBe('idle')
+    expect(p.state.plays).toBe(2)
+  })
+  it('open-ended pause waits for Continue instead of guessing', async () => {
+    p.load(q, { reciterId: 'alafasy', echoPause: 0 })
+    await flush(); audio.end(); await flush()
+    expect(p.state).toMatchObject({ phase: 'recite', waiting: true })
+    expect(p.state.index).toBe(0)
+    p.continue(); await flush()
+    expect(p.state).toMatchObject({ phase: 'listen', waiting: false, index: 1 })
+  })
+  it('waits for a tap when the clip length is unknown', async () => {
+    audio.duration = NaN
+    p.load(q, { reciterId: 'alafasy', echoPause: 1.5 })
+    await flush(); audio.end(); await flush()
+    expect(p.state.waiting).toBe(true)
+  })
+  it('a failed silent clip never stalls practice', async () => {
+    p.load(q, { reciterId: 'alafasy', echoPause: 1 })
+    await flush(); audio.end(); await flush()
+    audio.dispatchEvent(new Event('error')); await flush()
+    expect(p.state.index).toBe(1)
+  })
+  it('without echo, nothing changes: playback advances straight away', async () => {
+    p.load(q, { reciterId: 'alafasy' })
+    await flush(); audio.end(); await flush()
+    expect(p.state.index).toBe(1)
+    expect(p.state.phase).toBe('listen')
+  })
+  it('silent clips are valid WAV and cached by length', () => {
+    expect(silentClipUrl(3)).toBe(silentClipUrl(3))
+    expect(silentClipUrl(3)).not.toBe(silentClipUrl(4))
   })
 })

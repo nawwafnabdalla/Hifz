@@ -16,6 +16,17 @@
 | Audio | Per-ayah playback, repeat, speed, reciter choice, fallback hosts, explicit errors | `tests/audio.test.ts` + Playwright |
 | UI | Today, Qur'an map, reader (mushaf / study), Learn, Review, transition drill, Session, Progress, Settings; light/dark; PWA manifest + service worker | Playwright (10 tests), visual review of screenshots |
 
+## Security validation on the live project (done)
+Against the real `hifz-os` database, using impersonated users and read-only/insert-only statements, all rolled back: the owner reads and writes
+own rows; a different signed-in user sees 0 rows across all 8 tables and cannot write into the owner's history (RLS violation); a retried
+insert with the same id creates no duplicate; impossible verses and unknown grades are refused; signed-out visitors cannot read, write,
+export or erase. Privilege listing: `authenticated` has no UPDATE/DELETE/TRUNCATE on event tables; `anon` has no table privileges.
+`supabase/tests/rls.sql` remains the fuller paste-and-run script (it also exercises UPDATE/DELETE refusal, which needs a dashboard confirmation).
+
+## The next-leap update (branch `claude/hifz-os-next`)
+See `docs/NEXT_UPDATE.md`: echo practice, hints, slip-to-repair and junction repair, lead-in connect, habit-time scheduling window,
+resume, session summary, grouped queue, saved recitation passages, your three reciters, the font-coverage fix.
+
 ## Not verified / known limits
 
 * **Database:** the migration was applied to `hifz-os` by the owner via the dashboard. Verified from the real project: 8 tables with the

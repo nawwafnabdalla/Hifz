@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 
 /** A 0.4 s silent mono WAV, served in place of third-party audio so the player path is exercised for real. */
 export function silentWav(): Buffer {
@@ -45,3 +46,29 @@ export async function completeLearning(page: Page, opts: { grade?: 'independent'
   }
   throw new Error('learning flow did not finish')
 }
+
+
+/** Insert rows straight into the app's IndexedDB (as unsynced local data), then reload so the app rebuilds its state. */
+export async function seed(page: Page, table: 'reviews' | 'flows' | 'declarations', rows: Record<string, unknown>[]) {
+  await page.evaluate(async ({ table, rows }) => {
+    const db: IDBDatabase = await new Promise((res, rej) => { const r = indexedDB.open('hifz-os'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
+    await new Promise<void>((res, rej) => { const tx = db.transaction(table, 'readwrite'); const st = tx.objectStore(table); rows.forEach((x) => st.put({ ...x, synced: 0 })); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error) })
+    db.close()
+  }, { table, rows })
+  await page.reload()
+}
+
+export async function idbRows(page: Page, table: string): Promise<any[]> {
+  return page.evaluate(async (t) => {
+    const db: IDBDatabase = await new Promise((res, rej) => { const r = indexedDB.open('hifz-os'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
+    const rows: any[] = await new Promise((res, rej) => { const q = db.transaction(t).objectStore(t).getAll(); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error) })
+    db.close()
+    return rows
+  }, table)
+}
+
+export const recall = (surah: number, start: number, end: number, grade: string, hoursAgo: number, extra: Record<string, unknown> = {}) => ({
+  id: randomUUID(), kind: 'recall', range: { surah, start, end }, grade, context: 'free', cueLevel: 4, stumbles: [], shakyJunctions: [], durationMs: 15000,
+  occurredAt: Date.now() - hoursAgo * 3600e3, ...extra,
+})
+export const declaration = (surah: number, start: number, end: number) => ({ id: randomUUID(), range: { surah, start, end }, level: 'known', occurredAt: Date.now() - 5 * 86400e3 })

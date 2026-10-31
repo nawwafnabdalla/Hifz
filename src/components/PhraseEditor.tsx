@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Sheet } from './ui'
 import { wordsOfAyah } from '@/lib/quran/data'
 import { suggestBoundaries } from '@/lib/engine/phrases'
+import { wordFontClass } from './Arabic'
 
 /** Tap between words to place or remove a practice break. Suggestions come from the text's stop signs, conservatively. */
 export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }: {
@@ -19,7 +20,7 @@ export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }:
         <p className="arabic" lang="ar" dir="rtl" style={{ fontSize: 'calc(1.5rem * var(--arabic-scale, 1))', lineHeight: 2.6 }}>
           {words.map((w, i) => (
             <span key={i}>
-              <span>{w}</span>
+              <span className={`w${wordFontClass(w)}`}>{w}</span>
               {i < words.length - 1 && (
                 <button onClick={() => toggle(i)} aria-pressed={has(i)} aria-label={`${has(i) ? 'Remove' : 'Add'} break after word ${i + 1}`}
                   className={`mx-0.5 inline-block h-[1.1em] align-middle rounded-full transition-all ${has(i) ? 'w-[0.5em] bg-brass' : 'w-[0.5em] bg-transparent hover:bg-line'}`} style={{ verticalAlign: 'middle' }} />

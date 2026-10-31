@@ -6,6 +6,15 @@ import type { Stage } from '@/lib/engine/derive'
 
 export type Cue = 0 | 1 | 2 | 3 | 4
 
+/** Characters the main Qur'an font lacks. Words containing one are drawn in Amiri (same family) so no glyph is ever missing. */
+export const ALT_FONT_CHARS = /[\u065E]/
+export const wordFontClass = (w: string) => (ALT_FONT_CHARS.test(w) ? ' alt' : '')
+
+/** A run of words exactly as stored, joined by single spaces, with the per-word font fallback applied. */
+export function PlainWords({ words }: { words: string[] }) {
+  return <>{words.map((w, i) => <span key={i}><span className={`w${wordFontClass(w)}`}>{w}</span>{i < words.length - 1 ? ' ' : ''}</span>)}</>
+}
+
 /** Which word indices stay visible at a given cue level (4 = none, 3 = first word, 2 = every third, 1 = two of three, 0 = all). */
 export function visibleAt(cue: Cue, i: number): boolean {
   if (cue === 0) return true
@@ -15,8 +24,13 @@ export function visibleAt(cue: Cue, i: number): boolean {
   return false
 }
 
-export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps }: {
+export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, onWord, marked }: {
   surah: number; ayah: number; cue?: Cue
+  /** When set, exactly the first N words are visible (progressive hints) and `cue` is ignored. */
+  revealCount?: number
+  /** Makes each word tappable (used to mark where a recitation slipped). */
+  onWord?: (index: number) => void
+  marked?: number | null
   /** Words outside [from, to] are dimmed (used by the phrase ladder). */
   dimOutside?: [number, number]
   /** Word indices after which to show a small gap (phrase boundaries). */
@@ -27,12 +41,17 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps }: {
   return (
     <>
       {words.map((w, i) => {
-        const shown = visibleAt(cue, i)
+        const shown = revealCount !== undefined ? i < revealCount : visibleAt(cue, i)
         const dim = dimOutside && (i < dimOutside[0] || i > dimOutside[1])
         return (
           <span key={i}>
             {shown ? (
-              <span className={`w${dim ? ' dim' : ''}`}>{w}</span>
+              onWord ? (
+                <span className={`w wordtap${marked === i ? ' marked' : ''}${wordFontClass(w)}`} role="button" tabIndex={0} aria-label={`Word ${i + 1}`} aria-pressed={marked === i} data-word={i}
+                  onClick={() => onWord(i)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onWord(i))}>{w}</span>
+              ) : (
+                <span className={`w${dim ? ' dim' : ''}${wordFontClass(w)}`}>{w}</span>
+              )
             ) : (
               <span className="mask" style={{ width: `${Math.max(0.9, w.replace(/[ً-ٰٟۖ-ۭ]/g, '').length * 0.42)}em` } as CSSProperties} aria-hidden="true" />
             )}

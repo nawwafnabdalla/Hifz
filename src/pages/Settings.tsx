@@ -59,6 +59,7 @@ export function SettingsPage() {
   }
   async function runProbe() {
     const c = candidateUrls(s.reciter, 1, 1).map((x) => ({ source: x.source, url: x.url, state: 'testing' as const }))
+    if (!c.length) { setProbes([{ source: 'No verse-by-verse source is known for this reciter', url: 'none', state: 'fail' }]); return }
     setProbes(c)
     await Promise.all(c.map(async (p, i) => { const ok = await testUrl(p.url); setProbes((cur) => cur.map((x, j) => (j === i ? { ...x, state: ok ? 'ok' : 'fail' } : x))) }))
   }

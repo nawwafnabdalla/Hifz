@@ -11,3 +11,11 @@
   is tested against a local stand-in (unit tests + a real Chromium run that serves audio from a mocked route). Real-host playback
   must be confirmed on a device: Settings → *Check audio on this device*.
 * Not implemented: word timings, phrase-level audio slicing, caching audio for offline use.
+
+
+## Reciters and honesty (next-leap update)
+Badr Al-Turki, Yasser Al-Dossary and Maher Al-Mu'aiqly are first in the picker, with Arabic names. Their audio could not be verified from the
+build environment, so: nothing is claimed in advance; the picker's dot reports what the device has actually observed; candidates for one
+reciter are only ever other recordings of that reciter; if none load, the bar says so and offers an announced alternative or the full surah.
+Full-surah files come from the MP3Quran catalogue, looked up by name on the phone at runtime and validated. Verse timings are not used.
+See `docs/NEXT_UPDATE.md`.

@@ -4,6 +4,7 @@ import { useApp } from '@/app/store'
 import { Passage, Medallion, AyahWords } from '@/components/Arabic'
 import { AudioBar } from '@/components/AudioBar'
 import { GoalSheet } from '@/components/GoalSheet'
+import { PassageSheet } from '@/components/PassagesCard'
 import { Icon, Divider } from '@/components/Icon'
 import { Legend, Sheet, cellStyle } from '@/components/ui'
 import { SURAHS, bismillahText, hasBismillahHeader, isValidRef, juzOf, loadTranslation, pageOf, surahInfo } from '@/lib/quran/data'
@@ -37,6 +38,7 @@ export function SurahPage() {
   const [listen, setListen] = useState(false)
   const [goal, setGoal] = useState(false)
   const [detail, setDetail] = useState(false)
+  const [savePassage, setSavePassage] = useState(false)
   const [mapOpen, setMapOpen] = useState(info.count <= 80)
 
   useEffect(() => { if (study && !tr) void loadTranslation().then((t) => setTr(t[n - 1] ?? null)) }, [study, tr, n])
@@ -117,7 +119,7 @@ export function SurahPage() {
               const on = sel && a >= sel[0] && a <= sel[1]
               const s = status(n, a)
               return (
-                <li key={a}>
+                <li key={a} data-ayah={a}>
                   <button onClick={() => onTap(a)} className={`card-flat w-full p-4 text-left transition-colors ${on ? '!border-accent bg-accent-soft/50' : ''}`} aria-pressed={!!on}>
                     <div className="mb-1 flex items-center justify-between text-xs text-muted"><span className="tabular font-semibold">{n}:{a}</span><span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-[3px]" style={cellStyle(s.stage, s.retrievability)} />{s.stage === 'claimed' ? 'marked known' : s.stage.replace('_', ' ')}</span></div>
                     <p className="arabic" lang="ar" dir="rtl"><AyahWords surah={n} ayah={a} />{' '}<Medallion n={a} /></p>
@@ -156,6 +158,7 @@ export function SurahPage() {
       )}
 
       <GoalSheet open={goal} onClose={() => setGoal(false)} initial={range ?? undefined} />
+      <PassageSheet open={savePassage} onClose={() => setSavePassage(false)} initial={range ?? undefined} />
       <Sheet open={detail && !!range} onClose={() => setDetail(false)} title={range ? rangeTitle(range) : ''}>
         {range && (
           <div className="space-y-3 text-sm">
@@ -177,6 +180,7 @@ export function SurahPage() {
                 ? <button className="btn btn-quiet flex-1" onClick={async () => { await declare(range, 'retract'); say('Unmarked'); setDetail(false) }}>I don’t know this after all</button>
                 : <button className="btn btn-quiet flex-1" onClick={async () => { await declare(range, 'known'); say('Marked as known'); setDetail(false) }} data-testid="mark-known">I already know this</button>}
             </div>
+            {range.end > range.start && <button className="btn btn-ghost w-full" onClick={() => { setDetail(false); setSavePassage(true) }} data-testid="save-passage">Save as a recitation passage</button>}
             <p className="text-xs text-muted">“I already know this” is saved as your statement. It does not count as checked until you recall it.</p>
           </div>
         )}

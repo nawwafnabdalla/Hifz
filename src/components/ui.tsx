@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { STAGE_LABEL, type Stage } from '@/lib/engine/derive'
 
@@ -11,7 +12,9 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     return () => { window.removeEventListener('keydown', k); document.body.style.overflow = '' }
   }, [open, onClose])
   if (!open) return null
-  return (
+  // Rendered into <body>: a sheet is position:fixed, and inside any animated or transformed ancestor a fixed
+  // element is positioned relative to that ancestor instead of the screen (which put it off the top of the viewport).
+  return createPortal(
     <>
       <div className="sheet-back" onClick={onClose} />
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
@@ -19,7 +22,8 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
         {title && <h2 className="font-display mb-3 text-xl">{title}</h2>}
         {children}
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 

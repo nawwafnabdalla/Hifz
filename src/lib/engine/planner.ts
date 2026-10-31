@@ -3,7 +3,7 @@
 // recorded history and fixed default parameters. It makes no claim of being
 // personalised or scientifically validated.
 import { ayahKey, DAY, type Corpus, type LearningTarget, type Range } from './types'
-import { ayahStatus, type Derived } from './derive'
+import { ayahStatus, junctionNeedsRepair, type Derived } from './derive'
 import { PARAMS, retrievability, dueAt, type AyahMemory } from './memory'
 
 export type PlanKind = 'sabqi' | 'repair' | 'new' | 'manzil' | 'verify'
@@ -18,6 +18,8 @@ export interface PlanItem {
   priority: number
   reasons: string[]
   title: string
+  /** 'junction' = a short transition drill (end of one ayah into the start of the next) instead of a full recitation. */
+  drill?: 'junction'
 }
 
 export interface Plan {
@@ -55,6 +57,16 @@ const KIND_WEIGHT: Record<PlanKind, number> = { repair: 1.35, sabqi: 1.15, manzi
 const MAX_WORDS: Record<PlanKind, number> = { sabqi: 80, repair: 70, manzil: 160, verify: 160, new: 0 }
 const DEFAULT_SEC_PER_WORD = 10
 const NEW_SHARE = 0.4
+const HOUR = 3600 * 1000
+
+/**
+ * How far ahead of its due moment an item may be pulled into today's plan. A new ayah is first due
+ * 24 hours after it was learned; if you study at the same time every day it would otherwise miss
+ * today's session by minutes and wait another day. Short intervals get a short window; never more than 12 hours.
+ */
+export function dueHorizonMs(stability: number): number {
+  return Math.min(12 * HOUR, 0.25 * stability * DAY)
+}
 
 interface Cand {
   m: AyahMemory
@@ -108,7 +120,7 @@ export function buildPlan(input: PlannerInput): Plan {
       if (!inTarget(m.surah, m.ayah)) kind = 'sabqi'
     } else if (st.stage === 'needs_repair') {
       kind = 'repair'
-    } else if (R <= PARAMS.targetRetrievability) {
+    } else if (R <= PARAMS.targetRetrievability || dueAt(m) <= now + dueHorizonMs(m.stability)) {
       const recent = m.firstDemonstratedAt !== null && now - m.firstDemonstratedAt < 14 * DAY
       kind = recent || m.stability < 8 ? 'sabqi' : 'manzil'
     }
@@ -225,8 +237,24 @@ export function buildPlan(input: PlannerInput): Plan {
     }
   }
 
+  // ── 7b. Short transition drills for junctions that keep going wrong ───────
+  const covered = (s: number, a: number) => chosen.some((c) => c.range.surah === s && a >= c.range.start && a + 1 <= c.range.end)
+  const junctionItems: PlanItem[] = []
+  const troubledJunctions = [...derived.junctions.values()].filter((j) => junctionNeedsRepair(j) && !covered(j.surah, j.from))
+    .sort((x, y) => y.shaky - 0.5 * y.ok - (x.shaky - 0.5 * x.ok) || x.surah - y.surah || x.from - y.from)
+  for (const j of troubledJunctions) {
+    if (junctionItems.length >= 2) break
+    if (used + 0.7 * (junctionItems.length + 1) > reviewBudget + 1) break
+    const range: Range = { surah: j.surah, start: j.from, end: j.from + 1 }
+    junctionItems.push({
+      id: `junction:${j.surah}:${j.from}-${j.from + 1}`, kind: 'repair', range, ayahs: 2, words: 0, estMinutes: 0.7, priority: 1.2, drill: 'junction',
+      reasons: [`The transition from ayah ${j.from} into ${j.from + 1} wobbled ${agoText(j.lastAt, now)}.`, 'A short transition drill, not a full recitation.'],
+      title: `${formatRange(range, name)} (transition)`,
+    })
+  }
+
   // ── 8. Assemble in a fixed, learnable order ──────────────────────────────
-  const final = [...chosen, ...(newItem ? [newItem] : []), ...verifyChosen].sort(
+  const final = [...chosen, ...junctionItems, ...(newItem ? [newItem] : []), ...verifyChosen].sort(
     (a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || b.priority - a.priority,
   )
   const planned = final.reduce((n, i) => n + i.estMinutes, 0)
@@ -292,7 +320,8 @@ function reasonsFor(cs: Cand[], kind: PlanKind, d: Derived, now: number): string
     out.push('Practised, but not yet recalled accurately on its own.')
   }
   const minR = Math.min(...cs.map((c) => c.R))
-  out.push(`Estimated recall is about ${Math.round(minR * 100)}% at its weakest point.`)
+  if (cs.every((c) => c.R > PARAMS.targetRetrievability)) out.push('Due around this time today. Included now so it does not wait an extra day.')
+  else out.push(`Estimated recall is about ${Math.round(minR * 100)}% at its weakest point.`)
   const prompted = cs.filter((c) => c.m.lastOutcome === 'prompted')
   if (prompted.length) out.push(`Needed prompting last time${prompted.length === 1 ? ` (ayah ${prompted[0]!.m.ayah})` : ` (${prompted.length} ayahs)`}.`)
   const lapsed = ms.filter((m) => m.lapses > 0)
