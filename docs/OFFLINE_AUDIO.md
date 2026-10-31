@@ -25,12 +25,25 @@ Automatic clean-up *suggestions* are limited to a quiet "Not used by a current g
 ## Rights (what is and is not enabled)
 | Source | Saving | Basis |
 |---|---|---|
-| Islamic Network (cdn.islamic.network, alquran.cloud) | **On** | Terms reported as: free for personal, non-commercial and educational use, including download. *I could only read this through a search summary of the terms page; the page itself was unreachable from the build environment. Please read https://alquran.cloud/terms-and-conditions once.* One constant to turn it off: `SOURCE_RIGHTS.islamicnetwork.saveOffline`. |
+| Islamic Network (cdn.islamic.network, alquran.cloud) | **On** | Its terms cover the website, API and CDN and ask apps to cache audio aggressively; no restriction on keeping a copy was found. Read through search summaries only (the terms page is blocked from the build environment). Its contributors page credits EveryAyah as the origin of the CDN's ayah audio, so Maher's recordings there are the same ones. One constant turns it off: SOURCE_RIGHTS.islamicnetwork.saveOffline. |
 | EveryAyah | **Off** | No licence published; recordings belong to their reciters. Streaming only. Turn on only with written permission. |
 | MP3Quran | Off | Whole-surah streaming only; nothing is saved. |
 
 Consequences for your reciters: **Maher** and Alafasy etc. can be saved (they have an Islamic Network source). **Yasser Al-Dossary** and **Badr Al-Turki** cannot be saved: they stream normally, and the card says "Yasser Al-Dossary can be played online but not saved" and offers a reciter that can.
 Getting Yasser saved needs permission from EveryAyah's operator (or a licensed source for him). That is the single action that would unlock it.
+
+## Maher, Yasser, Badr (investigated)
+* **Maher** (`ar.mahermuaiqly`, `https://cdn.islamic.network/quran/audio/128/ar.mahermuaiqly/<n>.mp3`, n = global ayah number): the URL form is the CDN's standard one. I could not fetch it from here, so the app proves it on the phone: Settings, About, Audio sources & checks, "Check my three reciters" now includes an **Offline saving** line that downloads one Ta-Ha file exactly as a save would and reports success or the reason (including "the host didn't allow saving from this app", which would mean a cross-origin restriction).
+* **Yasser Al-Dossary**: not found in Islamic Network's catalogue. Quran.com carries him with reported sync problems and no clear terms; MP3Quran has whole surahs only. He stays stream-only from EveryAyah. At personal/friends scale the single switch is `SOURCE_RIGHTS.everyayah.saveOffline = true`; that is your call, because those recordings belong to the reciters. Asking EveryAyah's operator is the clean route.
+* **Badr Al-Turki**: no per-ayah source found. Whole-surah streaming via MP3Quran only.
+
+## Sizes
+No size is shown before saving (no trustworthy metadata without extra requests). The card says "Save for offline listening". While saving it shows the measured count and bytes stored so far; afterwards the real stored size. An internal rough estimate only refuses a save that obviously will not fit; it is never displayed.
+
+## Effortless by design
+* One save at a time; requests are remembered. If the app is closed or the connection drops, saving resumes by itself when the app returns or is back online (up to 3 tries; a permanent "not found", Stop, or removing the audio ends it).
+* Overlapping goals never refetch: only missing ayahs are fetched. Playback prefers the saved copy and quietly streams if a copy is missing or unreadable.
+* Removing audio (Settings, Offline recitations, second on the page) never touches history, sync or goals.
 
 ## Reliability design
 * Recordings are written only after the whole file is read, validated (HTTP ok, audio type, ≥1 KB, matches declared length) and read back; nothing is half-written, an interrupted save resumes by fetching only what is missing.

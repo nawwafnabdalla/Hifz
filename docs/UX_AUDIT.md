@@ -27,3 +27,17 @@ Kept on purpose: "Why this, today", the honest evidence notes, error messages, c
 * Auto-start the recitation on entering Sound (iOS may block autoplay after navigation).
 * Auto-save goal audio "when on Wi-Fi": iOS Safari cannot tell Wi-Fi from mobile data, so this would not be real consent.
 * Larger Arabic on short single-ayah Sound screens (needs on-device readability checks with the Mushaf font).
+
+## Round 2 (final screens, screen by screen)
+| Screen | Removed or shortened |
+|---|---|
+| Today | The empty-state Welcome card (the header already says it); the time pill is hidden until there is a plan; the "A 20-minute session" subtitle (it repeated the pill); goal rows no longer repeat their own title. |
+| Learn, Sound | Larger Arabic for short ayahs (the card had empty space below it); the instruction fades after three days. |
+| Flow | The repeated "Smooth and unhurried…" line under the counter. |
+| Recall / Review | "Did a transition feel shaky? (end of one ayah into the next)" is now "Any shaky transitions?" |
+| My Qur'an, Surah | The six-item colour legend sits behind "Colour key" instead of always showing. |
+| Progress | Intro and chart captions cut to a line each; method notes behind "How to read this". |
+| Settings | Offline recitations moved to the top with large Remove audio / Remove all downloads buttons and the measured total; hints cut. |
+| Audio | One row at rest; one sheet; no host names; no download size shown before it is measured. |
+
+Kept: consent ("Best on Wi-Fi. It uses mobile data otherwise."), "Why this, today", honest-evidence notes, errors, the study-aid statement, all credits and terms (Settings → About).
