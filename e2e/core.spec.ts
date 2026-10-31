@@ -158,5 +158,5 @@ test('after a first accurate recall, the details sheet shows the next review abo
   expect(text).not.toMatch(/Due now/)
   // Today reports that it falls due within a day.
   await page.goto('/')
-  await expect(page.getByText(/1 ayahs will fall due in the next 7 days|will fall due/)).toBeVisible()
+  await expect(page.getByTestId('nothing-due')).toContainText(/1 ayah will fall due within a day/)
 })

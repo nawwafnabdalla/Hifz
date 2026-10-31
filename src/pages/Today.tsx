@@ -113,7 +113,7 @@ export function TodayPage() {
           )}
 
           {(plan.deferred.items > 0 || plan.upcoming.next7d > 0) && (
-            <p className="text-center text-xs text-muted">{plan.deferred.ayahs > 0 ? `${plan.deferred.ayahs} more ayahs are due but not in today’s plan. ` : ''}{plan.upcoming.next7d} ayahs will fall due in the next 7 days.</p>
+            <p className="text-center text-xs text-muted">{plan.deferred.ayahs > 0 ? `${plan.deferred.ayahs} more ${plan.deferred.ayahs === 1 ? 'ayah is' : 'ayahs are'} due but not in today’s plan. ` : ''}{plan.upcoming.next7d} {plan.upcoming.next7d === 1 ? 'ayah falls' : 'ayahs fall'} due in the next 7 days.</p>
           )}
         </section>
       )}
