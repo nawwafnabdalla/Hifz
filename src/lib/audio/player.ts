@@ -28,6 +28,8 @@ export interface PlayerState {
   via: string | null
   rate: number
   reciterId: string
+  /** Number of ayah playbacks that ran to the end since the queue was loaded. */
+  plays: number
 }
 export interface QueueOptions {
   reciterId: string
@@ -49,7 +51,7 @@ export class AyahPlayer {
   private gapTimer: ReturnType<typeof setTimeout> | null = null
   private listeners = new Set<(s: PlayerState) => void>()
   private token = 0
-  state: PlayerState = { status: 'idle', current: null, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, via: null, rate: 1, reciterId: 'alafasy' }
+  state: PlayerState = { status: 'idle', current: null, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, via: null, rate: 1, reciterId: 'alafasy', plays: 0 }
 
   constructor(audio: AudioLike) {
     this.audio = audio
@@ -77,7 +79,7 @@ export class AyahPlayer {
     this.stop()
     this.queue = queue
     this.opts = { ...this.opts, ...opts }
-    this.set({ reciterId: this.opts.reciterId, rate: this.opts.rate, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null })
+    this.set({ reciterId: this.opts.reciterId, rate: this.opts.rate, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, plays: 0 })
     if (queue.length) this.startAyah(0)
   }
 
@@ -129,6 +131,7 @@ export class AyahPlayer {
   }
 
   private onEnded() {
+    this.set({ plays: this.state.plays + 1 })
     const { ayahRepeat, index } = this.state
     if (ayahRepeat + 1 < this.opts.repeatEach) {
       this.set({ ayahRepeat: ayahRepeat + 1 })

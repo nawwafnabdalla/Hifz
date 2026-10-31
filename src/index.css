@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   Ivory / emerald / charcoal with a restrained brass accent.
+   Light is parchment; dark is a deep green-black, not neutral grey. */
+:root {
+  --bg: #f5f0e4;
+  --surface: #fffcf5;
+  --surface-2: #efe8d6;
+  --ink: #1b2621;
+  --ink-2: #46534c;
+  --muted: #727b75;
+  --line: #ddd3bc;
+  --accent: #0e5a47;
+  --accent-strong: #0a4637;
+  --accent-ink: #f7f3e8;
+  --accent-soft: #d9eadf;
+  --brass: #9c7a32;
+  --brass-soft: #efe3c4;
+  --clay: #b0522e;
+  --clay-soft: #f3ddd1;
+  --amber: #b98a2b;
+  --amber-soft: #f4e7c5;
+  --shadow: 0 1px 2px rgb(60 45 15 / 0.06), 0 8px 24px -12px rgb(60 45 15 / 0.18);
+  --ring: 0 0 0 3px color-mix(in oklab, var(--accent) 35%, transparent);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0b1310;
+  --surface: #111b16;
+  --surface-2: #18251e;
+  --ink: #ece6d4;
+  --ink-2: #c2c7b8;
+  --muted: #8a968d;
+  --line: #243329;
+  --accent: #4cbb9b;
+  --accent-strong: #7ad6b9;
+  --accent-ink: #06150f;
+  --accent-soft: #14382d;
+  --brass: #cfaa5c;
+  --brass-soft: #34301a;
+  --clay: #e0805b;
+  --clay-soft: #3a2218;
+  --amber: #d9a944;
+  --amber-soft: #382e14;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1310;
+    --surface: #111b16;
+    --surface-2: #18251e;
+    --ink: #ece6d4;
+    --ink-2: #c2c7b8;
+    --muted: #8a968d;
+    --line: #243329;
+    --accent: #4cbb9b;
+    --accent-strong: #7ad6b9;
+    --accent-ink: #06150f;
+    --accent-soft: #14382d;
+    --brass: #cfaa5c;
+    --brass-soft: #34301a;
+    --clay: #e0805b;
+    --clay-soft: #3a2218;
+    --amber: #d9a944;
+    --amber-soft: #382e14;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --font-arabic: "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-brass: var(--brass);
+  --color-brass-soft: var(--brass-soft);
+  --color-clay: var(--clay);
+  --color-clay-soft: var(--clay-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+}
+
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+/* Faint paper grain and a soft top glow; decorative only. */
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  background:
+    radial-gradient(1200px 520px at 50% -140px, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%),
+    radial-gradient(800px 400px at 100% 100%, color-mix(in oklab, var(--brass) 6%, transparent), transparent 70%);
+}
+:focus-visible { outline: none; box-shadow: var(--ring); border-radius: 10px; }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+::selection { background: color-mix(in oklab, var(--accent) 28%, transparent); }
+
+.font-display { font-family: var(--font-display); font-variation-settings: "SOFT" 60, "WONK" 0; letter-spacing: -0.01em; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ── Arabic text ─────────────────────────────────────────────────────── */
+.arabic {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  unicode-bidi: isolate;
+  text-align: justify;
+  text-align-last: right;
+  font-size: calc(clamp(1.7rem, 6.6vw, 2.35rem) * var(--arabic-scale, 1));
+  line-height: 2.35;
+  word-spacing: 0.06em;
+  font-kerning: normal;
+  font-feature-settings: "liga", "calt", "ccmp", "locl", "mark", "mkmk";
+  color: var(--ink);
+}
+.arabic.center { text-align: center; text-align-last: center; }
+.arabic .w { transition: color 200ms ease, opacity 200ms ease; }
+.arabic .waqf { color: var(--brass); }
+.arabic .dim { opacity: 0.28; }
+.arabic .mask {
+  display: inline-block; height: 0.5em; vertical-align: middle; margin-inline: 0.2em;
+  border-radius: 999px; background: color-mix(in oklab, var(--ink) 12%, transparent);
+}
+.arabic .sel { background: color-mix(in oklab, var(--accent) 14%, transparent); border-radius: 12px; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 0 0.15em; }
+.arabic .ayah { cursor: pointer; border-radius: 12px; transition: background 150ms; }
+.arabic .ayah:hover { background: color-mix(in oklab, var(--accent) 7%, transparent); }
+.arabic .phrase-gap { display: inline-block; width: 0.55em; }
+
+.medallion {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+  width: 1.55em; height: 1.55em; margin-inline: 0.18em; padding-top: 0.22em; box-sizing: border-box;
+  font-family: var(--font-arabic); font-size: 0.62em; line-height: 1;
+  color: var(--brass);
+  background:
+    radial-gradient(circle at center, transparent 58%, color-mix(in oklab, var(--brass) 55%, transparent) 60%, transparent 63%),
+    radial-gradient(circle at center, var(--surface) 0 56%, transparent 57%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--brass) 70%, transparent);
+}
+
+/* ── Surfaces & controls ─────────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow);
+}
+.card-flat { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 44px; padding: 0 1.1rem; border-radius: 14px; border: 1px solid transparent;
+  font-weight: 600; font-size: 0.95rem; letter-spacing: 0.005em;
+  transition: transform 120ms ease, background 160ms ease, box-shadow 160ms ease, opacity 160ms;
+  user-select: none;
+}
+.btn:active { transform: scale(0.98); }
+.btn[disabled] { opacity: 0.45; pointer-events: none; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 1px 0 rgb(255 255 255 / 0.12) inset, 0 6px 16px -8px var(--accent); }
+.btn-primary:hover { background: var(--accent-strong); }
+.btn-quiet { background: var(--surface-2); color: var(--ink); border-color: var(--line); }
+.btn-quiet:hover { background: color-mix(in oklab, var(--surface-2) 80%, var(--ink) 6%); }
+.btn-ghost { background: transparent; color: var(--ink-2); }
+.btn-ghost:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+.btn-lg { min-height: 54px; font-size: 1.02rem; border-radius: 16px; padding: 0 1.4rem; }
+.btn-sm { min-height: 36px; padding: 0 0.8rem; font-size: 0.85rem; border-radius: 11px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; min-height: 34px; padding: 0 0.85rem;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
+  font-size: 0.85rem; font-weight: 550; transition: all 150ms ease;
+}
+.chip[aria-pressed="true"], .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.eyebrow { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 650; color: var(--muted); }
+.hairline { height: 1px; background: linear-gradient(90deg, transparent, var(--line), transparent); }
+
+.sheet-back { position: fixed; inset: 0; background: rgb(8 14 11 / 0.5); backdrop-filter: blur(2px); z-index: 60; animation: fade 160ms ease; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 88dvh; overflow: auto;
+  background: var(--surface); border-radius: 26px 26px 0 0; border: 1px solid var(--line); border-bottom: 0;
+  padding: 10px 20px calc(24px + env(safe-area-inset-bottom)); animation: rise 240ms cubic-bezier(.2,.8,.2,1);
+  max-width: 640px; margin-inline: auto;
+}
+
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes rise { from { transform: translateY(24px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes pop { 0% { transform: scale(0.96); opacity: 0 } 100% { transform: none; opacity: 1 } }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 45%, transparent) } 100% { box-shadow: 0 0 0 14px transparent } }
+.enter { animation: rise 320ms cubic-bezier(.2,.8,.2,1) both; }
+.enter-2 { animation: rise 320ms 60ms cubic-bezier(.2,.8,.2,1) both; }
+.enter-3 { animation: rise 320ms 120ms cubic-bezier(.2,.8,.2,1) both; }
+.pop { animation: pop 200ms ease both; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+/* Safe areas for the installed PWA */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* Quiet per-ayah state under the reader text */
+.arabic .ayah[data-stage="learning"] { box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--amber) 55%, transparent); }
+.arabic .ayah[data-stage="claimed"] { box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--accent) 22%, transparent); }
+.arabic .ayah[data-stage="reviewing"] { box-shadow: inset 0 -3px 0 color-mix(in oklab, var(--accent) 50%, transparent); }
+.arabic .ayah[data-stage="strong"] { box-shadow: inset 0 -3px 0 var(--accent); }
+.arabic .ayah[data-stage="needs_repair"] { box-shadow: inset 0 -3px 0 var(--clay); }
