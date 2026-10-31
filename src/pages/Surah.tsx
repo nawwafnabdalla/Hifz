@@ -97,7 +97,7 @@ export function SurahPage() {
                   <button key={a} role="listitem" aria-label={`Ayah ${a}: ${s.stage.replace('_', ' ')}`} onClick={() => { onTap(a) }} className={`${info.count > 80 ? 'h-3.5 w-3.5' : 'h-4 w-4'} rounded-[4px] ${on ? 'ring-2 ring-ink' : ''}`} style={cellStyle(s.stage, s.retrievability)} />
                 ) })}
               </div>
-              <div className="mt-3"><Legend /></div>
+              <details className="mt-3"><summary className="cursor-pointer select-none text-xs text-muted">Colour key</summary><div className="mt-2"><Legend /></div></details>
             </>
           )}
         </div>

@@ -20,11 +20,12 @@ export function ReciterCheck() {
               <div className="font-semibold">{r.name}</div>
               <div className={`mt-1 flex gap-2 ${tone(r.verse.state)}`}><span className="w-4 flex-none">{mark(r.verse.state)}</span><span><b>Verse by verse:</b> {r.verse.detail}</span></div>
               <div className={`mt-1 flex gap-2 ${tone(r.full.state)}`}><span className="w-4 flex-none">{mark(r.full.state)}</span><span><b>Full surah:</b> {r.full.detail}</span></div>
+              <div className={`mt-1 flex gap-2 ${tone(r.save.state)}`}><span className="w-4 flex-none">{mark(r.save.state)}</span><span><b>Offline saving:</b> {r.save.detail}</span></div>
             </li>
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-muted">This tests real audio files for Ta-Ha (first, middle and last ayah), not directory listings. Nothing is downloaded beyond file headers.</p>
+      <p className="mt-2 text-xs text-muted">Tests real Ta-Ha files (first, middle, last ayah). Nothing is kept except one short file fetched to test saving.</p>
     </div>
   )
 }
@@ -33,7 +34,7 @@ export function AudioCredits() {
   const a = (href: string, label: string) => <a className="underline" href={href} target="_blank" rel="noopener noreferrer">{label}</a>
   return (
     <p className="text-xs text-muted" data-testid="audio-credits">
-      Recitations are streamed, never stored or redistributed by this app. Verse-by-verse files come from {a('https://everyayah.com', 'EveryAyah.com')} (it publishes no licence; the recordings belong to the reciters, so please use them for personal study and credit the reciters), and full surahs from {a('https://mp3quran.net', 'MP3Quran')}.
+      Recitations are streamed from {a('https://everyayah.com', 'EveryAyah.com')} (no licence is published; the recordings belong to the reciters, so please use them for personal study and credit them), {a('https://alquran.cloud', 'Islamic Network')} and {a('https://mp3quran.net', 'MP3Quran')}. Copies are saved to your device only from sources that allow it. This app never redistributes audio.
     </p>
   )
 }

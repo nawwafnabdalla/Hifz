@@ -67,3 +67,25 @@ describe('on-device verification', () => {
   })
   it('uses the intended probe ayahs', () => { expect(PROBE_AYAHS).toEqual([[20, 1], [20, 77], [20, 135]]) })
 })
+
+describe('can this reciter be saved on this device', () => {
+  const okFetch = (async () => new Response(new Uint8Array(4000), { status: 200, headers: { 'content-type': 'audio/mpeg' } })) as unknown as typeof fetch
+  it('really downloads one file for a reciter whose source allows saving, and reports it', async () => {
+    resetStatusCache()
+    const r = await checkReciter('maher', { probe: none, online: true, fetchFn: okFetch })
+    expect(r.save).toEqual({ state: 'ok', detail: 'Can be saved to this device.' })
+  })
+  it('says so plainly when the host blocks the app, or the file is not audio', async () => {
+    resetStatusCache()
+    const blocked = (async () => { throw new TypeError('cors') }) as unknown as typeof fetch
+    expect((await checkReciter('maher', { probe: none, online: true, fetchFn: blocked })).save).toMatchObject({ state: 'fail' })
+    const html = (async () => new Response('<html></html>'.repeat(200), { headers: { 'content-type': 'text/html' } })) as unknown as typeof fetch
+    expect((await checkReciter('maher', { probe: none, online: true, fetchFn: html })).save.detail).toContain('not an audio file')
+  })
+  it('never attempts a download for reciters whose source does not permit saving', async () => {
+    let called = 0
+    const spy = (async () => { called++; return new Response(new Uint8Array(4000)) }) as unknown as typeof fetch
+    for (const id of ['dossary', 'turki']) expect((await checkReciter(id, { probe: none, online: true, fetchFn: spy, fullSurah: async () => ({ ok: false, reason: 'x' }) })).save.state).toBe('none')
+    expect(called).toBe(0)
+  })
+})

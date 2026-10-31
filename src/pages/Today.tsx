@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '@/app/store'
 import { Header, Sheet, minutesLabel } from '@/components/ui'
-import { Icon, Khatam } from '@/components/Icon'
+import { Icon } from '@/components/Icon'
 import { KnownSheet } from '@/components/KnownSheet'
 import { GoalSheet } from '@/components/GoalSheet'
 import { GoalAudioLine, GoalFinishSheet, useOffline } from '@/components/OfflineAudio'
@@ -84,7 +84,7 @@ export function TodayPage() {
 
   return (
     <div>
-      <Header eyebrow={dateLabel(now)} title="Today’s hifz" subtitle={plan.mode === 'empty' ? 'Let’s begin with what you already carry.' : plan.headline} />
+      <Header eyebrow={dateLabel(now)} title="Today’s hifz" subtitle={plan.mode === 'empty' ? 'Let’s begin with what you already carry.' : /^A \d+-minute session$/.test(plan.headline) ? undefined : plan.headline} />
 
       {session && (
         <div className="enter mx-5 mb-4 flex items-center justify-between gap-3 rounded-2xl border border-accent/40 bg-accent-soft p-4">
@@ -93,17 +93,12 @@ export function TodayPage() {
         </div>
       )}
 
-      <section className="px-5">
+      {plan.mode !== 'empty' && <section className="px-5">
         <button className="chip tabular" onClick={() => setTimeOpen(true)} data-testid="time-pill" aria-label={`Time today: ${minutes} minutes. Change`}><Icon name="clock" size={14} />{minutes} min today<Icon name="down" size={13} className="text-muted" /></button>
-      </section>
+      </section>}
 
       {plan.mode === 'empty' && (
         <section className="enter-2 mt-6 space-y-3 px-5" data-testid="onboarding">
-          <div className="card p-6 text-center">
-            <Khatam size={34} className="mx-auto text-brass" />
-            <h2 className="font-display mt-3 text-2xl">Welcome</h2>
-            <p className="mx-auto mt-2 max-w-md text-[0.95rem] text-ink-2">Tell Hifz OS what you already know and what you want to learn. It plans each day for you.</p>
-          </div>
           <button className="card flex w-full items-center gap-4 p-4 text-left" onClick={() => setKnown(true)} data-testid="open-known"><span className="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-accent"><Icon name="check" /></span><span className="flex-1"><span className="block font-semibold">Mark what I already know</span><span className="text-sm text-ink-2">Surahs or passages you have memorised</span></span><Icon name="right" className="text-muted" /></button>
           <button className="card flex w-full items-center gap-4 p-4 text-left" onClick={() => setGoal(true)} data-testid="open-goal"><span className="grid h-11 w-11 place-items-center rounded-full bg-brass-soft text-brass"><Icon name="target" /></span><span className="flex-1"><span className="block font-semibold">Choose something to memorise</span><span className="text-sm text-ink-2">A surah or passage as your goal</span></span><Icon name="right" className="text-muted" /></button>
           <Link to="/quran" className="card flex w-full items-center gap-4 p-4 text-left"><span className="grid h-11 w-11 place-items-center rounded-full bg-surface-2 text-ink-2"><Icon name="headphones" /></span><span className="flex-1"><span className="block font-semibold">Just read and listen</span><span className="text-sm text-ink-2">Browse the Qur’an and hear recitation</span></span><Icon name="right" className="text-muted" /></Link>
@@ -166,7 +161,7 @@ export function TodayPage() {
                   <li key={t.id} className="card-flat flex items-center gap-3 p-3.5" data-testid="goal-row">
                     <div className="min-w-0 flex-1">
                       <button className="block max-w-full truncate text-left font-semibold" onClick={() => setEditGoal(t)} data-testid="goal-edit" aria-label={`Change goal ${t.label ?? rangeTitle(t.range)}`}>{t.label ?? rangeTitle(t.range)}</button>
-                      <div className="text-xs text-muted">{rangeTitle(t.range)} · {have} of {n} recalled</div>
+                      <div className="text-xs text-muted">{t.label ? `${rangeTitle(t.range)} · ` : ''}{have} of {n} recalled</div>
                       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(have / n) * 100}%` }} /></div>
                       {offline.supported && <GoalAudioLine goalId={t.id} range={t.range} />}
                     </div>

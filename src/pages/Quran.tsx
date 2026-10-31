@@ -45,7 +45,7 @@ export function QuranPage() {
           <div className="flex h-3 overflow-hidden rounded-full bg-line" role="img" aria-label="Composition of the Qur'an by stage">
             {(['strong', 'reviewing', 'needs_repair', 'learning', 'claimed'] as Stage[]).map((s) => totals[s] > 0 && <div key={s} style={{ width: `${(totals[s] / TOTAL_AYAHS) * 100}%`, background: STAGE_STYLE[s].ring ?? STAGE_STYLE[s].bg, opacity: s === 'claimed' ? 0.35 : 1 }} />)}
           </div>
-          <div className="mt-3"><Legend /></div>
+          <details className="mt-3"><summary className="cursor-pointer select-none text-xs text-muted">Colour key</summary><div className="mt-2"><Legend /></div></details>
           <div className="mt-4 grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(19, minmax(0, 1fr))' }} role="list" aria-label="All 114 surahs">
             {roll.map((r) => {
               const dominant: Stage = r.counts.needs_repair ? 'needs_repair' : r.counts.learning && !r.counts.strong && !r.counts.reviewing ? 'learning' : r.counts.strong + r.counts.reviewing > 0 ? (r.counts.strong >= r.counts.reviewing ? 'strong' : 'reviewing') : r.counts.claimed ? 'claimed' : 'not_started'

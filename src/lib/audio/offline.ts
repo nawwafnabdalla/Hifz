@@ -88,6 +88,16 @@ export type SaveStop = 'done' | 'cancelled' | 'space' | 'offline' | 'too-large' 
 export interface SaveResult { stopped: SaveStop; saved: number; failed: { ayah: number; reason: string }[]; bytes: number }
 
 export interface LedgerIO { read(): string[]; write(keys: string[]): void }
+/** A save the person asked for. It is kept until it completes, fails for good, or they stop it, so an interrupted save can resume by itself. */
+export interface Intent { reciter: string; surah: number; start: number; end: number; tries: number }
+export interface IntentIO { read(): Intent[]; write(x: Intent[]): void }
+const lsIntents = (): IntentIO => ({
+  read: () => { try { return JSON.parse(localStorage.getItem('hifz.audioIntent.v1') ?? '[]') as Intent[] } catch { return [] } },
+  write: (x) => { try { localStorage.setItem('hifz.audioIntent.v1', JSON.stringify(x)) } catch { /* private mode */ } },
+})
+/** What is being saved right now. Counts and bytes are measured, never estimated. */
+export interface SaveJob { reciter: string; range: Range; done: number; total: number; bytes: number }
+const MAX_TRIES = 3
 const lsLedger = (): LedgerIO => ({
   read: () => { try { return JSON.parse(localStorage.getItem('hifz.audioLedger.v1') ?? '[]') as string[] } catch { return [] } },
   write: (k) => { try { localStorage.setItem('hifz.audioLedger.v1', JSON.stringify(k)) } catch { /* private mode */ } },
@@ -102,6 +112,7 @@ export interface LocalAudio {
 export interface OfflineOptions {
   fetchFn?: typeof fetch
   ledger?: LedgerIO
+  intents?: IntentIO
   online?: () => boolean
   freeBytes?: () => Promise<number | null>
   maxBytes?: number
@@ -126,14 +137,21 @@ export class OfflineAudio implements LocalAudio {
   private ledgerKeys: Set<string>
   private listeners = new Set<() => void>()
   private version = 0
-  private readonly o: Required<Omit<OfflineOptions, 'ledger' | 'fetchFn'>> & { ledger: LedgerIO; fetchFn?: typeof fetch }
+  private readonly o: Required<Omit<OfflineOptions, 'ledger' | 'fetchFn' | 'intents'>> & { ledger: LedgerIO; intents: IntentIO; fetchFn?: typeof fetch }
   loaded = false
+  /** The save in progress, if any (one at a time). */
+  job: SaveJob | null = null
+  /** How the last save ended, so a card that was closed and reopened can still say so. */
+  lastResult: { reciter: string; range: Range; result: SaveResult } | null = null
+  private ctl: AbortController | null = null
+  private chain: Promise<unknown> = Promise.resolve()
 
   constructor(private store: AudioStore | null, opts: OfflineOptions = {}) {
     this.supported = store !== null
     this.o = {
       fetchFn: opts.fetchFn,
       ledger: opts.ledger ?? lsLedger(),
+      intents: opts.intents ?? lsIntents(),
       online: opts.online ?? (() => (typeof navigator === 'undefined' ? true : navigator.onLine !== false)),
       freeBytes: opts.freeBytes ?? (async () => {
         try { const e = await navigator.storage?.estimate?.(); return e?.quota != null && e.usage != null ? e.quota - e.usage : null } catch { return null }
@@ -232,7 +250,7 @@ export class OfflineAudio implements LocalAudio {
   }
 
   // ----- saving -----
-  async save(reciter: string, range: Range, hooks: { onProgress?: (done: number, total: number) => void; signal?: AbortSignal } = {}): Promise<SaveResult> {
+  async save(reciter: string, range: Range, hooks: { onProgress?: (done: number, total: number, bytes: number) => void; signal?: AbortSignal } = {}): Promise<SaveResult> {
     const result: SaveResult = { stopped: 'done', saved: 0, failed: [], bytes: 0 }
     if (!this.store || !offlineEndpoint(reciter)) return { ...result, stopped: 'not-permitted' }
     const { missing } = this.coverage(reciter, range)
@@ -247,6 +265,7 @@ export class OfflineAudio implements LocalAudio {
     const fetchFn = this.o.fetchFn ?? ((...a: Parameters<typeof fetch>) => fetch(...a))
     const queue = [...missing]
     let done = 0
+    let savedBytes = 0
     let halt: SaveStop | null = null
     const worker = async () => {
       while (!halt && !hooks.signal?.aborted) {
@@ -256,8 +275,8 @@ export class OfflineAudio implements LocalAudio {
         if (failure === 'cancelled') { halt = 'cancelled'; return }
         if (failure === 'space') { halt = 'space'; return }
         if (failure === 'offline') { halt = 'offline'; return }
-        if (failure) result.failed.push({ ayah, reason: failure }); else result.saved++
-        hooks.onProgress?.(++done, missing.length)
+        if (failure) result.failed.push({ ayah, reason: failure }); else { result.saved++; savedBytes += this.inv.get(keyOf({ reciter, surah: range.surah, ayah })) ?? 0 }
+        hooks.onProgress?.(++done, missing.length, savedBytes)
       }
     }
     await Promise.all(Array.from({ length: Math.min(this.o.concurrency, missing.length) }, worker))
@@ -300,6 +319,66 @@ export class OfflineAudio implements LocalAudio {
     return lastReason
   }
 
+  // ----- managed saves: one at a time, resumable, visible to every screen -----
+  private intentList(): Intent[] { return this.o.intents.read() }
+  private sameIntent = (a: Intent, reciter: string, r: Range) => a.reciter === reciter && a.surah === r.surah && a.start === r.start && a.end === r.end
+  private dropIntent(reciter: string, r: Range) { this.o.intents.write(this.intentList().filter((i) => !this.sameIntent(i, reciter, r))) }
+  hasIntent(reciter: string, r: Range) { return this.intentList().some((i) => this.sameIntent(i, reciter, r)) }
+
+  /** The person asked to save this range. Runs in the background; resumes by itself if the app is interrupted. */
+  start(reciter: string, range: Range): Promise<SaveResult> {
+    if (!this.hasIntent(reciter, range)) this.o.intents.write([...this.intentList(), { reciter, ...{ surah: range.surah, start: range.start, end: range.end }, tries: 0 }])
+    return this.run(reciter, range)
+  }
+  /** Stop what is being saved and do not resume it. Recordings already saved are kept. */
+  cancel() {
+    if (this.job) this.dropIntent(this.job.reciter, this.job.range)
+    this.ctl?.abort()
+  }
+  private run(reciter: string, range: Range): Promise<SaveResult> {
+    const go = async (): Promise<SaveResult> => {
+      const ctl = new AbortController()
+      this.ctl = ctl
+      this.job = { reciter, range, done: 0, total: this.coverage(reciter, range).missing.length, bytes: 0 }
+      this.lastResult = null
+      this.bump()
+      let result: SaveResult = { stopped: 'done', saved: 0, failed: [], bytes: 0 }
+      try {
+        result = await this.save(reciter, range, { signal: ctl.signal, onProgress: (done, total, bytes) => { this.job = { reciter, range, done, total, bytes }; this.bump() } })
+        this.settle(reciter, range, result)
+      } finally {
+        this.job = null; this.ctl = null
+        this.lastResult = { reciter, range, result }
+        this.bump()
+      }
+      return result
+    }
+    const p = this.chain.then(go, go)
+    this.chain = p.catch(() => undefined)
+    return p
+  }
+  /** Keep the request only while retrying could help. */
+  private settle(reciter: string, range: Range, r: SaveResult) {
+    if (this.coverage(reciter, range).complete) return this.dropIntent(reciter, range)
+    const cur = this.intentList().find((i) => this.sameIntent(i, reciter, range))
+    if (!cur) return
+    const permanent = r.failed.length > 0 && r.failed.every((f) => f.reason.startsWith('server said 4') || f.reason === 'not an audio file' || f.reason === 'file too small')
+    const interrupted = r.stopped === 'offline' || (r.stopped === 'done' && r.failed.length > 0 && !permanent) || (r.stopped === 'cancelled' && this.hasIntent(reciter, range))
+    const tries = r.saved > 0 ? 0 : cur.tries + 1
+    if (!interrupted || tries >= MAX_TRIES) return this.dropIntent(reciter, range)
+    this.o.intents.write(this.intentList().map((i) => (this.sameIntent(i, reciter, range) ? { ...i, tries } : i)))
+  }
+  /** Finish saves that were started earlier and interrupted (app closed, connection lost). Safe to call often. */
+  async resumePending(): Promise<void> {
+    if (!this.store || this.job || !this.o.online()) return
+    for (const i of this.intentList()) {
+      const range = { surah: i.surah, start: i.start, end: i.end }
+      if (this.coverage(i.reciter, range).complete) { this.dropIntent(i.reciter, range); continue }
+      await this.run(i.reciter, range)
+      if (!this.o.online()) return
+    }
+  }
+
   // ----- removing (media only; never touches memorisation history) -----
   async remove(keys: RecKey[]): Promise<void> {
     if (!this.store) return
@@ -309,6 +388,9 @@ export class OfflineAudio implements LocalAudio {
       this.ledgerKeys.delete(keyOf(k))
     }
     this.o.ledger.write([...this.ledgerKeys])
+    // Anything we were still trying to save in these places is no longer wanted.
+    const gone = new Set(keys.map((k) => `${k.reciter}:${k.surah}`))
+    this.o.intents.write(this.intentList().filter((i) => !gone.has(`${i.reciter}:${i.surah}`)))
     this.bump()
   }
   async removeAll(): Promise<void> { await this.remove(this.allKeys()) }

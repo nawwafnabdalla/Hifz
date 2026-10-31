@@ -300,3 +300,90 @@ describe('separation from memorisation history', () => {
     expect(formatBytes(120 * 1024 * 1024)).toBe('120 MB')
   })
 })
+
+describe('saving that resumes by itself', () => {
+  const intents = () => { let x: import('@/lib/audio/offline').Intent[] = []; return { read: () => x, write: (v: import('@/lib/audio/offline').Intent[]) => { x = v } } }
+  const build = (f: ReturnType<typeof vi.fn>, io = intents(), online: () => boolean = () => true) => {
+    const store = new MemoryStore()
+    return { io, store, o: new OfflineAudio(store, { fetchFn: f as never, ledger: ledger(), intents: io, online, freeBytes: async () => null, retryDelayMs: 0, concurrency: 1 }) }
+  }
+  it('reports measured progress while saving, then forgets the request once complete', async () => {
+    const f = vi.fn(async () => mp3(3000))
+    const { o, io } = build(f)
+    const seen: { done: number; total: number; bytes: number }[] = []
+    o.subscribe(() => { if (o.job) seen.push({ done: o.job.done, total: o.job.total, bytes: o.job.bytes }) })
+    const res = await o.start('maher', taha(3))
+    expect(res.saved).toBe(3)
+    expect(seen.at(-1)).toEqual({ done: 3, total: 3, bytes: 9000 })        // bytes are what was actually stored
+    expect(o.job).toBeNull()
+    expect(io.read()).toEqual([])
+    expect(o.lastResult?.result.saved).toBe(3)
+  })
+  it('an interrupted save is remembered and finishes the missing ayahs when the app returns', async () => {
+    let n = 0
+    const f = vi.fn(async () => { if (++n > 2) throw new TypeError('network dropped'); return mp3() })
+    const { o, io } = build(f)
+    await o.start('maher', taha(5))
+    expect(o.coverage('maher', taha(5)).have).toBe(2)
+    expect(io.read()).toHaveLength(1)                                      // still wanted
+    f.mockImplementation(async () => mp3())
+    f.mockClear()
+    await o.resumePending()
+    expect(f).toHaveBeenCalledTimes(3)                                    // only the three that were missing
+    expect(o.coverage('maher', taha(5)).complete).toBe(true)
+    expect(io.read()).toEqual([])
+  })
+  it('does nothing while offline, and resumes when back online', async () => {
+    let online = false
+    const f = vi.fn(async () => mp3())
+    const io = intents()
+    io.write([{ reciter: 'maher', surah: 20, start: 1, end: 3, tries: 0 }])
+    const { o } = build(f, io, () => online)
+    await o.resumePending()
+    expect(f).not.toHaveBeenCalled()
+    online = true
+    await o.resumePending()
+    expect(o.coverage('maher', taha(3)).complete).toBe(true)
+  })
+  it('Stop keeps what is saved and does not resume', async () => {
+    let started: () => void = () => undefined
+    const gate = new Promise<void>((r) => { started = r })
+    const f = vi.fn(async (_u: unknown, init?: RequestInit) => { started(); await new Promise((r) => setTimeout(r, 5)); if (init?.signal?.aborted) throw new DOMException('x', 'AbortError'); return mp3() })
+    const { o, io } = build(f)
+    const p = o.start('maher', taha(6))
+    await gate
+    o.cancel()
+    const res = await p
+    expect(res.stopped).toBe('cancelled')
+    expect(io.read()).toEqual([])
+    f.mockClear()
+    await o.resumePending()
+    expect(f).not.toHaveBeenCalled()
+  })
+  it('gives up on files the host says do not exist instead of retrying forever, and after repeated failures', async () => {
+    const gone = vi.fn(async () => new Response('no', { status: 404 }))
+    const a = build(gone)
+    await a.o.start('maher', taha(2))
+    expect(a.io.read()).toEqual([])
+    const flaky = vi.fn(async () => { throw new TypeError('network') })
+    const b = build(flaky)
+    for (let i = 0; i < 3; i++) await b.o.start('maher', taha(2)).catch(() => undefined)
+    expect(b.io.read()).toEqual([])
+  })
+  it('removing audio also cancels the wish to save it', async () => {
+    let n = 0
+    const f = vi.fn(async () => { if (++n > 1) throw new TypeError('network'); return mp3() })
+    const { o, io } = build(f)
+    await o.start('maher', taha(3))
+    expect(io.read()).toHaveLength(1)
+    await o.remove(o.keysIn('maher', 20, 1, 3))
+    expect(io.read()).toEqual([])
+  })
+  it('two requests run one after the other and never fetch the same file twice', async () => {
+    const f = vi.fn(async (_u: unknown) => mp3())
+    const { o } = build(f)
+    await Promise.all([o.start('maher', { surah: 20, start: 1, end: 4 }), o.start('maher', { surah: 20, start: 3, end: 6 })])
+    expect(f).toHaveBeenCalledTimes(6)
+    expect(new Set(f.mock.calls.map((c) => String(c[0]))).size).toBe(6)
+  })
+})

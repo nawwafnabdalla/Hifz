@@ -44,7 +44,7 @@ export function ProgressPage() {
 
   return (
     <div>
-      <Header eyebrow="Progress" title="What the evidence shows" subtitle="Every figure comes from your own recorded practice. Where there isn’t enough data, it says so." />
+      <Header eyebrow="Progress" title="What the evidence shows" subtitle="From your own recorded practice only." />
 
       <section className="grid grid-cols-2 gap-3 px-5" data-testid="coverage">
         <Stat label="Recalled" value={cov.demonstrated.toLocaleString()} hint={`of ${TOTAL_AYAHS.toLocaleString()} ayahs, shown by recall`} />
@@ -84,7 +84,7 @@ export function ProgressPage() {
             {weeks.map((w) => <div key={w.weekStart} className="flex flex-1 flex-col items-center justify-end gap-1"><div className="w-full rounded-t-md bg-accent/80" style={{ height: `${Math.max(2, (w.minutes / maxMin) * 100)}%` }} title={`${Math.round(w.minutes)} min on ${w.days} days`} /></div>)}
           </div>
           <div className="mt-1 flex gap-2 text-[0.65rem] text-muted tabular">{weeks.map((w) => <span key={w.weekStart} className="flex-1 text-center">{shortDate(w.weekStart)}</span>)}</div>
-          <p className="mt-2 text-xs text-muted">Active minutes recorded in the app, by week. No streaks here: a missed day is just a day.</p>
+          <p className="mt-2 text-xs text-muted">Active minutes per week.</p>
         </div>
       </section>
 

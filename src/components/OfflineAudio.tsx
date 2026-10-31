@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useApp } from '@/app/store'
 import { Sheet } from './ui'
 import { Icon } from './Icon'
@@ -35,7 +35,7 @@ export function useWants(): Want[] {
 
 const saidResult = (r: SaveResult, ok: boolean): string | null => {
   if (r.stopped === 'space') return `Your phone is running low on space. ${r.saved} saved so far.`
-  if (r.stopped === 'too-large') return `That would use more than ${formatBytes(MAX_TOTAL_BYTES)}. Remove audio you no longer use, or save a smaller part.`
+  if (r.stopped === 'too-large') return `Saved audio is limited to ${formatBytes(MAX_TOTAL_BYTES)}. Remove audio you no longer use, or save less.`
   if (r.stopped === 'offline') return r.saved ? `Connection lost. ${r.saved} saved; save again to continue.` : 'No connection. Try again when you’re online.'
   if (r.stopped === 'cancelled') return `Stopped. ${r.saved} saved.`
   if (r.failed.length) return `${r.failed.length} ${r.failed.length === 1 ? 'recording' : 'recordings'} couldn’t be saved. ${r.saved ? `${r.saved} saved.` : ''} They may be temporarily unavailable.`
@@ -78,7 +78,7 @@ export function RemoveAudioSheet({ open, onClose, keys, title, reciter, exceptWa
 
 /**
  * The one offline action for a stretch of Qur'an (a goal, passage or selection). It states what is true right now, in one line,
- * and offers the single next step.
+ * and offers the single next step. No size is promised before saving: progress and size are shown only once they are measured.
  */
 export function OfflineAudioCard({ range, goalId, onChanged }: { range: Range; goalId?: string; onChanged?: () => void }) {
   const o = useOffline()
@@ -88,81 +88,74 @@ export function OfflineAudioCard({ range, goalId, onChanged }: { range: Range; g
   const saveable = saveableReciters()
   const [chosen, setChosen] = useState<string | null>(null)
   const [pickOpen, setPickOpen] = useState(false)
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
-  const [result, setResult] = useState<SaveResult | null>(null)
   const [removing, setRemoving] = useState(false)
-  const ctl = useRef<AbortController | null>(null)
-  useEffect(() => () => ctl.current?.abort(), [])
 
   if (!o.supported) return <p className="text-sm text-muted" data-testid="offline-unsupported">Saving audio isn’t available in this browser.</p>
 
   const reciter = chosen ?? (canSaveOffline(selected) ? selected : saveable[0]?.id ?? selected)
   const name = reciterById(reciter).name
   const cov = o.coverage(reciter, range)
-  const need = o.estimateBytes(reciter, range.surah, cov.missing)
   const selectedCantSave = !canSaveOffline(selected)
-  const saving = progress !== null
+  const job = o.job && o.job.reciter === reciter && o.job.range.surah === range.surah && o.job.range.start <= range.end && o.job.range.end >= range.start ? o.job : null
+  const waiting = !job && !cov.complete && o.hasIntent(reciter, range)
   const evicted = o.evictedCount()
+  const last = o.lastResult && o.lastResult.reciter === reciter && o.lastResult.range.surah === range.surah ? o.lastResult.result : null
+  const note = last && !job ? saidResult(last, cov.complete) : null
 
-  async function save() {
-    setResult(null); setProgress({ done: 0, total: cov.missing.length })
-    ctl.current = new AbortController()
-    const r = await o.save(reciter, range, { signal: ctl.current.signal, onProgress: (done, total) => setProgress({ done, total }) })
-    ctl.current = null
-    setProgress(null); setResult(r)
-    if (r.saved > 0) o.acknowledgeEvicted()
-    onChanged?.()
+  function save() {
+    void o.start(reciter, range).then((r) => { if (r.saved > 0) o.acknowledgeEvicted(); onChanged?.() })
   }
 
-  const note = result ? saidResult(result, cov.complete) : null
-  const heading = saving ? `Saving ${progress!.done} of ${progress!.total}…`
+  const heading = job ? `Saving ${job.done} of ${job.total}${job.bytes ? ` · ${formatBytes(job.bytes)}` : ''}`
+    : waiting ? 'Waiting to save…'
     : cov.complete ? `Ready offline · ${formatBytes(cov.bytes)}`
     : cov.have > 0 ? `Partly saved: ${cov.have} of ${cov.total} ayahs`
-    : 'Save audio for offline practice?'
+    : 'Save for offline listening'
+  const state = job || waiting ? 'saving' : cov.complete ? 'ready' : cov.have > 0 ? 'partial' : 'none'
 
   return (
-    <div className="space-y-3" data-testid="offline-card" data-state={saving ? 'saving' : cov.complete ? 'ready' : cov.have > 0 ? 'partial' : 'none'}>
+    <div className="space-y-3" data-testid="offline-card" data-state={state}>
       <div>
         <div className="flex items-center gap-2 font-semibold" data-testid="offline-heading">{cov.complete && <Icon name="check" size={16} className="text-accent" />}{heading}</div>
-        <div className="text-sm text-muted">{rangeTitle(range)} · {name}{!cov.complete && !saving ? ` · about ${formatBytes(need)}` : ''}</div>
+        <div className="text-sm text-muted">{rangeTitle(range)} · {name}</div>
       </div>
 
-      {saving && (
+      {(job || waiting) && (
         <div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(progress!.done / Math.max(1, progress!.total)) * 100}%` }} /></div>
-          <button className="btn btn-ghost btn-sm mt-2" onClick={() => ctl.current?.abort()} data-testid="offline-cancel">Stop</button>
+          <div className="h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${job ? (job.done / Math.max(1, job.total)) * 100 : 0}%` }} /></div>
+          <button className="btn btn-ghost btn-sm mt-2" onClick={() => o.cancel()} data-testid="offline-cancel">Stop</button>
         </div>
       )}
 
-      {!saving && selectedCantSave && !cov.complete && (
+      {!job && !waiting && selectedCantSave && !cov.complete && (
         <p className="text-sm text-ink-2" data-testid="offline-cant">{reciterById(selected).name} can be played online but not saved. {chosen === null ? `I’ll save ${name} instead.` : ''}</p>
       )}
 
-      {!saving && !cov.complete && (
+      {!job && !waiting && !cov.complete && (
         <div className="flex flex-wrap items-center gap-2">
-          <button className="btn btn-primary" disabled={!online} onClick={() => void save()} data-testid="offline-save">{cov.have > 0 ? `Save the missing ${cov.missing.length}` : 'Save audio'}</button>
+          <button className="btn btn-primary" disabled={!online} onClick={save} data-testid="offline-save">{cov.have > 0 ? `Save the missing ${cov.missing.length}` : 'Save audio'}</button>
           {saveable.length > 1 && <button className="btn btn-ghost btn-sm" onClick={() => setPickOpen(true)} data-testid="offline-reciter">Different reciter</button>}
         </div>
       )}
-      {!saving && !cov.complete && (online
+      {!job && !waiting && !cov.complete && (online
         ? <p className="text-xs text-muted">Best on Wi-Fi. It uses mobile data otherwise.</p>
         : <p className="text-xs text-muted" data-testid="offline-no-net">You’re offline. Connect to save audio.</p>)}
 
-      {!saving && cov.complete && reciter !== selected && (
+      {!job && cov.complete && reciter !== selected && (
         <button className="btn btn-quiet btn-sm" onClick={() => void patch({ reciter })} data-testid="offline-use">Use {name} for practice</button>
       )}
-      {!saving && cov.have > 0 && (
+      {!job && cov.have > 0 && (
         <button className="text-sm text-muted underline" onClick={() => setRemoving(true)} data-testid="offline-remove">Remove audio</button>
       )}
 
-      {evicted > 0 && !saving && <p className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-ink" data-testid="offline-evicted">Your phone cleared {evicted} saved {evicted === 1 ? 'recording' : 'recordings'} to free up space.</p>}
+      {evicted > 0 && !job && <p className="rounded-xl bg-amber-soft px-3 py-2 text-sm text-ink" data-testid="offline-evicted">Your phone cleared {evicted} saved {evicted === 1 ? 'recording' : 'recordings'} to free up space.</p>}
       {note && <p className="text-sm text-clay" role="status" data-testid="offline-note">{note}</p>}
 
       <RemoveAudioSheet open={removing} onClose={() => { setRemoving(false); onChanged?.() }} keys={o.keysIn(reciter, range.surah, range.start, range.end)} title={`${rangeTitle(range)} · ${name}`} reciter={selected} exceptWantId={goalId} protect />
       <Sheet open={pickOpen} onClose={() => setPickOpen(false)} title="Save with">
         <ul className="space-y-2">
           {saveable.map((r) => (
-            <li key={r.id}><button className={`card-flat flex w-full items-center justify-between p-3 text-left ${r.id === reciter ? '!border-accent' : ''}`} onClick={() => { setChosen(r.id); setResult(null); setPickOpen(false) }} data-testid={`offline-pick-${r.id}`}>
+            <li key={r.id}><button className={`card-flat flex w-full items-center justify-between p-3 text-left ${r.id === reciter ? '!border-accent' : ''}`} onClick={() => { setChosen(r.id); setPickOpen(false) }} data-testid={`offline-pick-${r.id}`}>
               <span className="font-semibold">{r.name}</span>{r.id === reciter && <Icon name="check" className="text-accent" />}</button></li>
           ))}
         </ul>
@@ -180,10 +173,11 @@ export function GoalAudioLine({ goalId, range }: { goalId: string; range: Range 
   if (!o.supported) return null
   const reciter = canSaveOffline(selected) ? selected : saveableReciters().find((r) => o.coverage(r.id, range).have > 0)?.id ?? selected
   const cov = o.coverage(reciter, range)
-  const text = cov.complete ? 'Audio saved offline' : cov.have > 0 ? `Audio partly saved · ${cov.have} of ${cov.total}` : 'Save audio for offline'
+  const busy = (o.job && o.job.reciter === reciter && o.job.range.surah === range.surah) || o.hasIntent(reciter, range)
+  const text = busy && !cov.complete ? 'Saving audio…' : cov.complete ? 'Audio saved offline' : cov.have > 0 ? `Audio partly saved · ${cov.have} of ${cov.total}` : 'Save audio for offline'
   return (
     <>
-      <button className={`mt-1.5 flex items-center gap-1.5 text-xs ${cov.complete ? 'text-accent-strong' : 'text-muted'}`} onClick={() => setOpen(true)} data-testid="goal-audio" data-state={cov.complete ? 'ready' : cov.have > 0 ? 'partial' : 'none'}>
+      <button className={`mt-1.5 flex items-center gap-1.5 text-xs ${cov.complete ? 'text-accent-strong' : 'text-muted'}`} onClick={() => setOpen(true)} data-testid="goal-audio" data-state={busy && !cov.complete ? 'saving' : cov.complete ? 'ready' : cov.have > 0 ? 'partial' : 'none'}>
         <Icon name={cov.complete ? 'check' : 'download'} size={14} />{text}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Offline audio"><OfflineAudioCard range={range} goalId={goalId} /></Sheet>
@@ -216,7 +210,7 @@ export function GoalFinishSheet({ open, onClose, goalId, range, label, onFinish 
   )
 }
 
-/** Settings → Offline recitations. Plain language, measured sizes, clear removal. */
+/** Settings → Offline recitations. Plain language, measured sizes, and removal that is impossible to miss. */
 export function ManageDownloads() {
   const o = useOffline()
   const wants = useWants()
@@ -232,30 +226,30 @@ export function ManageDownloads() {
   return (
     <div data-testid="manage-downloads">
       <div className="p-4">
-        <div className="font-medium" data-testid="downloads-total">{runs.length ? `Using ${formatBytes(total)} on this device` : 'Nothing saved for offline'}</div>
-        <div className="text-xs text-muted">{runs.length ? 'Saved recitations can be removed any time. Your progress stays.' : 'Save a goal’s audio from Today, or from the audio panel.'}</div>
-        {total > LARGE_NOTICE_BYTES && <div className="mt-2 rounded-xl bg-amber-soft px-3 py-2 text-xs text-ink" data-testid="downloads-large">This is a lot of space. Removing audio you no longer practise is safe.</div>}
-        {evicted > 0 && <div className="mt-2 rounded-xl bg-amber-soft px-3 py-2 text-xs text-ink" data-testid="downloads-evicted">Your phone cleared {evicted} saved {evicted === 1 ? 'recording' : 'recordings'} to free up space. <button className="underline" onClick={() => o.acknowledgeEvicted()}>OK</button></div>}
+        <div className="font-display text-xl" data-testid="downloads-total">{runs.length ? `${formatBytes(total)} saved on this device` : 'No audio saved'}</div>
+        <div className="text-sm text-muted">{runs.length ? 'Remove any recitation below. Your memorisation progress is never affected.' : 'Save a goal’s audio from Today to practise offline.'}</div>
+        {total > LARGE_NOTICE_BYTES && <div className="mt-2 rounded-xl bg-amber-soft px-3 py-2 text-sm text-ink" data-testid="downloads-large">That’s a lot of space. Removing audio you no longer practise is safe.</div>}
+        {evicted > 0 && <div className="mt-2 rounded-xl bg-amber-soft px-3 py-2 text-sm text-ink" data-testid="downloads-evicted">Your phone cleared {evicted} saved {evicted === 1 ? 'recording' : 'recordings'} to free up space. <button className="underline" onClick={() => o.acknowledgeEvicted()}>OK</button></div>}
       </div>
       {runs.map((r) => {
         const range: Range = { surah: r.surah, start: r.start, end: r.end }
         const users = wants.filter((w) => w.range.surah === r.surah && w.range.start <= r.end && w.range.end >= r.start)
         const forThis = r.reciter === selected ? users : []
         const short = forThis.map((w) => ({ w, c: o.coverage(r.reciter, w.range) })).find((x) => !x.c.complete)
-        const status = short ? `Partial · ${short.c.have} of ${short.c.total} for ${short.w.label}` : `Ready offline · ${formatBytes(r.bytes)}`
+        const status = short ? `Partial · ${short.c.have} of ${short.c.total} for ${short.w.label}` : 'Ready offline'
         const title = `${surahInfo(r.surah).tr} ${rangeLabel(r.start, r.end)} — ${reciterById(r.reciter).name}`
         return (
           <div key={`${r.reciter}:${r.surah}:${r.start}`} className="flex items-center justify-between gap-3 p-4" data-testid="download-row" data-complete={short ? 'false' : 'true'}>
             <div className="min-w-0">
               <div className="break-words font-medium">{title}</div>
-              <div className="text-xs text-muted">{status}{short ? ` · ${formatBytes(r.bytes)}` : ''}</div>
+              <div className="text-sm text-muted">{status} · {formatBytes(r.bytes)}</div>
               {forThis.length === 0 && <div className="text-xs text-muted">Not used by a current goal</div>}
             </div>
-            <button className="btn btn-ghost btn-sm flex-none" onClick={() => setRemoveRun({ keys: o.keysIn(r.reciter, range.surah, range.start, range.end), title, reciter: selected })} data-testid="download-remove">Remove audio</button>
+            <button className="btn btn-quiet btn-sm flex-none !text-clay" onClick={() => setRemoveRun({ keys: o.keysIn(r.reciter, range.surah, range.start, range.end), title, reciter: selected })} data-testid="download-remove"><Icon name="trash" size={15} />Remove audio</button>
           </div>
         )
       })}
-      {runs.length > 1 && <div className="p-4"><button className="btn btn-quiet btn-sm text-clay" onClick={() => setAll(true)} data-testid="remove-all-downloads">Remove all downloads</button></div>}
+      {runs.length > 0 && <div className="p-4"><button className="btn btn-quiet w-full !text-clay" onClick={() => setAll(true)} data-testid="remove-all-downloads"><Icon name="trash" size={16} />Remove all downloads</button></div>}
 
       {removeRun && <RemoveAudioSheet open onClose={() => setRemoveRun(null)} keys={removeRun.keys} title={removeRun.title} reciter={removeRun.reciter} />}
       <Sheet open={all} onClose={() => setAll(false)} title="Remove all downloads?">

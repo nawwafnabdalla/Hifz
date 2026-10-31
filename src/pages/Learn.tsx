@@ -148,7 +148,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'sound' && (
         <section className="enter px-4" data-testid="stage-sound">
-          <div className="card px-4 py-6 text-center">
+          <div className="card px-4 py-6 text-center" style={words.length <= 10 ? ({ '--arabic-scale': snap.settings.arabicScale * 1.2 } as React.CSSProperties) : undefined}>
             <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} /> <Medallion n={ayah} /></p>
             {snap.settings.translation && <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2">{tr?.[ayah - 1] ?? ''}</p>}
           </div>

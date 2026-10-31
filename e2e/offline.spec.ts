@@ -15,8 +15,9 @@ test.describe('goal-based offline audio', () => {
 
   test('a new goal offers its audio once; one tap saves it; it is listed with a measured size and can be removed without touching progress', async ({ page }) => {
     await addGoal(page, '112')
-    await expect(heading(page)).toHaveText('Save audio for offline practice?')
-    await expect(page.getByTestId('offline-card')).toContainText(/Al-Ikhlas 1–4 · Mishary Alafasy · about/)
+    await expect(heading(page)).toHaveText('Save for offline listening')
+    await expect(page.getByTestId('offline-card')).toContainText('Al-Ikhlas 1–4 · Mishary Alafasy')
+    await expect(page.getByTestId('offline-card')).not.toContainText(/about|KB|MB/)        // no size is promised before it is measured
     await page.screenshot({ path: 'test-results/shots/60-goal-offer.png' })
     await page.getByTestId('offline-save').click()
     await expect(page.getByTestId('offline-card')).toHaveAttribute('data-state', 'ready')
@@ -26,19 +27,20 @@ test.describe('goal-based offline audio', () => {
     await page.screenshot({ path: 'test-results/shots/61-goal-ready.png' })
 
     await page.goto('/settings')
-    await expect(page.getByTestId('downloads-total')).toContainText(/Using \d[\d.]* (KB|MB) on this device/)
+    await expect(page.getByTestId('downloads-total')).toContainText(/\d[\d.]* (KB|MB) saved on this device/)
     const row = page.getByTestId('download-row')
     await expect(row).toHaveCount(1)
     await expect(row).toContainText('Al-Ikhlas 1–4 — Mishary Alafasy')
-    await expect(row).toContainText(/Ready offline · \d/)
+    await expect(row).toContainText(/Ready offline · \d[\d.]* (KB|MB)/)
     await page.screenshot({ path: 'test-results/shots/62-manage-downloads.png', fullPage: true })
 
+    await expect(page.getByTestId('remove-all-downloads')).toBeVisible()
     const goalsBefore = (await idbRows(page, 'targets')).length
     await page.getByTestId('download-remove').click()
     await expect(page.getByTestId('remove-audio')).toContainText('Remove audio only. Your memorisation progress will stay saved.')
     await page.getByTestId('confirm-remove-audio').click()
     await expect(page.getByTestId('download-row')).toHaveCount(0)
-    await expect(page.getByTestId('downloads-total')).toHaveText('Nothing saved for offline')
+    await expect(page.getByTestId('downloads-total')).toHaveText('No audio saved')
     expect((await idbRows(page, 'targets')).length).toBe(goalsBefore)
     // …and it can be saved again.
     await page.goto('/')
@@ -115,6 +117,27 @@ test.describe('goal-based offline audio', () => {
     await expect(page.getByTestId('offline-card')).toHaveAttribute('data-state', 'partial')
     await expect(page.getByTestId('offline-heading')).not.toContainText('Ready offline')
     await page.screenshot({ path: 'test-results/shots/64-partial.png' })
+  })
+
+  test('shows real progress while saving, and an interrupted save carries on by itself when the app is back', async ({ page }) => {
+    await page.unroute(/cdn\.islamic\.network\/.*\.mp3/)
+    let n = 0
+    let cut = true
+    await page.route(/cdn\.islamic\.network\/.*\.mp3/, async (r) => {
+      await new Promise((res) => setTimeout(res, 250))
+      if (cut && ++n > 2) return r.abort('connectionreset')
+      return r.fulfill({ status: 200, contentType: 'audio/mpeg', body: Buffer.alloc(4000, 7), headers: { 'access-control-allow-origin': '*' } })
+    })
+    await addGoal(page, '112', '1', '4')
+    await page.getByTestId('offline-save').click()
+    await expect(heading(page)).toHaveText(/Saving \d of 4/, { timeout: 5000 })           // measured count while saving
+    await expect(page.getByTestId('offline-card')).toHaveAttribute('data-state', /partial|saving/, { timeout: 20000 })
+    await expect(page.getByTestId('offline-card')).not.toHaveAttribute('data-state', 'ready')
+    // The connection comes back; the app finishes the save with no further tap.
+    cut = false
+    await page.evaluate(() => window.dispatchEvent(new Event('online')))
+    await expect(page.getByTestId('offline-card')).toHaveAttribute('data-state', 'ready', { timeout: 30000 })
+    await expect(heading(page)).toContainText(/Ready offline · 16 KB|Ready offline · 15.6 KB|Ready offline · \d/)
   })
 
   test('a reciter whose recordings may not be saved is never saved; the choice is a reciter that can be', async ({ page }) => {

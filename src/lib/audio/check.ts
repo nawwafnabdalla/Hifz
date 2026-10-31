@@ -1,6 +1,7 @@
 // Proves, on the user's own device, what each reciter's audio really does. A directory listing is not playback:
 // only a file that actually loads counts. Nothing is assumed, and a failed check never plays a different reciter.
-import { candidateUrls, reciterById } from './sources'
+import { candidateUrls, offlineUrl, reciterById } from './sources'
+import { validateAudio } from './offline'
 import { fullSurahAudio, type SurahAudio } from './mp3quran'
 import { recordConfirmed, recordUnavailable } from './status'
 
@@ -14,6 +15,8 @@ export interface ReciterCheck {
   name: string
   verse: { state: 'ok' | 'fail' | 'none'; via?: string; detail: string }
   full: { state: 'ok' | 'fail' | 'none'; detail: string }
+  /** Could a copy be saved to this device? A real download of one file (not stored), checked the way saving checks it. */
+  save: { state: 'ok' | 'fail' | 'none'; detail: string }
 }
 
 /** Real-browser probe: does the URL load as audio (metadata only; the whole file is not downloaded). */
@@ -29,10 +32,10 @@ export const browserProbe: Probe = (url) =>
     a.load()
   })
 
-export async function checkReciter(id: string, deps: { probe: Probe; fullSurah?: (id: string, surah: number) => Promise<SurahAudio>; online?: boolean } = { probe: browserProbe }): Promise<ReciterCheck> {
+export async function checkReciter(id: string, deps: { probe: Probe; fullSurah?: (id: string, surah: number) => Promise<SurahAudio>; online?: boolean; fetchFn?: typeof fetch } = { probe: browserProbe }): Promise<ReciterCheck> {
   const r = reciterById(id)
   const online = deps.online ?? (typeof navigator === 'undefined' ? true : navigator.onLine)
-  const out: ReciterCheck = { id, name: r.name, verse: { state: 'none', detail: 'No verse-by-verse source is known.' }, full: { state: 'none', detail: 'No full-surah source is configured.' } }
+  const out: ReciterCheck = { id, name: r.name, verse: { state: 'none', detail: 'No verse-by-verse source is known.' }, full: { state: 'none', detail: 'No full-surah source is configured.' }, save: { state: 'none', detail: 'Saving isn’t available for this reciter.' } }
 
   // Verse by verse: the first host whose files ALL load for the three test ayahs.
   const hosts = candidateUrls(id, PROBE_AYAHS[0]![0], PROBE_AYAHS[0]![1]).map((c) => c.source)
@@ -55,6 +58,19 @@ export async function checkReciter(id: string, deps: { probe: Probe; fullSurah?:
     const f = await lookup(id, 20)
     if (!f.ok) out.full = { state: 'fail', detail: f.reason }
     else out.full = (await deps.probe(f.url)) ? { state: 'ok', detail: 'Full-surah recording loads (Ta-Ha).' } : { state: 'fail', detail: 'Listed by MP3Quran, but the file did not load here.' }
+  }
+
+  // Saving: only for reciters whose source allows it, and only a real download of one file, validated exactly as a save would be.
+  const saveUrl = offlineUrl(id, PROBE_AYAHS[0]![0], PROBE_AYAHS[0]![1])
+  if (saveUrl) {
+    try {
+      const res = await (deps.fetchFn ?? fetch)(saveUrl, { mode: 'cors', credentials: 'omit' })
+      const blob = await res.blob()
+      const bad = validateAudio(res, blob)
+      out.save = bad ? { state: 'fail', detail: `The file couldn’t be saved (${bad}).` } : { state: 'ok', detail: 'Can be saved to this device.' }
+    } catch {
+      out.save = { state: 'fail', detail: online ? 'The host didn’t allow saving from this app.' : 'No connection.' }
+    }
   }
   return out
 }

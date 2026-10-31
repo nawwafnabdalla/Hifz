@@ -28,10 +28,12 @@ export function App() {
   const init = useApp((s) => s.init)
   useEffect(() => { void init() }, [init])
   useEffect(() => {   // what is really saved on this device, re-read whenever the app returns to the foreground
-    void offlineAudio.refresh()
-    const v = () => { if (document.visibilityState === 'visible') void offlineAudio.refresh() }
+    const wake = () => { void offlineAudio.refresh().then(() => offlineAudio.resumePending()) }   // an interrupted save simply continues
+    wake()
+    const v = () => { if (document.visibilityState === 'visible') wake() }
     document.addEventListener('visibilitychange', v)
-    return () => document.removeEventListener('visibilitychange', v)
+    window.addEventListener('online', wake)
+    return () => { document.removeEventListener('visibilitychange', v); window.removeEventListener('online', wake) }
   }, [])
   useEffect(() => { try { registerSW({ immediate: true }) } catch { /* dev / unsupported */ } }, [])
   if (!ready) return <Splash />

@@ -50,13 +50,13 @@ export const SOURCES: Record<Endpoint['source'], AudioSource> = {
 /**
  * May a copy be kept on the listener's own device? Streaming a public file is not the same as having permission to save it, so this is
  * decided per source, from the source's own published terms, and defaults to NO. Changing a value here is a licensing decision.
- *  - Islamic Network (alquran.cloud): terms reported as free for personal, non-commercial and educational use, including download.
- *    (Read through a search summary of the terms page; the page itself could not be opened from the build environment. Verify once.)
+ *  - Islamic Network (alquran.cloud): an open audio CDN whose terms ask clients to cache files; no restriction on keeping a copy was found.
+ *    (Read only through search summaries; the terms page itself could not be opened from the build environment.)
  *  - EveryAyah: publishes no licence and says the recordings belong to the reciters, so saving stays OFF until the operator or the
  *    reciters give permission.
  */
 export const SOURCE_RIGHTS: Record<Endpoint['source'], { saveOffline: boolean; basis: string; terms: string }> = {
-  islamicnetwork: { saveOffline: true, basis: 'Free for personal and educational use, including download.', terms: 'https://alquran.cloud/terms-and-conditions' },
+  islamicnetwork: { saveOffline: true, basis: 'An open audio CDN that asks apps to cache its files; no restriction on keeping a copy was found.', terms: 'https://alquran.cloud/terms-and-conditions' },
   everyayah: { saveOffline: false, basis: 'No licence is published; the recordings belong to their reciters.', terms: 'https://everyayah.com' },
 }
 

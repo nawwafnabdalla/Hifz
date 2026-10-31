@@ -52,7 +52,7 @@ export function SettingsPage() {
 
       <Section title="Account & sync">
         {!cloudConfigured ? (
-          <Row label="Saved on this device" hint="Cloud sync isn’t configured in this build. Everything works, and you can export a backup below." />
+          <Row label="Saved on this device" hint="Everything works offline. Export a backup below." />
         ) : authLoading ? <Row label="Checking account…" /> : user ? (
           <>
             <Row label={user.email} hint={sync.status === 'syncing' ? 'Syncing…' : sync.status === 'offline' ? 'Offline. Changes are kept and will upload when you’re back online.' : sync.status === 'mismatch' ? sync.error ?? '' : sync.status === 'error' ? `Sync problem: ${sync.error}` : `Synced${sync.lastSyncAt ? ` ${shortDate(sync.lastSyncAt)}` : ''} · ${sync.pending} waiting to upload`}>
@@ -72,14 +72,16 @@ export function SettingsPage() {
         )}
       </Section>
 
+      <Section title="Offline recitations"><ManageDownloads /></Section>
+
       <Section title="Study">
         <Row label="Plan new memorisation" hint="Turn off to only revise"><Toggle on={s.planNew} onChange={(v) => void patchSettings({ planNew: v })} label="Plan new memorisation" /></Row>
-        <Row label="Most new ayahs per day" hint="A ceiling, not a target. The planner usually takes less."><select className="h-10 rounded-lg border border-line bg-bg px-2" value={s.newPerDayCap} onChange={(e) => void patchSettings({ newPerDayCap: +e.target.value })} aria-label="New ayahs cap">{[0, 3, 5, 10, 15, 20, 30].map((m) => <option key={m} value={m}>{m === 0 ? 'None' : m}</option>)}</select></Row>
+        <Row label="Most new ayahs per day" hint="A ceiling, not a target"><select className="h-10 rounded-lg border border-line bg-bg px-2" value={s.newPerDayCap} onChange={(e) => void patchSettings({ newPerDayCap: +e.target.value })} aria-label="New ayahs cap">{[0, 3, 5, 10, 15, 20, 30].map((m) => <option key={m} value={m}>{m === 0 ? 'None' : m}</option>)}</select></Row>
       </Section>
 
       <Section title="Reading">
         <Row label="Appearance"><div className="flex gap-1.5">{(['system', 'light', 'dark'] as const).map((t) => <button key={t} className="chip capitalize" aria-pressed={s.theme === t} onClick={() => void patchSettings({ theme: t })}>{t}</button>)}</div></Row>
-        <Row label="Script" hint="Madinah Mushaf uses the King Fahd Complex font and text. If it can’t load, the simple script is used."><div className="flex gap-1.5">{([['madinah', 'Mushaf'], ['simple', 'Simple']] as const).map(([v, l]) => <button key={v} className="chip" aria-pressed={s.script === v} onClick={() => void patchSettings({ script: v })} data-testid={`script-${v}`}>{l}</button>)}</div></Row>
+        <Row label="Script" hint="Official King Fahd Complex font"><div className="flex gap-1.5">{([['madinah', 'Mushaf'], ['simple', 'Simple']] as const).map(([v, l]) => <button key={v} className="chip" aria-pressed={s.script === v} onClick={() => void patchSettings({ script: v })} data-testid={`script-${v}`}>{l}</button>)}</div></Row>
         <Row label="Arabic size" hint="Applies everywhere"><input type="range" min={0.9} max={1.6} step={0.05} value={s.arabicScale} onChange={(e) => void patchSettings({ arabicScale: +e.target.value })} aria-label="Arabic text size" /></Row>
         <Row label="Show translation" hint="Saheeh International"><Toggle on={s.translation} onChange={(v) => void patchSettings({ translation: v })} label="Show translation" /></Row>
       </Section>
@@ -87,8 +89,6 @@ export function SettingsPage() {
       <Section title="Audio">
         <Row label="Reciter"><select className="h-10 max-w-[12rem] rounded-lg border border-line bg-bg px-2" value={s.reciter} onChange={(e) => void patchSettings({ reciter: e.target.value })} aria-label="Reciter">{RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Row>
       </Section>
-
-      <Section title="Offline recitations"><ManageDownloads /></Section>
 
       <Section title="Your data">
         <Row label="Export backup" hint="Everything you’ve recorded, as a JSON file"><button className="btn btn-quiet btn-sm" onClick={() => void download()} data-testid="export"><Icon name="download" size={15} />Export</button></Row>

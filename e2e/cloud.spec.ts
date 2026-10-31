@@ -123,4 +123,42 @@ test.describe('cloud sync (emulated backend)', () => {
     expect(server.rows('review_events')).toHaveLength(4)
     await ctxA.close(); await ctxB.close()
   })
+
+  test('saved audio never interferes with offline memorisation or syncing, and removing it leaves history and the cloud untouched', async ({ browser }) => {
+    const server = new Emulator()
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    await server.attach(ctx)
+    const a = await ctx.newPage()
+    await mockAudio(a)
+    await a.goto('/'); await a.evaluate(async () => { localStorage.clear(); for (const d of (await indexedDB.databases?.()) ?? []) indexedDB.deleteDatabase(d.name!) })
+    await signIn(a)
+
+    // Recordings are present on the device (as if saved earlier).
+    await a.evaluate(async () => {
+      const c = await caches.open('hifz-audio-v1')
+      for (const ayah of [1, 2]) await c.put(new URL(`/offline-audio/alafasy/112/${ayah}`, location.origin).href, new Response(new Blob([new Uint8Array(5000)], { type: 'audio/mpeg' }), { headers: { 'content-type': 'audio/mpeg', 'x-hifz-bytes': '5000' } }))
+    })
+    await a.reload()
+    await a.goto('/review/112/1/1?ctx=free')
+    await expect(a.getByTestId('recall-card')).toBeVisible()
+
+    // Offline: memorise, remove the saved audio, keep memorising.
+    await ctx.setOffline(true)
+    await gradeOnce(a)
+    await a.evaluate(() => { history.pushState({}, '', '/settings'); window.dispatchEvent(new PopStateEvent('popstate')) })   // in-app navigation, no reload while offline
+    await expect(a.getByTestId('downloads-total')).toContainText('10 KB saved')
+    await a.getByTestId('remove-all-downloads').click()
+    await a.getByTestId('confirm-remove-all').click()
+    await expect(a.getByTestId('downloads-total')).toHaveText('No audio saved')
+    expect((await idb(a, 'reviews')).length).toBe(1)                                   // history untouched by removing audio
+
+    // Back online: the history uploads exactly once, and nothing about audio ever reaches the server.
+    await ctx.setOffline(false)
+    await a.evaluate(() => window.dispatchEvent(new Event('online')))
+    await expect.poll(() => server.rows('review_events').length, { timeout: 20_000 }).toBe(1)
+    await expect.poll(async () => (await idb(a, 'reviews')).filter((r) => r.synced === 0).length).toBe(0)
+    for (const table of server.tables.keys()) expect(['review_events', 'flow_events', 'declarations', 'study_sessions', 'learning_targets', 'phrase_markers', 'experiments', 'profiles']).toContain(table)
+    expect(JSON.stringify([...server.tables.values()])).not.toMatch(/offline-audio|hifz-audio|x-hifz-bytes/)
+    await ctx.close()
+  })
 })

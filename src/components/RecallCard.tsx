@@ -149,7 +149,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
               {ayahs.map((a) => { const k = flags.get(a); return <button key={a} className={`chip tabular ${k ? KIND_STYLE[k] : ''}`} onClick={() => cycle(a)} aria-label={`Ayah ${a}: ${k ? KIND_LABEL[k] : 'fine'}`}>{a}{k && <span className="text-xs">· {KIND_LABEL[k]}</span>}</button> })}
             </div>
             <div>
-              <div className="mb-1 text-xs text-muted">Did a transition feel shaky? (end of one ayah into the next)</div>
+              <div className="mb-1 text-xs text-muted">Any shaky transitions?</div>
               <div className="flex flex-wrap gap-1.5">
                 {ayahs.slice(0, -1).map((a) => <button key={a} className="chip tabular" aria-pressed={shaky.has(a)} onClick={() => setShaky((s) => { const x = new Set(s); x.has(a) ? x.delete(a) : x.add(a); return x })}><Icon name="link" size={13} />{a}→{a + 1}</button>)}
               </div>

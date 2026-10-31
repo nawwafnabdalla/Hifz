@@ -47,7 +47,7 @@ export function RungPractice({ surah, ayah, words, phrases, boundaries, from, to
       <button className="card mt-4 flex w-full flex-col items-center gap-1 py-6 active:scale-[0.99]" onClick={() => setReps((r) => r + 1)} data-testid="said-it" style={reps === 0 ? { animation: 'pulse-ring 2s ease-out infinite' } : undefined}>
         <span className="text-sm font-semibold text-accent">Say it aloud, then tap</span>
         <span className="font-display tabular text-5xl text-ink">{reps}</span>
-        <span className="text-xs text-muted">{reps === 0 ? 'Smooth and unhurried; sound matters more than speed' : reps < 3 ? 'A few more times' : 'Rate how it feels'}</span>
+        <span className="text-xs text-muted">{reps === 0 ? '' : reps < 3 ? 'A few more times' : 'Rate how it feels'}</span>
       </button>
       <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="How does it feel on the tongue?">
         <button className="btn btn-quiet h-auto flex-col !gap-0 py-2.5" onClick={() => void rate('tangled')} data-testid="rate-tangled"><span>Tangled</span><span className="text-[0.7rem] font-normal text-muted">again</span></button>
