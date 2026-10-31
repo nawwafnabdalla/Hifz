@@ -17,7 +17,11 @@ The project **hifz-os** exists and is empty (project id `dfygzjfrkkrmmomwbtma`).
 2. Open the SQL editor of **hifz-os**: `https://supabase.com/dashboard/project/dfygzjfrkkrmmomwbtma/sql/new`
 3. Paste. Tap **Run**. If Supabase warns about "destructive" statements, that is the `REVOKE` and `DELETE` lines explained below. Confirm.
 4. You should see "Success. No rows returned". Check **Table Editor**: 8 tables (`review_events`, `flow_events`, `declarations`, `study_sessions`, `learning_targets`, `phrase_markers`, `experiments`, `profiles`).
-5. Tell Claude "migration applied". Claude will then run the security tests against the real database and report the results.
+5. Tell Claude "migration applied". Then run the security test (below) and paste the result to Claude.
+
+### Run the security test on the real database
+New query in the SQL editor → paste the whole file `supabase/tests/rls.sql` (raw link: `https://raw.githubusercontent.com/nawwafnabdalla/Hifz/claude/hifz-os-feasibility-btrmfb/supabase/tests/rls.sql`) → Run → confirm the "destructive" warning (it deliberately attempts forbidden updates and deletes).
+It always ends with an **error box that lists PASS/FAIL lines**; that error is what rolls everything back, so no test data stays. Every line should say PASS. Copy the box to Claude.
 
 ### Or: let Claude apply it
 Reply **retry migration**. A confirmation card from Supabase appears and expires after about **60 seconds**, so keep the Claude app open and tap approve straight away. (It timed out twice because it went unanswered.)

@@ -18,8 +18,13 @@
 
 ## Not verified / known limits
 
-* **Database migration has not been applied** (Supabase asked for confirmation that timed out). The SQL is in `supabase/migrations/` and
-  a PASS/FAIL RLS script is in `supabase/tests/rls.sql`. Until applied, the app runs local-only.
+* **Database:** the migration was applied to `hifz-os` by the owner via the dashboard. Verified from the real project: 8 tables with the
+  intended columns/constraints/foreign keys, RLS enabled on all 8, and the Supabase security advisor reports a single WARN:
+  `erase_my_data()` is a SECURITY DEFINER function callable by signed-in users. **Accepted, intentional**: it is the "erase all my data"
+  feature, deletes only rows where `user_id = auth.uid()`, and is not executable by signed-out visitors.
+* **RLS behaviour test (`supabase/tests/rls.sql`) must be run against the real project.** The MCP SQL tool required an approval that
+  expired, so the test has not yet been executed there. It checks cross-user isolation, append-only history, constraints, idempotent
+  inserts, signed-out access, export and erase.
 * **The live Supabase project was unreachable from the build sandbox.** Sync was tested against a faithful in-test emulator of the
   REST/Auth endpoints, not the real service. RLS behaviour is specified in SQL but not yet executed.
 * No iPhone/Safari testing. Audio from real hosts untested. Offline behaviour tested in Chromium only.
