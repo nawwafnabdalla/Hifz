@@ -149,3 +149,14 @@ export interface Corpus {
 }
 
 export const DAY = 24 * 60 * 60 * 1000
+
+export interface StudySession {
+  id: string
+  startedAt: number
+  endedAt: number | null
+  plannedMinutes: number
+  /** The plan as it was shown, so "why was this chosen" survives later changes. */
+  planSnapshot?: unknown
+  summary?: unknown
+  updatedAt: number
+}
