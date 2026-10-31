@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "surahs": 114,
+  "ayahs": 6236,
+  "words": 77433,
+  "primary": {
+    "npm": "quran-json@3.1.2",
+    "upstream": "The Noble Qur’an Encyclopedia (QuranEnc) Uthmani text",
+    "files": {
+      "quran.json": "d8a8adff387f60ce3ff7dbe3238dd9b27120bfe29d8fcb07ad2e89cad37cefd4",
+      "quran_en.json": "bae3acab517304dc2684d65949a00f31000a92818041cefabc234663da99d7a3"
+    }
+  },
+  "crosscheck": {
+    "sources": {
+      "tanzil": {
+        "npm": "@muslims-community/quran@1.1.0",
+        "integrity": "sha512-ayWXhB0WAPv2KXZH5MM0ACPMLvRBU69Rn7PaIxmcMbtEJiRfdiUWaqpUtSLiV7FsSMcw0exTUQF4ERQr4AoKkw=="
+      },
+      "qul": {
+        "npm": "quran-validator@1.3.0",
+        "integrity": "sha512-NT9YkM6N0Ozh104mx6vwsmVw4pGxbWRB3dsf9A4Do63ftLfIu+pgkPl5aagbXkHi4B3T8ZkCjW6p95x4C9dm5w=="
+      }
+    },
+    "letterLevelAgreement": "6236/6236 with both",
+    "wordSpacingAgreement": "6236/6236 with both (after errata)"
+  },
+  "errata": [
+    {
+      "surah": 2,
+      "ayah": 72,
+      "ops": [
+        "remove-space"
+      ]
+    },
+    {
+      "surah": 15,
+      "ayah": 7,
+      "ops": [
+        "insert-space"
+      ]
+    },
+    {
+      "surah": 27,
+      "ayah": 20,
+      "ops": [
+        "insert-space"
+      ]
+    },
+    {
+      "surah": 36,
+      "ayah": 22,
+      "ops": [
+        "insert-space"
+      ]
+    },
+    {
+      "surah": 37,
+      "ayah": 164,
+      "ops": [
+        "insert-space"
+      ]
+    },
+    {
+      "surah": 41,
+      "ayah": 47,
+      "ops": [
+        "insert-space"
+      ]
+    }
+  ],
+  "generatedTextSha256": "885a599bccca729a6996d35a9925e4589c28b1791a3ff8a62d5b05bbd75c6d45",
+  "generatedFileSha256": "ad8835af2c5ca01284256ca49fced33bb22f806b1d0f5578a219aa19aaa5b873"
+}
