@@ -30,6 +30,7 @@ test.describe('core hifz loop', () => {
     await page.getByTestId('open-goal').click()
     await page.getByTestId('goal-surah').selectOption('112')
     await page.getByTestId('goal-save').click()
+    await page.getByTestId('goal-audio-skip').click()                 // the one-time offer to save audio offline
     await expect(page.getByTestId('plan-item').first()).toHaveAttribute('data-kind', 'new')
     await page.getByTestId('start-session').click()
     await expect(page).toHaveURL(/\/session/)
@@ -113,8 +114,12 @@ test.describe('core hifz loop', () => {
     await mockAudio(page, { failEveryAyah: true })
     await page.goto('/learn/1/1/1')
     await expect(page.getByTestId('stage-sound')).toBeVisible()
+    const hosts: string[] = []
+    page.on('request', (r) => { if (/\.mp3/.test(r.url())) hosts.push(new URL(r.url()).host) })
     await page.getByTestId('audio-play').click()
-    await expect(page.getByTestId('audio-bar')).toContainText(/Islamic Network/, { timeout: 15000 })
+    await expect(page.getByTestId('audio-status')).toContainText(/Ayah 1/, { timeout: 15000 })       // plays; the host is not shown on the main screen
+    expect(hosts).toContain('everyayah.com')
+    expect(hosts).toContain('cdn.islamic.network')
   })
 })
 

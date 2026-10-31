@@ -55,6 +55,8 @@ interface State {
   declare(range: Range, level: Declaration['level']): Promise<void>
   addTarget(range: Range, label?: string): Promise<void>
   setTargetStatus(id: string, status: LearningTarget['status']): Promise<void>
+  /** Change a goal's range or name (for example, extend Ta-Ha 1–36 to 1–50). Progress is derived from events, so nothing is lost. */
+  updateTarget(id: string, range: Range, label?: string): Promise<void>
   setMarker(surah: number, ayah: number, boundaries: number[]): Promise<void>
   patchSettings(p: Partial<Settings>): Promise<void>
 
@@ -203,6 +205,14 @@ export const useApp = create<State>((set, get) => {
       const cur = get().snap.targets.find((t) => t.id === id)
       if (!cur) return
       const t = { ...cur, status, updatedAt: Date.now() }
+      await saveTarget(db, t)
+      commit({ ...get().snap, targets: get().snap.targets.map((x) => (x.id === id ? t : x)) })
+      scheduleSync()
+    },
+    async updateTarget(id, range, label) {
+      const cur = get().snap.targets.find((t) => t.id === id)
+      if (!cur) return
+      const t: LearningTarget = { ...cur, range, label, updatedAt: Date.now() }
       await saveTarget(db, t)
       commit({ ...get().snap, targets: get().snap.targets.map((x) => (x.id === id ? t : x)) })
       scheduleSync()

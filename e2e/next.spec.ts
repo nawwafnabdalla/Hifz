@@ -124,7 +124,7 @@ test.describe('audio: your three reciters, echo, honesty', () => {
     await page.getByTestId('audio-play').click()
     await expect(page.getByTestId('audio-status')).toContainText(/Your turn/, { timeout: 12000 })
     await page.screenshot({ path: 'test-results/shots/23-echo.png' })
-    await page.getByTestId('audio-settings').click()
+    await page.getByTestId('reciter-chip').click()
     await expect(page.getByText('Pause length')).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/24-audio-settings.png' })
   })

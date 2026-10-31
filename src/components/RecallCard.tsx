@@ -1,3 +1,4 @@
+import { Coach } from './Coach'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AyahWords, Medallion, Passage, type Cue } from './Arabic'
 import { AudioBar } from './AudioBar'
@@ -8,7 +9,7 @@ import { rangeTitle } from '@/lib/format'
 import { buildPhrases, suggestBoundaries } from '@/lib/engine/phrases'
 import { slipRung } from '@/lib/engine/repair'
 import type { FlowRating, Grade, PracticeContext, Range, ReviewEvent, StumbleKind } from '@/lib/engine/types'
-import { loadTranslation, surahInfo, wordsOfAyah } from '@/lib/quran/data'
+import { loadTranslation, wordsOfAyah } from '@/lib/quran/data'
 
 const KINDS: StumbleKind[] = ['hesitated', 'prompted', 'wrong', 'blank']
 const KIND_LABEL: Record<StumbleKind, string> = { hesitated: 'hesitated', prompted: 'needed a prompt', wrong: 'words wrong', blank: 'blank' }
@@ -110,14 +111,14 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
     return (
       <div className="px-4" data-testid="repair-panel">
         <div className="mb-3 text-center"><div className="eyebrow">Repair the exact spot</div><h2 className="font-display mt-1 text-xl">Practise {label}</h2>
-          <p className="mt-1 text-sm text-ink-2">Say just this part until it flows. The rest of the ayah is already in your history.</p></div>
+          <Coach id="repair-intro" className="mt-1 text-sm text-ink-2" full="Say just this part until it flows. The rest of the ayah is already in your history." short="Say just this part until it flows." /></div>
         <RungPractice surah={range.surah} ayah={range.start} words={words} phrases={phrases} boundaries={boundaries} from={repair.from} to={repair.to} resetKey="repair" focusOnly={words.length > 28}
           onRate={async (rating: FlowRating, s) => {
             await logFlow({ surah: range.surah, ayah: range.start, fromPhrase: repair.from, toPhrase: repair.to, phraseCount: phrases.length, rating, reps: s.reps, durationMs: s.durationMs })
             if (rating === 'natural') onDone(repair.event, { repaired: true })
           }} />
         <button className="btn btn-ghost mt-3 w-full" onClick={() => onDone(repair.event, { repaired: true })} data-testid="repair-skip">Done for now</button>
-        <p className="mt-2 text-center text-xs text-muted">Until it feels natural it stays marked as tricky and is practised first next time.</p>
+        <Coach id="repair-outro" className="mt-2 text-center text-xs text-muted" full="Until it feels natural it stays marked as tricky and is practised first next time." />
       </div>
     )
   }
@@ -127,7 +128,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
       <div className="mb-3 text-center">
         <div className="eyebrow">{revealed ? 'How was that?' : 'From memory'}</div>
         <h2 className="font-display mt-1 text-xl">{title ?? rangeTitle(range)}</h2>
-        {!revealed && <p className="mt-1 text-sm text-ink-2">Recite aloud, then show the text to check. {n > 1 ? `${n} ayahs, in order.` : ''}</p>}
+        {!revealed && <Coach id="recall-intro" className="mt-1 text-sm text-ink-2" full={`Recite aloud, then show the text to check.${n > 1 ? ` ${n} ayahs, in order.` : ''}`} short={n > 1 ? `${n} ayahs, in order.` : ''} />}
       </div>
 
       <div className="card px-4 py-5">
@@ -140,10 +141,10 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
           <Passage surah={range.surah} ayahs={ayahs} cue={cue} onTap={revealed ? cycle : undefined} stageOf={undefined} />
         )}
         {single && meaning && <p className="mt-3 border-t border-line pt-3 text-center text-[0.95rem] leading-relaxed text-ink-2" data-testid="meaning-line">{tr ? tr[range.start - 1] : '…'}</p>}
-        {revealed && single && <p className="mt-2 text-center text-xs text-muted">Slipped somewhere? Tap that word and I’ll practise that exact spot with you.</p>}
+        {revealed && single && <Coach id="slip-tip" className="mt-2 text-center text-xs text-muted" full="Slipped somewhere? Tap that word and I’ll practise that exact spot with you." short="Tap the word where you slipped." />}
         {revealed && n > 1 && (
           <div className="mt-3 space-y-3 border-t border-line pt-3" data-testid="stumble-tools">
-            <p className="text-xs text-muted">Optional: tap an ayah where you slipped. Tap again to change how.</p>
+            <Coach id="stumble-tip" className="text-xs text-muted" full="Optional: tap an ayah where you slipped. Tap again to change how." short="Tap an ayah where you slipped." />
             <div className="flex flex-wrap gap-1.5">
               {ayahs.map((a) => { const k = flags.get(a); return <button key={a} className={`chip tabular ${k ? KIND_STYLE[k] : ''}`} onClick={() => cycle(a)} aria-label={`Ayah ${a}: ${k ? KIND_LABEL[k] : 'fine'}`}>{a}{k && <span className="text-xs">· {KIND_LABEL[k]}</span>}</button> })}
             </div>
@@ -176,7 +177,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
             </div>
           )}
           {!single && !fixedCue && <button className="btn btn-ghost w-full" onClick={() => setFirstWords((h) => !h)} aria-pressed={firstWords}>{firstWords ? 'First words shown (counts as weaker evidence)' : 'Need a hint? Show the first words'}</button>}
-          {usedHelp && <p className="text-center text-xs text-muted" data-testid="hint-note">Hints are fine, and they count as weaker evidence. A hinted recall can’t be recorded as “on my own”.</p>}
+          {usedHelp && <p className="text-center text-xs text-muted" data-testid="hint-note">Hints count as weaker evidence, so “on my own” isn’t available.</p>}
         </div>
       ) : (
         <>
@@ -196,7 +197,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
           {hear && <div className="mt-2"><AudioBar queue={ayahs.map((a) => ({ surah: range.surah, ayah: a }))} autoKey={`check-${range.surah}:${range.start}-${range.end}`} /></div>}
         </>
       )}
-      <p className="mt-3 text-center text-xs text-muted">{surahInfo(range.surah).tr} · your answer is saved to your history, not graded by the app.</p>
+      <p className="mt-3 text-center text-xs text-muted">Saved to your history. The app doesn’t grade you.</p>
     </div>
   )
 }

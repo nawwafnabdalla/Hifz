@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import { Layout } from '@/components/Layout'
 import { useApp } from './store'
+import { offlineAudio } from '@/lib/audio/offline'
 import { Khatam } from '@/components/Icon'
 import { TodayPage } from '@/pages/Today'
 import { QuranPage } from '@/pages/Quran'
@@ -26,6 +27,12 @@ export function App() {
   const ready = useApp((s) => s.ready)
   const init = useApp((s) => s.init)
   useEffect(() => { void init() }, [init])
+  useEffect(() => {   // what is really saved on this device, re-read whenever the app returns to the foreground
+    void offlineAudio.refresh()
+    const v = () => { if (document.visibilityState === 'visible') void offlineAudio.refresh() }
+    document.addEventListener('visibilitychange', v)
+    return () => document.removeEventListener('visibilitychange', v)
+  }, [])
   useEffect(() => { try { registerSW({ immediate: true }) } catch { /* dev / unsupported */ } }, [])
   if (!ready) return <Splash />
   return (

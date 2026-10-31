@@ -3,7 +3,8 @@ import { useApp } from '@/app/store'
 import { Header, Sheet } from '@/components/ui'
 import { Icon } from '@/components/Icon'
 import { AudioCredits, ReciterCheck } from '@/components/ReciterCheck'
-import { RECITERS } from '@/lib/audio/sources'
+import { ManageDownloads } from '@/components/OfflineAudio'
+import { RECITERS, SOURCE_RIGHTS } from '@/lib/audio/sources'
 import { INTEGRITY } from '@/lib/quran/data'
 import { cloudConfigured } from '@/lib/store/remote'
 import { shortDate } from '@/lib/format'
@@ -26,6 +27,7 @@ export function SettingsPage() {
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [about, setAbout] = useState(false)
+  const [sources, setSources] = useState(false)
   const [confirm, setConfirm] = useState<null | 'local' | 'all'>(null)
   const file = useRef<HTMLInputElement>(null)
 
@@ -71,7 +73,6 @@ export function SettingsPage() {
       </Section>
 
       <Section title="Study">
-        <Row label="Daily time" hint="Used by Today’s plan"><select className="h-10 rounded-lg border border-line bg-bg px-2" value={s.minutes} onChange={(e) => void patchSettings({ minutes: +e.target.value })} aria-label="Daily minutes">{[10, 15, 20, 30, 45, 60, 90, 120].concat(![10, 15, 20, 30, 45, 60, 90, 120].includes(s.minutes) ? [s.minutes] : []).sort((a, b) => a - b).map((m) => <option key={m} value={m}>{m} min</option>)}</select></Row>
         <Row label="Plan new memorisation" hint="Turn off to only revise"><Toggle on={s.planNew} onChange={(v) => void patchSettings({ planNew: v })} label="Plan new memorisation" /></Row>
         <Row label="Most new ayahs per day" hint="A ceiling, not a target. The planner usually takes less."><select className="h-10 rounded-lg border border-line bg-bg px-2" value={s.newPerDayCap} onChange={(e) => void patchSettings({ newPerDayCap: +e.target.value })} aria-label="New ayahs cap">{[0, 3, 5, 10, 15, 20, 30].map((m) => <option key={m} value={m}>{m === 0 ? 'None' : m}</option>)}</select></Row>
       </Section>
@@ -85,8 +86,9 @@ export function SettingsPage() {
 
       <Section title="Audio">
         <Row label="Reciter"><select className="h-10 max-w-[12rem] rounded-lg border border-line bg-bg px-2" value={s.reciter} onChange={(e) => void patchSettings({ reciter: e.target.value })} aria-label="Reciter">{RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Row>
-        <div className="space-y-3 p-4"><ReciterCheck /><AudioCredits /></div>
       </Section>
+
+      <Section title="Offline recitations"><ManageDownloads /></Section>
 
       <Section title="Your data">
         <Row label="Export backup" hint="Everything you’ve recorded, as a JSON file"><button className="btn btn-quiet btn-sm" onClick={() => void download()} data-testid="export"><Icon name="download" size={15} />Export</button></Row>
@@ -97,10 +99,10 @@ export function SettingsPage() {
       </Section>
 
       <Section title="About">
-        <Row label="Qur’an text & sources" hint={`${INTEGRITY.ayahs.toLocaleString()} ayahs · verified against two independent sources`}><button className="btn btn-quiet btn-sm" onClick={() => setAbout(true)}>Details</button></Row>
-        <div className="space-y-2 p-4 text-xs text-muted">
-          <p>On iPhone: open this page in Safari, tap Share, then “Add to Home Screen” to install.</p>
-          <p>Hifz OS is a study aid. It does not assess pronunciation or tajweed and does not replace a qualified teacher. Progress figures describe recorded practice only; they say nothing about worth or sincerity.</p>
+        <Row label="Qur’an text & sources" hint="Verified against two independent sources"><button className="btn btn-quiet btn-sm" onClick={() => setAbout(true)}>Details</button></Row>
+        <Row label="Audio sources & checks" hint="Credits, terms and a device check"><button className="btn btn-quiet btn-sm" onClick={() => setSources(true)} data-testid="open-audio-sources">Open</button></Row>
+        <div className="p-4 text-xs text-muted">
+          <p>Hifz OS is a study aid. It doesn’t check pronunciation or tajweed and doesn’t replace a teacher.</p>
         </div>
       </Section>
       <div className="h-6" />
@@ -110,8 +112,22 @@ export function SettingsPage() {
           <p><b>Arabic:</b> Hafs Uthmani from the Noble Qur’an Encyclopedia (via <code>quran-json@3.1.2</code>, pinned and checksummed). Compared letter-for-letter with two independent sources (Tanzil v1.1 and Tarteel’s QUL): <b>{INTEGRITY.ayahs.toLocaleString()} of {INTEGRITY.ayahs.toLocaleString()}</b> agree.</p>
           <p><b>{INTEGRITY.errata.length} whitespace-only corrections</b> are applied where the primary source disagreed with both others on word spacing: {INTEGRITY.errata.map((e) => `${e.surah}:${e.ayah}`).join(', ')}. No letter, vowel or sign is ever altered. They are pending review by a qualified reader.</p>
           <p><b>Madinah Mushaf script:</b> the official text and font of the <a className="underline" href="https://fonts.qurancomplex.gov.sa/" target="_blank" rel="noopener noreferrer">King Fahd Glorious Quran Printing Complex</a> (KFGQPC Uthmanic Hafs v3.0), delivered unmodified under the font’s own licence (free to use and distribute; not to be sold or altered). The official text reaches the app through the CC BY 4.0 <i>quran-text</i> dataset from quran.ws. It is checked word for word against the stored text; the stored text itself is never altered.</p>
-          <p><b>Translation:</b> Saheeh International (via Tanzil, personal use). <b>Simple script:</b> Amiri Quran and Amiri (SIL OFL). <b>Audio:</b> streamed from EveryAyah and MP3Quran; not hosted by this app. EveryAyah publishes no licence, so please use it for personal study and credit the reciters.</p>
+          <p><b>Translation:</b> Saheeh International (via Tanzil, personal use). <b>Simple script:</b> Amiri Quran and Amiri (SIL OFL). <b>Audio:</b> see Audio sources & checks.</p>
           <p className="break-all text-xs">Text checksum (sha256): {INTEGRITY.generatedTextSha256}</p>
+        </div>
+      </Sheet>
+      <Sheet open={sources} onClose={() => setSources(false)} title="Audio sources & checks">
+        <div className="space-y-4 text-sm text-ink-2">
+          <ReciterCheck />
+          <AudioCredits />
+          <div data-testid="audio-terms">
+            <div className="eyebrow mb-1.5">Saving recordings on your device</div>
+            <ul className="space-y-1.5 text-xs">
+              <li><b>Islamic Network:</b> {SOURCE_RIGHTS.islamicnetwork.basis} Saving is on. <a className="underline" href={SOURCE_RIGHTS.islamicnetwork.terms} target="_blank" rel="noopener noreferrer">Terms</a></li>
+              <li><b>EveryAyah:</b> {SOURCE_RIGHTS.everyayah.basis} Saving is off; streaming only. <a className="underline" href={SOURCE_RIGHTS.everyayah.terms} target="_blank" rel="noopener noreferrer">Site</a></li>
+              <li><b>MP3Quran:</b> whole-surah streaming only; nothing is saved.</li>
+            </ul>
+          </div>
         </div>
       </Sheet>
       <Sheet open={confirm !== null} onClose={() => setConfirm(null)} title={confirm === 'all' ? 'Erase everything?' : 'Erase data on this device?'}>

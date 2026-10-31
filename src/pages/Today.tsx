@@ -5,6 +5,9 @@ import { Header, Sheet, minutesLabel } from '@/components/ui'
 import { Icon, Khatam } from '@/components/Icon'
 import { KnownSheet } from '@/components/KnownSheet'
 import { GoalSheet } from '@/components/GoalSheet'
+import { GoalAudioLine, GoalFinishSheet, useOffline } from '@/components/OfflineAudio'
+import { RECITERS } from '@/lib/audio/sources'
+import type { LearningTarget } from '@/lib/engine/types'
 import { KIND, dateLabel, rangeTitle, rangePath } from '@/lib/format'
 import type { PlanItem } from '@/lib/engine/planner'
 import { surahInfo } from '@/lib/quran/data'
@@ -60,6 +63,10 @@ export function TodayPage() {
   const [groupOpen, setGroupOpen] = useState<string | null>(null)
   const [known, setKnown] = useState(false)
   const [goal, setGoal] = useState(false)
+  const [editGoal, setEditGoal] = useState<LearningTarget | null>(null)
+  const [finishGoal, setFinishGoal] = useState<LearningTarget | null>(null)
+  const offline = useOffline()
+  const [timeOpen, setTimeOpen] = useState(false)
   const [custom, setCustom] = useState(false)
   const [how, setHow] = useState(false)
   const [cm, setCm] = useState(String(snap.settings.minutes))
@@ -87,11 +94,7 @@ export function TodayPage() {
       )}
 
       <section className="px-5">
-        <div className="eyebrow mb-2">Time available</div>
-        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1" role="group" aria-label="Session length">
-          {PRESETS.map((m) => <button key={m} className="chip tabular whitespace-nowrap" aria-pressed={minutes === m} onClick={() => patchSettings({ minutes: m })}>{m} min</button>)}
-          <button className="chip whitespace-nowrap" aria-pressed={isCustom} onClick={() => { setCm(String(minutes)); setCustom(true) }}>{isCustom ? `${minutes} min` : 'Custom'}</button>
-        </div>
+        <button className="chip tabular" onClick={() => setTimeOpen(true)} data-testid="time-pill" aria-label={`Time today: ${minutes} minutes. Change`}><Icon name="clock" size={14} />{minutes} min today<Icon name="down" size={13} className="text-muted" /></button>
       </section>
 
       {plan.mode === 'empty' && (
@@ -99,7 +102,7 @@ export function TodayPage() {
           <div className="card p-6 text-center">
             <Khatam size={34} className="mx-auto text-brass" />
             <h2 className="font-display mt-3 text-2xl">Welcome</h2>
-            <p className="mx-auto mt-2 max-w-md text-[0.95rem] text-ink-2">Hifz OS learns from what you actually recite. Tell it what you already know, choose something to learn, and each day it will plan what to revise, repair and learn, and explain why.</p>
+            <p className="mx-auto mt-2 max-w-md text-[0.95rem] text-ink-2">Tell Hifz OS what you already know and what you want to learn. It plans each day for you.</p>
           </div>
           <button className="card flex w-full items-center gap-4 p-4 text-left" onClick={() => setKnown(true)} data-testid="open-known"><span className="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-accent"><Icon name="check" /></span><span className="flex-1"><span className="block font-semibold">Mark what I already know</span><span className="text-sm text-ink-2">Surahs or passages you have memorised</span></span><Icon name="right" className="text-muted" /></button>
           <button className="card flex w-full items-center gap-4 p-4 text-left" onClick={() => setGoal(true)} data-testid="open-goal"><span className="grid h-11 w-11 place-items-center rounded-full bg-brass-soft text-brass"><Icon name="target" /></span><span className="flex-1"><span className="block font-semibold">Choose something to memorise</span><span className="text-sm text-ink-2">A surah or passage as your goal</span></span><Icon name="right" className="text-muted" /></button>
@@ -113,6 +116,7 @@ export function TodayPage() {
 
           {plan.items.length > 0 ? (
             <>
+              <button className="btn btn-primary btn-lg enter-3 w-full" onClick={begin} data-testid="start-session"><Icon name="play" size={16} /> {session ? 'Continue session' : 'Begin session'}</button>
               <div className="flex items-baseline justify-between"><div className="eyebrow">{plan.items.length} item{plan.items.length > 1 ? 's' : ''}</div><div className="text-sm text-muted tabular">about {minutesLabel(plan.plannedMinutes)} of {plan.budgetMinutes}</div></div>
               <ul className="space-y-3" data-testid="plan-list">
                 {groupRows(plan.items).map((row) => {
@@ -134,7 +138,6 @@ export function TodayPage() {
                   )
                 })}
               </ul>
-              <button className="btn btn-primary btn-lg enter-3 !mt-5 w-full" onClick={begin} data-testid="start-session"><Icon name="play" size={16} /> {session ? 'Continue session' : 'Begin session'}</button>
             </>
           ) : (
             <div className="card p-6 text-center" data-testid="nothing-due">
@@ -160,10 +163,18 @@ export function TodayPage() {
                 const n = t.range.end - t.range.start + 1
                 for (let a = t.range.start; a <= t.range.end; a++) { const m = derived.memory.get(`${t.range.surah}:${a}`); if (m && m.firstDemonstratedAt) have++ }
                 return (
-                  <li key={t.id} className="card-flat flex items-center gap-3 p-3.5">
-                    <div className="min-w-0 flex-1"><div className="truncate font-semibold">{t.label ?? rangeTitle(t.range)}</div><div className="text-xs text-muted">{rangeTitle(t.range)} · {have} of {n} recalled</div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(have / n) * 100}%` }} /></div></div>
-                    <button className="btn btn-ghost btn-sm" onClick={() => void useApp.getState().setTargetStatus(t.id, have === n ? 'done' : 'paused')}>{have === n ? 'Done' : 'Pause'}</button>
+                  <li key={t.id} className="card-flat flex items-center gap-3 p-3.5" data-testid="goal-row">
+                    <div className="min-w-0 flex-1">
+                      <button className="block max-w-full truncate text-left font-semibold" onClick={() => setEditGoal(t)} data-testid="goal-edit" aria-label={`Change goal ${t.label ?? rangeTitle(t.range)}`}>{t.label ?? rangeTitle(t.range)}</button>
+                      <div className="text-xs text-muted">{rangeTitle(t.range)} · {have} of {n} recalled</div>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${(have / n) * 100}%` }} /></div>
+                      {offline.supported && <GoalAudioLine goalId={t.id} range={t.range} />}
+                    </div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => {
+                      if (have !== n) { void useApp.getState().setTargetStatus(t.id, 'paused'); return }
+                      const hasAudio = RECITERS.some((r) => offline.keysIn(r.id, t.range.surah, t.range.start, t.range.end).length > 0)
+                      if (hasAudio) setFinishGoal(t); else void useApp.getState().setTargetStatus(t.id, 'done')
+                    }}>{have === n ? 'Done' : 'Pause'}</button>
                   </li>
                 )
               })}
@@ -179,15 +190,22 @@ export function TodayPage() {
 
       <KnownSheet open={known} onClose={() => setKnown(false)} />
       <GoalSheet open={goal} onClose={() => setGoal(false)} />
+      <GoalSheet open={editGoal !== null} onClose={() => setEditGoal(null)} target={editGoal ?? undefined} />
+      {finishGoal && <GoalFinishSheet open onClose={() => setFinishGoal(null)} goalId={finishGoal.id} range={finishGoal.range} label={finishGoal.label ?? rangeTitle(finishGoal.range)} onFinish={() => void useApp.getState().setTargetStatus(finishGoal.id, 'done')} />}
+      <Sheet open={timeOpen} onClose={() => setTimeOpen(false)} title="Time today">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Session length">
+          {PRESETS.map((m) => <button key={m} className="chip tabular" aria-pressed={minutes === m} onClick={() => { void patchSettings({ minutes: m }); setTimeOpen(false) }}>{m} min</button>)}
+          <button className="chip" aria-pressed={isCustom} onClick={() => { setCm(String(minutes)); setTimeOpen(false); setCustom(true) }}>{isCustom ? `${minutes} min` : 'Custom'}</button>
+        </div>
+      </Sheet>
       <Sheet open={custom} onClose={() => setCustom(false)} title="Custom time">
         <label className="block text-sm"><span className="eyebrow">Minutes (5–240)</span><input type="number" inputMode="numeric" min={5} max={240} className="mt-1 h-12 w-full rounded-xl border border-line bg-bg px-3 text-lg" value={cm} onChange={(e) => setCm(e.target.value)} /></label>
         <button className="btn btn-primary btn-lg mt-4 w-full" disabled={!(+cm >= 5 && +cm <= 240)} onClick={() => { void patchSettings({ minutes: Math.round(+cm) }); setCustom(false) }}>Use {cm || '…'} minutes</button>
       </Sheet>
       <Sheet open={how} onClose={() => setHow(false)} title="How today’s plan is chosen">
         <div className="space-y-3 text-sm text-ink-2">
-          <p>Every ayah has an estimated chance you could recite it right now, based <b>only on your own recorded recall</b> and the time since. When that estimate drops to about 90%, it is due.</p>
-          <p>Due material is ranked by risk. Material you needed help with comes first, then recent material, then older material. New memorisation takes a share of your time that <b>shrinks when revision is heavy</b>. After a long gap, the backlog is spread over several days, highest risk first. Nothing is reset.</p>
-          <p>Reciting a long passage perfectly counts as <b>weaker evidence per ayah</b> than reciting one ayah alone, and flow (how smoothly it comes off your tongue) never changes the retention estimate.</p>
+          <p>Each ayah has an estimated chance you could recite it now, based only on your own recorded recall. When it drops to about 90%, it’s due.</p>
+          <p>Due material goes first, riskiest first. New memorisation gets less time when revision is heavy. After a gap, the backlog is spread over several days; nothing is reset.</p>
           <p className="rounded-xl bg-brass-soft/60 p-3 text-ink">{plan.modelNote}</p>
         </div>
       </Sheet>

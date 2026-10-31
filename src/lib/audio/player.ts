@@ -10,6 +10,7 @@
 // survive that. (Designed for it; not verified on a locked iPhone from the build environment.)
 import { candidateUrls, hasAyahCandidates, reciterById } from './sources'
 import { recordConfirmed, recordUnavailable } from './status'
+import type { LocalAudio } from './offline'
 import type { AyahRef } from '@/lib/engine/types'
 
 export interface AudioLike extends EventTarget {
@@ -37,6 +38,8 @@ export interface PlayerState {
   unavailable: boolean
   /** Which host is serving the current ayah. */
   via: string | null
+  /** True while the current ayah is playing from the copy saved on this device. */
+  saved: boolean
   rate: number
   reciterId: string
   /** Number of ayah playbacks that ran to the end since the queue was loaded. */
@@ -99,12 +102,15 @@ export class AyahPlayer {
   private listeners = new Set<(s: PlayerState) => void>()
   private token = 0
   private silent = false
+  private localTried = false
+  private playingLocal = false
+  private objectUrl: string | null = null
   state: PlayerState = {
-    status: 'idle', current: null, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, unavailable: false, via: null, rate: 1,
+    status: 'idle', current: null, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, unavailable: false, via: null, saved: false, rate: 1,
     reciterId: 'alafasy', plays: 0, phase: 'listen', waiting: false, silenceSeconds: 0,
   }
 
-  constructor(audio: AudioLike) {
+  constructor(audio: AudioLike, private local?: LocalAudio) {
     this.audio = audio
     audio.preload = 'auto'
     audio.addEventListener('ended', () => this.onEnded())
@@ -113,7 +119,7 @@ export class AyahPlayer {
     audio.addEventListener('playing', () => {
       this.clearTimer()
       this.set({ status: 'playing', error: null, unavailable: false })
-      if (!this.silent && this.state.current && this.state.via) recordConfirmed(this.opts.reciterId, this.state.via)
+      if (!this.silent && !this.playingLocal && this.state.current && this.state.via) recordConfirmed(this.opts.reciterId, this.state.via)
     })
     audio.addEventListener('waiting', () => { if (this.state.status === 'playing') this.set({ status: 'loading' }) })
   }
@@ -143,6 +149,7 @@ export class AyahPlayer {
     if (!ref) return this.finish()
     this.token++
     this.urlIdx = 0
+    this.localTried = false
     this.silent = false
     this.set({ current: ref, index, status: 'loading', error: null, unavailable: false, phase: 'listen', waiting: false })
     this.tryUrl()
@@ -152,12 +159,19 @@ export class AyahPlayer {
     const ref = this.state.current
     if (!ref) return
     const reciter = reciterById(this.opts.reciterId)
+    // A copy saved on this device always comes first, so practice works offline and costs no data.
+    if (!this.localTried && this.local?.has(this.opts.reciterId, ref.surah, ref.ayah)) { this.localTried = true; void this.tryLocal(ref); return }
+    this.playingLocal = false
     if (!hasAyahCandidates(this.opts.reciterId)) {
       this.set({ status: 'error', unavailable: true, via: null, error: `${reciter.name} has no verse-by-verse recording available here.` })
       return
     }
     const cands = candidateUrls(this.opts.reciterId, ref.surah, ref.ayah)
     const cand = cands[this.urlIdx]
+    if (!cand && typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.set({ status: 'error', unavailable: false, via: null, saved: false, error: `You’re offline, and ${reciter.name} isn’t saved on this device for ayah ${ref.ayah}.` })
+      return
+    }
     if (!cand) {
       recordUnavailable(this.opts.reciterId)
       this.set({ status: 'error', unavailable: true, via: null, error: `Couldn’t load ${reciter.name} for ${ref.surah}:${ref.ayah}. Check your connection, or choose another reciter.` })
@@ -168,7 +182,7 @@ export class AyahPlayer {
     this.audio.src = cand.url
     this.audio.playbackRate = this.opts.rate
     if ('preservesPitch' in this.audio) this.audio.preservesPitch = true
-    this.set({ via: cand.source })
+    this.set({ via: cand.source, saved: false })
     const myToken = this.token
     const myIdx = this.urlIdx
     this.timer = setTimeout(() => {
@@ -181,6 +195,27 @@ export class AyahPlayer {
     })
   }
 
+  private async tryLocal(ref: AyahRef) {
+    const myToken = this.token
+    const blob = await this.local!.blob(this.opts.reciterId, ref.surah, ref.ayah)
+    if (myToken !== this.token) return
+    if (!blob) { this.tryUrl(); return }                 // evicted or unreadable: quietly use the network instead
+    if (this.objectUrl) URL.revokeObjectURL(this.objectUrl)
+    this.objectUrl = URL.createObjectURL(blob)
+    this.clearTimer()
+    this.silent = false
+    this.playingLocal = true
+    this.audio.src = this.objectUrl
+    this.audio.playbackRate = this.opts.rate
+    if ('preservesPitch' in this.audio) this.audio.preservesPitch = true
+    this.set({ via: 'Saved on this device', saved: true })
+    this.timer = setTimeout(() => { if (myToken === this.token && this.state.status === 'loading') this.onError('Timed out reading saved audio.') }, LOAD_TIMEOUT_MS)
+    this.audio.play().catch((e: unknown) => {
+      if (e instanceof Error && e.name === 'NotAllowedError') { this.set({ status: 'paused', error: 'Tap play to start audio.' }); return }
+      if (myToken === this.token) this.onError('Saved audio could not be played.')
+    })
+  }
+
   private onCanPlay() {
     if (this.state.status === 'loading' && !this.silent) this.audio.playbackRate = this.opts.rate
   }
@@ -189,8 +224,17 @@ export class AyahPlayer {
     if (this.silent) { this.endSilence(); return }         // a failed silent clip must never stall practice
     if (this.state.status === 'idle' || this.state.status === 'paused') return
     this.clearTimer()
-    this.urlIdx++
     void msg
+    if (this.playingLocal) {                               // the saved copy is bad: forget it and use the network
+      this.playingLocal = false
+      const r = this.state.current
+      if (r) this.local?.forget(this.opts.reciterId, r.surah, r.ayah)
+      this.urlIdx = 0
+      this.set({ saved: false })
+      this.tryUrl()
+      return
+    }
+    this.urlIdx++
     this.tryUrl()
   }
 
@@ -252,6 +296,7 @@ export class AyahPlayer {
   private replay() {
     this.token++
     this.urlIdx = 0
+    this.localTried = false
     this.set({ status: 'loading' })
     this.tryUrl()
   }
@@ -278,18 +323,18 @@ export class AyahPlayer {
     this.clearTimer()
     if (this.gapTimer) clearTimeout(this.gapTimer)
     this.audio.pause()
-    this.set({ status: 'idle', current: null, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, unavailable: false, via: null, phase: 'listen', waiting: false, silenceSeconds: 0 })
+    this.set({ status: 'idle', current: null, index: 0, ayahRepeat: 0, passageRepeat: 0, error: null, unavailable: false, via: null, saved: false, phase: 'listen', waiting: false, silenceSeconds: 0 })
   }
   next() { if (this.state.index + 1 < this.queue.length) this.startAyah(this.state.index + 1) }
   prev() { this.startAyah(Math.max(0, this.state.index - 1)) }
-  retry() { if (this.state.current) { this.urlIdx = 0; this.set({ status: 'loading', error: null, unavailable: false }); this.tryUrl() } }
+  retry() { if (this.state.current) { this.urlIdx = 0; this.localTried = false; this.set({ status: 'loading', error: null, unavailable: false }); this.tryUrl() } }
   setRate(rate: number) { this.opts.rate = rate; if (!this.silent) this.audio.playbackRate = rate; this.set({ rate }) }
   setEcho(pause: QueueOptions['echoPause']) { this.opts.echoPause = pause }
   setRepeat(n: number) { this.opts.repeatEach = n }
   setReciter(id: string) {
     this.opts.reciterId = id
     this.set({ reciterId: id })
-    if (this.state.current && this.state.status !== 'idle') { this.urlIdx = 0; this.set({ status: 'loading', unavailable: false }); this.tryUrl() }
+    if (this.state.current && this.state.status !== 'idle') { this.urlIdx = 0; this.localTried = false; this.set({ status: 'loading', unavailable: false }); this.tryUrl() }
   }
   get reciterName() { return reciterById(this.opts.reciterId).name }
 }

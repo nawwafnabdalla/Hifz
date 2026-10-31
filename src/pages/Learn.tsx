@@ -1,3 +1,4 @@
+import { Coach } from '@/components/Coach'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ensureArm, useApp } from '@/app/store'
@@ -152,9 +153,10 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             {snap.settings.translation && <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2">{tr?.[ayah - 1] ?? ''}</p>}
           </div>
           <div className="mt-3"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`s-${ayah}`} onListened={() => setListened(true)} /></div>
-          <p className="mt-3 text-center text-sm text-ink-2">{snap.settings.practiceMode === 'echo' ? 'Echo is on: listen, then say it in the pause.' : 'Listen first, with the text in front of you. Notice the sounds and where the voice rests.'}</p>
+          {snap.settings.practiceMode === 'echo'
+            ? <Coach id="sound-echo" className="mt-3 text-center text-sm text-ink-2" full="Echo is on: listen, then say it in the pause." short="Listen, then say it." />
+            : <Coach id="sound-listen" className="mt-3 text-center text-sm text-ink-2" full="Listen first, with the text in front of you. Notice the sounds and where the voice rests." short="Listen with the text." />}
           <button className="btn btn-primary btn-lg mt-4 w-full" onClick={() => setStage('flow')} data-testid="to-flow">{listened ? 'Continue to flow' : 'Continue'} <Icon name="right" size={16} /></button>
-          {!listened && <p className="mt-2 text-center text-xs text-muted">You haven’t played the recitation yet. That’s fine if you already know how it sounds.</p>}
         </section>
       )}
 
@@ -173,7 +175,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             <button className="btn btn-ghost btn-sm" onClick={() => setStage('recall')}>Skip to recall</button>
           </div>
           {hear && <div className="mt-2"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`f-${ayah}`} onListened={() => setListened(true)} /></div>}
-          <p className="mt-3 text-center text-xs text-muted">Flow is about the mouth, memory is separate: this rating never changes your retention estimate.</p>
+          <Coach id="flow-note" className="mt-3 text-center text-xs text-muted" full="Flow is about the mouth, memory is separate: this rating never changes your retention estimate." />
           <PhraseEditor open={edit} onClose={() => setEdit(false)} surah={range.surah} ayah={ayah} boundaries={boundaries} onSave={(b) => { void setMarker(range.surah, ayah, b); setLadder(null); setRungIdx(0); say('Phrases saved') }} />
         </section>
       )}
@@ -187,7 +189,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
         <section className="enter px-4" data-testid="stage-repair">
           <div className="card p-6 text-center">
             <h2 className="font-display text-xl">One more round of flow</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">That ayah isn’t settled yet, which is normal. Going back to the sound and the chain usually helps more than hammering recall.</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">Not settled yet, which is normal. A little more sound and flow usually helps.</p>
             <div className="mt-4 grid gap-2"><button className="btn btn-primary" onClick={() => { setRepair(false); setRungIdx(0); setLadder(null); setStage(methodA ? 'flow' : 'sound') }} data-testid="back-to-flow">Back to sound and flow</button><button className="btn btn-quiet" onClick={nextAyah}>Move on for now</button></div>
           </div>
         </section>
@@ -204,7 +206,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
         <section className="enter px-4" data-testid="stage-done">
           <div className="card p-6 text-center">
             <h2 className="font-display text-2xl">Well done</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">{rangeTitle(range)} is recorded. Hifz OS will schedule its first check soon, close enough to catch what fades and far enough to be a real test.</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">{rangeTitle(range)} is recorded. Its first check is scheduled.</p>
             <button className="btn btn-primary btn-lg mt-4 w-full" onClick={onDone} data-testid="learn-finish">Continue</button>
           </div>
         </section>

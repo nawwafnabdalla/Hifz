@@ -7,5 +7,6 @@
 | Qur'an text (canonical) | `quran-json@3.1.2` (QuranEnc), cross-checked with Tanzil and QUL | see `data/PROVENANCE.md` | unchanged; whitespace errata documented |
 | Amiri, Amiri Quran | SIL OFL 1.1 (via @fontsource) | OFL | Simple script and fallback |
 | Translation | Saheeh International via Tanzil | personal, verbatim, attributed | review before public release |
-| Verse audio | EveryAyah.com (reciters hold the rights; site publishes no licence) | none stated | streamed, never stored or redistributed; credited with a link; personal study |
+| Verse audio (streaming) | EveryAyah.com (reciters hold the rights; site publishes no licence) | none stated | streamed only; **never saved offline**; credited with a link; personal study |
+| Verse audio (streaming and offline copies) | Islamic Network CDN (alquran.cloud) | reported: free for personal, non-commercial and educational use incl. download (terms page not read directly; verify) | copies kept only on the listener's own device, removable in Settings; credited |
 | Full-surah audio | MP3Quran catalogue | public catalogue; terms not verified from the build environment | streamed from the phone, never stored |

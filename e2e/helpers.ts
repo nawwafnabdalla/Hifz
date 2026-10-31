@@ -23,6 +23,7 @@ export async function freshStart(page: Page) {
   await page.goto('/')
   await page.evaluate(async () => {
     localStorage.clear(); sessionStorage.clear()
+    await caches?.delete('hifz-audio-v1')
     const dbs = await indexedDB.databases?.()
     await Promise.all((dbs ?? []).map((d) => new Promise((res) => { const r = indexedDB.deleteDatabase(d.name!); r.onsuccess = r.onerror = r.onblocked = () => res(null) })))
   })

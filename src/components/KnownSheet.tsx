@@ -46,7 +46,7 @@ export function KnownSheet({ open, onClose }: { open: boolean; onClose: () => vo
 
   return (
     <Sheet open={open} onClose={onClose} title="What do you already know?">
-      <p className="mb-3 text-sm text-ink-2">Mark what you have already memorised. It is recorded as <b>marked known</b>, which is different from <b>checked by recall</b>. Hifz OS will gently check it over time; nothing is assumed to be perfect.</p>
+      <p className="mb-3 text-sm text-ink-2">Mark what you’ve memorised. It’s saved as <b>marked known</b> until you recall it, and Hifz OS checks it gently over time.</p>
       <div className="mb-3 flex flex-wrap gap-2">
         <button className="chip" onClick={() => quick(1, 1)}>Al-Fatihah</button>
         <button className="chip" onClick={() => quick(105, 114)}>Short surahs (105–114)</button>

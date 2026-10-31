@@ -7,11 +7,12 @@ import type { AyahRef } from '@/lib/engine/types'
 import { useApp } from '@/app/store'
 import { Icon } from './Icon'
 import { Sheet } from './ui'
-import { AudioCredits, ReciterCheck } from './ReciterCheck'
+import { OfflineAudioCard } from './OfflineAudio'
+import { offlineAudio } from '@/lib/audio/offline'
 
 let player: AyahPlayer | null = null
 export function getPlayer(): AyahPlayer {
-  player ??= new AyahPlayer(new Audio() as never)
+  player ??= new AyahPlayer(new Audio() as never, offlineAudio)
   return player
 }
 export function usePlayerState(): PlayerState {
@@ -21,6 +22,7 @@ export function usePlayerState(): PlayerState {
 
 const RATES = [0.75, 1, 1.25]
 const REPEATS = [1, 2, 3, 5, 10]
+const MINE = ['turki', 'dossary', 'maher']
 const PAUSES: { v: 0 | 1 | 1.5 | 2; label: string; hint: string }[] = [
   { v: 1, label: '1×', hint: 'as long as the ayah' },
   { v: 1.5, label: '1.5×', hint: 'a little longer' },
@@ -42,7 +44,7 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
   const settings = useApp((s) => s.snap.settings)
   const patch = useApp((s) => s.patchSettings)
   const [pick, setPick] = useState(false)
-  const [practice, setPractice] = useState(false)
+  const [moreReciters, setMoreReciters] = useState(false)
   const [loop, setLoop] = useState(false)
   // A reciter used instead of the saved one, only on this screen, and always announced.
   const [override, setOverride] = useState<string | null>(null)
@@ -54,6 +56,14 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
   const saved = reciterById(settings.reciter)
   const echo = settings.practiceMode === 'echo'
   const surah = surahForFull ?? queue[0]?.surah
+  const targets = useApp((s) => s.snap.targets)
+  // The one offline offer this screen can make: the goal this practice belongs to, else a multi-ayah selection.
+  const offerRange = useMemo(() => {
+    if (!queue.length || queue.some((q) => q.surah !== queue[0]!.surah)) return null
+    const span = { surah: queue[0]!.surah, start: Math.min(...queue.map((q) => q.ayah)), end: Math.max(...queue.map((q) => q.ayah)) }
+    const goal = targets.find((t) => t.status === 'active' && t.range.surah === span.surah && t.range.start <= span.start && t.range.end >= span.end)
+    return goal ? { range: goal.range, goalId: goal.id } : queue.length > 1 ? { range: span, goalId: undefined } : null
+  }, [queue, targets])
 
   useEffect(() => () => { p.stop() }, [autoKey, p])
   useEffect(() => { setOverride(null); setFull(null) }, [autoKey, settings.reciter])
@@ -83,12 +93,13 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
     setFull(await fullSurahAudio(chosen, surah))
   }
 
+  // Only says something when there is something to say; an idle bar is just play, reciter and Echo.
   const line = st.status === 'error' ? <span className="text-clay">{st.error}</span>
     : st.waiting ? <span className="font-semibold text-accent">Your turn. Tap Continue when you’re done.</span>
     : st.phase === 'recite' && st.status === 'playing' ? <span className="font-semibold text-accent">Your turn · {st.silenceSeconds}s</span>
     : st.status === 'loading' ? 'Loading…'
-    : st.status === 'playing' && st.current ? `Ayah ${st.current.ayah}${st.ayahRepeat ? ` · repeat ${st.ayahRepeat + 1}` : ''}${st.via ? ` · ${st.via}` : ''}`
-    : st.error ?? (echo ? 'Echo: listen, then recite in the pause' : 'Tap play to listen')
+    : (st.status === 'playing' || st.status === 'paused') && st.current ? `Ayah ${st.current.ayah}${st.ayahRepeat ? ` · repeat ${st.ayahRepeat + 1}` : ''}${st.saved ? ' · saved offline' : ''}`
+    : null
 
   return (
     <div className="card-flat p-3" data-testid="audio-bar">
@@ -102,17 +113,12 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
             <button className="btn btn-ghost btn-sm !px-2" onClick={() => p.next()} aria-label="Next ayah"><Icon name="skip" size={16} /></button>
           </>
         )}
-        <div className="min-w-0 flex-1 px-1">
-          <button className="flex max-w-full items-center gap-1.5 text-left text-[0.95rem] font-semibold leading-tight" onClick={() => setPick(true)} data-testid="reciter-chip" aria-label={`Reciter: ${reciter.name}. Tap to change`}>
-            <StatusDot id={chosen} /><span className="min-w-0 break-words">{reciter.name}</span><Icon name="down" size={13} className="flex-none text-muted" />
-          </button>
-        </div>
-        <button className="btn btn-ghost btn-sm flex-none !px-2" onClick={() => setPractice(true)} aria-label="Audio settings" data-testid="audio-settings"><Icon name="sliders" size={17} /></button>
-      </div>
-      <div className="mt-1.5 flex items-center justify-between gap-2 pl-1">
-        <div className="min-w-0 truncate text-xs text-muted" aria-live="polite" data-testid="audio-status">{line}</div>
+        <button className="flex min-w-0 flex-1 items-center gap-1.5 px-1 text-left text-[0.95rem] font-semibold leading-tight" onClick={() => setPick(true)} data-testid="reciter-chip" aria-label={`Audio: ${reciter.name}. Tap to change reciter or options`}>
+          <StatusDot id={chosen} /><span className="min-w-0 break-words">{reciter.name}</span><Icon name="down" size={13} className="flex-none text-muted" />
+        </button>
         <button className="chip flex-none" aria-pressed={echo} onClick={() => void patch(echo ? { practiceMode: 'listen' } : { practiceMode: 'echo', repeatEach: Math.max(settings.repeatEach, 3) })} data-testid="echo-toggle" aria-label="Echo mode: leave a pause to recite after each ayah"><Icon name="mic" size={14} />Echo</button>
       </div>
+      {line && <div className="mt-1.5 truncate pl-1 text-xs text-muted" aria-live="polite" data-testid="audio-status">{line}</div>}
 
       {override && (
         <div className="mt-2 rounded-xl bg-amber-soft px-3 py-2 text-xs text-ink" data-testid="fallback-notice">
@@ -142,59 +148,62 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
         ) : <p className="mt-2 text-xs text-clay" data-testid="full-surah-error">{full.reason}</p>
       )}
 
-      <Sheet open={pick} onClose={() => setPick(false)} title="Reciter">
-        <ul className="space-y-2">
-          {[...RECITERS].sort((a, b) => (['turki', 'dossary', 'maher'].includes(b.id) ? 1 : 0) - (['turki', 'dossary', 'maher'].includes(a.id) ? 1 : 0)).map((r) => {
-            const s = reciterStatus(r.id)
-            const detail = !hasAyahCandidates(r.id) ? 'Full surah only' : s.state === 'confirmed' ? `Verse-by-verse confirmed${s.via ? ` · ${s.via}` : ''}` : s.state === 'unavailable' ? 'Verse-by-verse failed on this device' : 'Verse-by-verse, not yet checked'
-            return (
-              <li key={r.id}>
-                <button className={`card-flat flex w-full items-center justify-between gap-3 p-3 text-left ${r.id === settings.reciter ? '!border-accent' : ''}`}
-                  onClick={() => { void patch({ reciter: r.id }); setOverride(null); p.setReciter(r.id); setPick(false) }} data-testid={`reciter-${r.id}`}>
-                  <span className="flex min-w-0 items-center gap-2.5"><StatusDot id={r.id} />
-                    <span className="min-w-0"><span className="block truncate font-semibold">{r.name}{r.arabic && <span lang="ar" dir="rtl" className="ml-2 font-[family-name:var(--font-arabic)] text-base font-normal text-ink-2">{r.arabic}</span>}</span>
-                      <span className="block truncate text-xs text-muted">{detail}{r.note && r.id === 'turki' ? '' : r.note ? ` · ${r.note}` : ''}</span></span></span>
-                  {r.id === settings.reciter && <Icon name="check" className="text-accent" />}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-        <div className="mt-4"><ReciterCheck /></div>
-        <p className="mt-3 text-xs text-muted">Your choice is saved to your account and used on every device. The dot shows what this device has actually observed: green = a verse file played, grey = not checked yet, red = none available.</p>
-        <div className="mt-2"><AudioCredits /></div>
-      </Sheet>
-
-      <Sheet open={practice} onClose={() => setPractice(false)} title="Audio practice">
+      <Sheet open={pick} onClose={() => setPick(false)} title="Audio">
         <div className="space-y-5 text-sm">
           <div>
-            <div className="eyebrow mb-2">Mode</div>
+            <div className="eyebrow mb-2">Reciter</div>
+            <ul className="space-y-2">
+              {[...RECITERS].sort((a, b) => (MINE.includes(b.id) ? 1 : 0) - (MINE.includes(a.id) ? 1 : 0)).map((r, i) => {
+                const s = reciterStatus(r.id)
+                const detail = !hasAyahCandidates(r.id) ? 'Full surah only' : s.state === 'unavailable' ? 'Didn’t load on this device' : r.note ?? ''
+                return (
+                  <li key={r.id} hidden={i >= MINE.length && !moreReciters}>
+                    <button className={`card-flat flex w-full items-center justify-between gap-3 p-3 text-left ${r.id === settings.reciter ? '!border-accent' : ''}`}
+                      onClick={() => { void patch({ reciter: r.id }); setOverride(null); p.setReciter(r.id); setPick(false) }} data-testid={`reciter-${r.id}`}>
+                      <span className="flex min-w-0 items-center gap-2.5"><StatusDot id={r.id} />
+                        <span className="min-w-0"><span className="block truncate font-semibold">{r.name}{r.arabic && <span lang="ar" dir="rtl" className="ml-2 font-[family-name:var(--font-arabic)] text-base font-normal text-ink-2">{r.arabic}</span>}</span>
+                          {detail && <span className="block truncate text-xs text-muted">{detail}</span>}</span></span>
+                      {r.id === settings.reciter && <Icon name="check" className="text-accent" />}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+            {!moreReciters && <button className="mt-2 text-sm text-muted underline" onClick={() => setMoreReciters(true)} data-testid="more-reciters">More reciters</button>}
+          </div>
+
+          <div>
+            <div className="eyebrow mb-2">Practice</div>
             <div className="grid grid-cols-2 gap-2">
               <button className="chip justify-center" aria-pressed={!echo} onClick={() => void patch({ practiceMode: 'listen' })}>Listen</button>
-              <button className="chip justify-center" aria-pressed={echo} onClick={() => void patch({ practiceMode: 'echo', repeatEach: Math.max(settings.repeatEach, 3) })}>Echo: listen, then recite</button>
+              <button className="chip justify-center" aria-pressed={echo} onClick={() => void patch({ practiceMode: 'echo', repeatEach: Math.max(settings.repeatEach, 3) })}>Echo</button>
             </div>
-            <p className="mt-2 text-xs text-muted">Echo leaves a silence after each ayah for you to recite it yourself. The silence is built from the ayah’s real recording length, so a three-word ayah and a long ayah each get a fitting pause.</p>
+            {echo && (
+              <div className="mt-3">
+                <div className="mb-1.5 text-xs text-muted">Pause length</div>
+                <div className="grid grid-cols-4 gap-2">{PAUSES.map((o) => <button key={o.v} className="chip justify-center" aria-pressed={settings.echoPause === o.v} onClick={() => void patch({ echoPause: o.v })} title={o.hint}>{o.label}</button>)}</div>
+                <p className="mt-1.5 text-xs text-muted">{PAUSES.find((o) => o.v === settings.echoPause)?.hint}.</p>
+              </div>
+            )}
           </div>
-          {echo && (
-            <div>
-              <div className="eyebrow mb-2">Pause length</div>
-              <div className="grid grid-cols-4 gap-2">{PAUSES.map((o) => <button key={o.v} className="chip justify-center" aria-pressed={settings.echoPause === o.v} onClick={() => void patch({ echoPause: o.v })} title={o.hint}>{o.label}</button>)}</div>
-              <p className="mt-2 text-xs text-muted">{PAUSES.find((o) => o.v === settings.echoPause)?.hint}. “Tap” waits for you.</p>
+
+          <details data-testid="audio-more">
+            <summary className="cursor-pointer select-none text-sm font-medium">More options</summary>
+            <div className="mt-3 space-y-4">
+              <div><div className="mb-1.5 text-xs text-muted">Repeat each ayah</div><div className="flex flex-wrap gap-2">{REPEATS.map((n) => <button key={n} className="chip tabular" aria-pressed={settings.repeatEach === n} onClick={() => { void patch({ repeatEach: n }); p.setRepeat(n) }}>{n}×</button>)}</div></div>
+              <div><div className="mb-1.5 text-xs text-muted">Speed</div><div className="flex gap-2">{RATES.map((r) => <button key={r} className="chip tabular" aria-pressed={settings.playbackRate === r} onClick={() => { void patch({ playbackRate: r }); p.setRate(r) }}>{r}×</button>)}</div></div>
+              {queue.length > 1 && (
+                <label className="flex items-center justify-between gap-3"><span>Loop the whole passage</span>
+                  <button role="switch" aria-checked={loop} aria-label="Loop passage" onClick={() => setLoop((l) => !l)} className={`relative h-7 w-12 flex-none rounded-full transition-colors ${loop ? 'bg-accent' : 'bg-line'}`}><span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${loop ? 'left-[22px]' : 'left-0.5'}`} /></button></label>
+              )}
+            </div>
+          </details>
+
+          {offerRange && (
+            <div className="rounded-2xl border border-line p-3" data-testid="audio-offline">
+              <OfflineAudioCard range={offerRange.range} goalId={offerRange.goalId} />
             </div>
           )}
-          <div>
-            <div className="eyebrow mb-2">Repeat each ayah</div>
-            <div className="flex flex-wrap gap-2">{REPEATS.map((n) => <button key={n} className="chip tabular" aria-pressed={settings.repeatEach === n} onClick={() => { void patch({ repeatEach: n }); p.setRepeat(n) }}>{n}×</button>)}</div>
-          </div>
-          <div>
-            <div className="eyebrow mb-2">Speed</div>
-            <div className="flex gap-2">{RATES.map((r) => <button key={r} className="chip tabular" aria-pressed={settings.playbackRate === r} onClick={() => { void patch({ playbackRate: r }); p.setRate(r) }}>{r}×</button>)}</div>
-          </div>
-          {queue.length > 1 && (
-            <label className="flex items-center justify-between gap-3"><span>Loop the whole passage<span className="block text-xs text-muted">Good for walking: keeps going until you stop it.</span></span>
-              <button role="switch" aria-checked={loop} aria-label="Loop passage" onClick={() => setLoop((l) => !l)} className={`relative h-7 w-12 flex-none rounded-full transition-colors ${loop ? 'bg-accent' : 'bg-line'}`}><span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${loop ? 'left-[22px]' : 'left-0.5'}`} /></button></label>
-          )}
-          <p className="text-xs text-muted">On iPhone, audio can continue with the screen locked. Echo pauses are played as audio so they should keep going too. This hasn’t been verified on a locked iPhone yet.</p>
         </div>
       </Sheet>
     </div>

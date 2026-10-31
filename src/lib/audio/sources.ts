@@ -47,6 +47,31 @@ export const SOURCES: Record<Endpoint['source'], AudioSource> = {
   },
 }
 
+/**
+ * May a copy be kept on the listener's own device? Streaming a public file is not the same as having permission to save it, so this is
+ * decided per source, from the source's own published terms, and defaults to NO. Changing a value here is a licensing decision.
+ *  - Islamic Network (alquran.cloud): terms reported as free for personal, non-commercial and educational use, including download.
+ *    (Read through a search summary of the terms page; the page itself could not be opened from the build environment. Verify once.)
+ *  - EveryAyah: publishes no licence and says the recordings belong to the reciters, so saving stays OFF until the operator or the
+ *    reciters give permission.
+ */
+export const SOURCE_RIGHTS: Record<Endpoint['source'], { saveOffline: boolean; basis: string; terms: string }> = {
+  islamicnetwork: { saveOffline: true, basis: 'Free for personal and educational use, including download.', terms: 'https://alquran.cloud/terms-and-conditions' },
+  everyayah: { saveOffline: false, basis: 'No licence is published; the recordings belong to their reciters.', terms: 'https://everyayah.com' },
+}
+
+/** The first endpoint of this reciter whose source allows saving a copy, or null when saving is not permitted. */
+export function offlineEndpoint(reciterId: string): Endpoint | null {
+  return reciterById(reciterId).endpoints.find((e) => SOURCE_RIGHTS[e.source].saveOffline) ?? null
+}
+export const canSaveOffline = (reciterId: string) => offlineEndpoint(reciterId) !== null
+/** The reciters whose recordings may be saved, your three first. */
+export const saveableReciters = (): Reciter[] => RECITERS.filter((r) => canSaveOffline(r.id))
+export function offlineUrl(reciterId: string, surah: number, ayah: number): string | null {
+  const e = offlineEndpoint(reciterId)
+  return e ? SOURCES[e.source].urlFor(e.ref, surah, ayah) : null
+}
+
 export const RECITERS: Reciter[] = [
   // The reciters the owner asked for by name. Verse-by-verse candidates are tried in order. The two EveryAyah folders are the exact
   // directories the owner found (https://everyayah.com/data/MaherAlMuaiqly128kbps/ and .../Yasser_Ad-Dussary_128kbps/); EveryAyah's

@@ -57,9 +57,9 @@ export function ProgressPage() {
 
       <section className="mt-8 px-5">
         <h2 className="font-display text-xl">Retention by gap</h2>
-        <p className="mt-1 text-sm text-ink-2">How often recall succeeded, grouped by time since you last practised that ayah. Bars show the rate; the pale band is a 95% interval.</p>
+        <p className="mt-1 text-sm text-ink-2">How often recall worked, by time since you last practised.</p>
         <div className="card mt-3 space-y-3 p-4" data-testid="retention">{retention.map((b) => <Bar key={b.label} label={b.label} value={b.rate} ci={b.ci} n={b.n} />)}</div>
-        <p className="mt-2 text-xs text-muted">Ayahs recited together are not independent tests, so intervals are optimistic. Passage recitations of more than a few ayahs are not counted here.</p>
+        <details className="mt-2 text-xs text-muted"><summary className="cursor-pointer select-none">How to read this</summary><p className="mt-1">Bars show the rate; the pale band is a 95% interval. Ayahs recited together are not independent tests, so intervals are optimistic. Long passage recitations are not counted here.</p></details>
       </section>
 
       <section className="mt-8 px-5">
@@ -97,14 +97,14 @@ export function ProgressPage() {
 
       <section className="mt-8 px-5 pb-6" data-testid="experiment">
         <h2 className="font-display text-xl">Does your method matter?</h2>
-        <p className="mt-1 text-sm text-ink-2">A fourteen-day comparison on your own new memorisation. <b>A:</b> your usual repeated recitation. <b>B:</b> listen first, practise overlapping phrases, then recall from memory.</p>
+        <p className="mt-1 text-sm text-ink-2">A 14-day comparison of two ways to learn: <b>A</b> repeated recitation, <b>B</b> listen, practise phrases, then recall.</p>
         <div className="card mt-3 p-4">
           {!exp || !active && exp.endsAt < now && !ro ? null : null}
           {!active ? (
             <>
               {exp && ro && <p className="mb-3 text-xs text-muted">Last experiment ended {shortDate(exp.endsAt)}.</p>}
               <button className="btn btn-primary w-full" onClick={() => void startExperiment()} data-testid="start-experiment"><Icon name="flask" size={16} /> Start a 14-day comparison</button>
-              <p className="mt-2 text-xs text-muted">From then on, each new passage you learn is assigned a method automatically, balanced by length. You’ll be shown which on the learning screen.</p>
+              <p className="mt-2 text-xs text-muted">Each new passage is assigned a method automatically.</p>
             </>
           ) : (
             <div className="flex items-center justify-between"><span className="text-sm"><b>Running</b> · {Math.max(0, Math.ceil((exp!.endsAt - now) / DAY))} days left</span><button className="btn btn-ghost btn-sm" onClick={() => void stopExperiment()}>End now</button></div>

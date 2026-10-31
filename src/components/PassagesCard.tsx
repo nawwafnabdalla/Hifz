@@ -23,7 +23,7 @@ export function PassageSheet({ open, onClose, initial }: { open: boolean; onClos
   const dup = ok && isDuplicate(settings.passages, r)
   return (
     <Sheet open={open} onClose={onClose} title="Save a recitation passage">
-      <p className="mb-3 text-sm text-ink-2">A passage is a stretch of consecutive ayahs you want to keep ready to recite. Choose its ends yourself; the app never decides where a passage should stop.</p>
+      <p className="mb-3 text-sm text-ink-2">Choose the ends yourself; the app never decides where a passage stops.</p>
       <div className="grid grid-cols-3 gap-2 text-sm">
         <label className="col-span-3"><span className="eyebrow">Surah</span>
           <select className="mt-1 h-11 w-full rounded-xl border border-line bg-bg px-2" value={r.surah} onChange={(e) => setR({ surah: +e.target.value, start: 1, end: Math.min(8, ayahCount(+e.target.value)) })} data-testid="passage-surah">
@@ -83,7 +83,7 @@ export function PassagesCard() {
                 </div>
               )
             })}
-            {!list.length && <p className="text-sm text-ink-2">Save a stretch you are working towards reciting, such as one you might use in prayer. Practising it uses the same passage recall, so every slip and shaky transition is recorded as usual.</p>}
+            {!list.length && <p className="text-sm text-ink-2">Save a stretch you want ready to recite, such as one for prayer.</p>}
             <div className="flex flex-wrap gap-2">
               <button className="btn btn-quiet btn-sm" onClick={() => setAdd(true)} data-testid="passage-add"><Icon name="plus" size={15} />Save a passage</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setSuggest((s) => !s)} data-testid="passage-suggest">Suggest from what I know</button>

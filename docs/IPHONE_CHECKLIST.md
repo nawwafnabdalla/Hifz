@@ -13,3 +13,10 @@ Everything below needs your confirmation. Tell me the result of each and I will 
 6. **Session resume.** Start learning, switch apps or close the app, reopen: same step. A half-finished recall comes back hidden, ungraded.
 7. **Fajr scheduling.** Learn an ayah in the evening. Next morning at your usual time it should be in Today as “Recent revision”, with the reason “Due around this time today”, not a day later.
 8. **Madinah script.** Open Ta-Ha and Ayat al-Kursi (Qur'an → Mushaf). You should see the printed Mushaf letterforms, brass end-of-ayah ornaments with numbers, and no empty boxes or detached marks. Check dark mode, text size, and the Flow ladder. Settings → Reading → Script lets you switch to Simple. Tell me anything that looks wrong, especially tanween and small signs.
+
+## Offline audio (new)
+9. **Save a goal's audio.** Create or open a goal (Maher or any reciter other than Yasser/Badr). Tap *Save audio*. Expect: a progress bar, then "Ready offline · N MB". If it says recordings couldn't be saved, tell me; it may mean the audio host blocks saving from the app (a cross-origin restriction I can't test from here).
+10. **Play with no connection.** Turn on airplane mode, open the goal, press play: the line under the player should say "saved offline", and Echo and repeat should work. An ayah you didn't save should say you're offline and it isn't saved.
+11. **Manage downloads.** Settings → Offline recitations: sizes shown, Remove audio works, your progress on Today is unchanged. (Compare the size with iPhone Settings → General → iPhone Storage → Hifz OS.)
+12. **Yasser.** With Yasser as reciter the goal card should say he can be played but not saved, and offer Maher. This is deliberate: his source doesn't permit saving.
+13. **Calm screens.** The audio bar should be one row; the Learn instruction should shorten after day three; nothing technical should appear on the main Settings page.

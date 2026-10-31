@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useApp } from '@/app/store'
 import { Passage, Medallion, AyahWords } from '@/components/Arabic'
 import { AudioBar } from '@/components/AudioBar'
@@ -132,7 +132,7 @@ export function SurahPage() {
         )}
         {shown < info.count && <button className="btn btn-quiet mt-4 w-full" onClick={() => setShown((x) => x + PAGE)}>Show more ({info.count - shown} remaining)</button>}
         {n < 114 && shown >= info.count && <button className="btn btn-ghost mt-4 w-full" onClick={() => nav(`/quran/${n + 1}`)}>Next: {SURAHS[n]!.tr} <Icon name="right" size={16} /></button>}
-        <p className="mt-6 px-2 text-center text-xs text-muted">Text: Hafs Uthmani, verified against independent sources. Translation: Saheeh International. See Settings → About for provenance. This app does not replace a teacher or a printed mushaf.</p>
+        <p className="mt-6 px-2 text-center text-xs text-muted">Hafs Uthmani text · Saheeh International translation · <Link to="/settings" className="underline">About this text</Link></p>
       </article>
 
       {range && (
