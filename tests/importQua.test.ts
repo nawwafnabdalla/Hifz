@@ -73,7 +73,7 @@ describe('whole-surah timing import (Quranic Universal Audio shape)', async () =
 
 describe('Quranic Universal Audio release folder (real v4.0.0 layout)', async () => {
   const s = await makeSurahMp3(eleven)
-  const dir = mkdtempSync(join(tmpdir(), 'qua-rel-')), audio = mkdtempSync(join(tmpdir(), 'qua-aud-'))
+  const audio = mkdtempSync(join(tmpdir(), 'qua-aud-'))
   writeFileSync(join(audio, '020.mp3'), s.mp3)
   const abs = s.ayah.segments.map(([w0, , t0, t1]) => [w0 + 1, t0 + s.originMs, t1 + s.originMs])
   const release = (opts: { rows: unknown[]; riwayah?: string; url?: string; badSha?: boolean }) => {
