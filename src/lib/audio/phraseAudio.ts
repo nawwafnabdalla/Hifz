@@ -9,6 +9,7 @@
 //    playback instead of cutting a word in half.
 //  * One decoded ayah is a few MB; a few are kept for fast repeats.
 import { proposeRange, DURATION_TOLERANCE_MS, type AyahTiming, type RangeProposal } from './timings'
+import type { Bytes } from './phraseSource'
 
 export interface Pcm { sampleRate: number; samples: Float32Array }
 
@@ -17,6 +18,8 @@ const WIN_MS = 10
 /** How far from the proposed boundary to look for the quiet moment (published alignments drift by roughly this much). */
 const SNAP_MS = 110
 const FADE_SEC = 0.006
+/** A window cut out of a whole-surah file may decode up to this much shorter or longer than its bytes imply (first-frame priming, frame rounding). */
+export const SLICE_TOLERANCE_MS = 120
 
 export interface Frames { rms: Float32Array; hopSec: number }
 export function frameRms(p: Pcm): Frames {
@@ -131,13 +134,14 @@ export interface RangeRequest {
   repeat: number
   /** Silence between repeats, given the length of the phrase in seconds (0 for none, or a multiple of it for "your turn"). */
   gapSec: (phraseSec: number) => number
-  bytes: () => Promise<ArrayBuffer>
+  /** The audio for this range: the whole ayah file, or (whole-surah recordings) just a window around the phrase. */
+  bytes: (prop: RangeProposal) => Promise<Bytes>
 }
 export type PhraseStatus = 'idle' | 'loading' | 'playing' | 'unavailable'
 export interface PhraseState { status: PhraseStatus; repeat: number; total: number; phrase: 'listen' | 'recite'; reason?: string; phraseSec?: number }
 export type UnavailableReason = 'no-audio' | 'wrong-recording' | 'no-range' | 'no-pause'
 
-interface Decoded { buffer: AudioBuffer; pcm: Pcm }
+interface Decoded { buffer: AudioBuffer; pcm: Pcm; /** where this buffer starts on the timing's clock, ms */ originMs: number }
 
 export class PhrasePlayer {
   private ctx: AudioContext | null = null
@@ -166,13 +170,15 @@ export class PhrasePlayer {
     return this.ctx
   }
 
-  private async decoded(req: RangeRequest, ctx: AudioContext): Promise<Decoded | null> {
+  private async decoded(req: RangeRequest, ctx: AudioContext, prop: RangeProposal): Promise<Decoded | null> {
     const hit = this.cache.get(req.key)
     if (hit) { this.cache.delete(req.key); this.cache.set(req.key, hit); return hit }
-    const bytes = await req.bytes()
-    const buffer = await ctx.decodeAudioData(bytes.slice(0))
-    if (!sameRecording(req.timing, buffer.duration)) return null
-    const d = { buffer, pcm: { sampleRate: buffer.sampleRate, samples: toMono(buffer) } }
+    const got = await req.bytes(prop)
+    const buffer = await ctx.decodeAudioData(got.data.slice(0))
+    // It must be the recording the timings describe: a whole per-ayah file of the same length, or a window of the length its bytes imply.
+    const ok = got.expectMs === undefined ? sameRecording(req.timing, buffer.duration) : Math.abs(buffer.duration * 1000 - got.expectMs) <= SLICE_TOLERANCE_MS
+    if (!ok) return null
+    const d = { buffer, pcm: { sampleRate: buffer.sampleRate, samples: toMono(buffer) }, originMs: got.originMs }
     this.cache.set(req.key, d)
     while (this.cache.size > 5) this.cache.delete(this.cache.keys().next().value!)
     return d
@@ -183,9 +189,12 @@ export class PhrasePlayer {
     const prop = proposeRange(req.timing, req.fromWord, req.toWord)
     if (!prop) return { reason: 'no-range' }
     let d: Decoded | null
-    try { d = await this.decoded(req, ctx as AudioContext) } catch { return { reason: 'no-audio' } }
+    try { d = await this.decoded(req, ctx as AudioContext, prop) } catch { return { reason: 'no-audio' } }
     if (!d) return { reason: 'wrong-recording' }
-    const cut = cutPoints(d.pcm, prop, d.buffer.duration)
+    // The proposal is on the ayah's clock; the decoded buffer may start part-way in (a window of a whole-surah file).
+    const o = d.originMs, local: RangeProposal = { startMs: prop.startMs - o, endMs: prop.endMs - o, startGap: prop.startGap && [prop.startGap[0] - o, prop.startGap[1] - o], endGap: prop.endGap && [prop.endGap[0] - o, prop.endGap[1] - o] }
+    if (local.startMs < 0 || local.endMs > d.buffer.duration * 1000 + 50) return { reason: 'no-audio' }
+    const cut = cutPoints(d.pcm, local, d.buffer.duration)
     if (!cut) return { reason: 'no-pause' }
     return { cut, decoded: d }
   }

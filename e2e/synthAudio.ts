@@ -70,3 +70,45 @@ export const AYAH_WORDS: SynthWord[] = [
   { ms: 280, gapAfterMs: 80 }, { ms: 320, gapAfterMs: 100 }, { ms: 360, gapAfterMs: 420 },  // phrase B, then a breath
   { ms: 300, gapAfterMs: 90 }, { ms: 330, gapAfterMs: 85 }, { ms: 380, gapAfterMs: 0 },     // phrase C
 ]
+
+// ---------- a synthetic WHOLE-SURAH recording as a real constant-bitrate MP3 ----------
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+export interface SurahMp3 {
+  mp3: Buffer
+  file: { bytes: number; kbps: number; dataOffset: number; durationMs: number }
+  /** Where the timed ayah begins inside the file, ms, and the ayah's own synthetic recitation. */
+  originMs: number
+  ayah: Synth
+}
+/** [other ayahs] + the ayah under test, separated by pauses, encoded as CBR MP3 the way a real surah file is (ID3 tag + Xing/Info frame by default). */
+export async function makeSurahMp3(ayah: SynthWord[], o: { id3?: boolean; kbps?: number; leadMs?: number } = {}): Promise<SurahMp3> {
+  const sr = 44100, kbps = o.kbps ?? 128, lead = o.leadMs ?? 7300
+  const before = synth([{ ms: 300, gapAfterMs: 90 }, { ms: 340, gapAfterMs: 90 }, { ms: 320, gapAfterMs: 0 }].map((w) => ({ ...w })), { sampleRate: sr, leadMs: 200, tailMs: 600 })
+  const target = synth(ayah, { sampleRate: sr })
+  const after = synth([{ ms: 300, gapAfterMs: 90 }, { ms: 360, gapAfterMs: 0 }], { sampleRate: sr, leadMs: 400, tailMs: 900 })
+  const n = (ms: number) => Math.round((ms / 1000) * sr)
+  const total = n(lead) + before.samples.length + target.samples.length + after.samples.length
+  const pcm = new Float32Array(total)
+  let seed = 99; for (let i = 0; i < total; i++) pcm[i] = (((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296) - 0.5) * 0.0024
+  let at = n(lead)
+  pcm.set(before.samples, at); at += before.samples.length
+  const originSamples = at
+  pcm.set(target.samples, at); at += target.samples.length
+  pcm.set(after.samples, at)
+  const dir = mkdtempSync(join(tmpdir(), 'surah-'))
+  writeFileSync(join(dir, 'in.wav'), toWav(pcm, sr))
+  const args = ['-v', 'error', '-y', '-i', join(dir, 'in.wav'), '-codec:a', 'libmp3lame', '-b:a', `${kbps}k`, '-ac', '1', '-ar', String(sr)]
+  if (o.id3 === false) args.push('-write_xing', '0', '-id3v2_version', '0')
+  execFileSync('ffmpeg', [...args, join(dir, 'out.mp3')])
+  const mp3 = readFileSync(join(dir, 'out.mp3'))
+  const probe = (a: string[]) => execFileSync('ffprobe', ['-v', 'error', ...a, join(dir, 'out.mp3')], { encoding: 'utf8' }).trim()
+  // @ts-expect-error plain ES module shared with the import script
+  const { inspectMp3 } = await import('../scripts/lib/mp3.mjs')
+  const dataOffset = (inspectMp3(mp3) as { dataOffset: number }).dataOffset
+  const durationMs = Math.round(parseFloat(probe(['-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1'])) * 1000)
+  return { mp3, file: { bytes: mp3.length, kbps, dataOffset, durationMs }, originMs: Math.round((originSamples / sr) * 1000), ayah: target }
+}

@@ -10,6 +10,7 @@
 // Short ayahs stay whole. A longer stretch is only broken where the evidence is good; if it is not, the stretch is left whole rather than guessed at.
 // These are PRACTICE phrases for memorising. They are never presented as places to stop when reciting.
 import cand from '@/data/generated/phrase-candidates.json'
+import review from '@/data/phrase-review.json'
 import { suggestBoundaries } from './phrases'
 
 /** Ayahs up to this many words are learned whole. */
@@ -26,7 +27,7 @@ const logit = (p: number) => Math.log(p / (1 - p))
 
 export interface Pause { afterWord: number; ms: number }
 export interface Candidate { after: number; p: number }
-export type Basis = 'stop sign' | 'grammar' | 'grammar and the reciter’s pause'
+export type Basis = 'stop sign' | 'reviewed' | 'grammar' | 'grammar and the reciter’s pause'
 export interface Breakdown { boundaries: number[]; basis: Record<number, Basis>; confidence: Record<number, number> }
 
 type File = { ayahs: Record<string, { n: number; c: [number, number][] }> }
@@ -38,27 +39,38 @@ export function candidatesFor(surah: number, ayah: number, wordCount: number): C
 }
 
 /** Long pieces cost more the longer they are; pieces of one or two words are almost never worth a break. */
+/** A grammatical candidate below this probability is never used on grammar alone (the model is a statistical proxy, not an authority). */
+export const GRAMMAR_FLOOR = 0.12
+/** Lower floor when the reciter's own pause confirms it. */
+export const GRAMMAR_FLOOR_PAUSED = 0.06
+/** Inside a long ayah (over 16 words) holding a piece whole is itself a failure for memorising, so weaker (still non-trivial) evidence is accepted. */
+export const GRAMMAR_FLOOR_LONG = 0.05
+type Review = { rejected?: number[]; approved?: number[] }
+const reviewOf = (surah: number, ayah: number): Review => (review.ayahs as Record<string, Review>)[`${surah}:${ayah}`] ?? {}
+
 const penalty = (len: number, comfort: number) => LAMBDA * Math.max(0, len - comfort) ** 2 + (len < 3 ? 40 : len < 4 ? 5 : 0)
 
 /** Pure selection: which of the candidate boundaries to use. */
-export function planBreaks(wordCount: number, stop: number[], candidates: Candidate[], pauses: Pause[] = [], avoid: number[] = []): Breakdown {
+export function planBreaks(wordCount: number, stop: number[], candidates: Candidate[], pauses: Pause[] = [], avoid: number[] = [], rev: Review = {}): Breakdown {
   const out: Breakdown = { boundaries: [], basis: {}, confidence: {} }
   if (wordCount <= WHOLE_LIMIT) return out
   const timed = pauses.length > 0
   const pauseAfter = new Map(pauses.map((p) => [p.afterWord, p.ms]))
-  const gain = new Map<number, { g: number; p: number; stop: boolean; paused: boolean }>()
+  const gain = new Map<number, { g: number; p: number; stop: boolean; paused: boolean; reviewed: boolean }>()
   const stopSet = new Set(stop)
   const ps = new Map(candidates.map((c) => [c.after, c.p]))
-  const avoidSet = new Set(avoid)
+  const avoidSet = new Set([...avoid, ...(rev.rejected ?? [])])
+  const approved = new Set(rev.approved ?? [])
   for (const b of new Set([...ps.keys(), ...stop])) {
     if (b < 0 || b >= wordCount - 1 || avoidSet.has(b)) continue
     const stopped = stopSet.has(b)
-    const p = Math.min(0.97, Math.max(ps.get(b) ?? 0.02, stopped ? 0.85 : 0))
+    const p = Math.min(0.97, Math.max(ps.get(b) ?? 0.02, stopped ? 0.85 : 0, approved.has(b) ? 0.85 : 0))
     let s = logit(p)
     const ms = pauseAfter.get(b)
     let paused = false
     if (timed) { if ((ms ?? 0) >= 150) { s += 1.2; paused = true } else if ((ms ?? 0) >= 100) { s += 0.5; paused = true } else if ((ms ?? 0) < 40) s -= 2.0 }
-    gain.set(b, { g: s - logit(BREAK_P), p, stop: stopped, paused })
+    if (!stopped && !approved.has(b) && p < (paused ? GRAMMAR_FLOOR_PAUSED : wordCount > 16 ? GRAMMAR_FLOOR_LONG : GRAMMAR_FLOOR)) continue       // too weak to use on grammar alone
+    gain.set(b, { g: s - logit(BREAK_P), p, stop: stopped, paused, reviewed: approved.has(b) })
   }
   const NEG = -1e9
   const comfort = wordCount > 16 ? COMFORT_LONG : COMFORT
@@ -81,7 +93,7 @@ export function planBreaks(wordCount: number, stop: number[], candidates: Candid
   for (const b of picks) {
     const g = gain.get(b)!
     out.boundaries.push(b)
-    out.basis[b] = g.stop ? 'stop sign' : g.paused ? 'grammar and the reciter’s pause' : 'grammar'
+    out.basis[b] = g.stop ? 'stop sign' : g.reviewed ? 'reviewed' : g.paused ? 'grammar and the reciter’s pause' : 'grammar'
     out.confidence[b] = +g.p.toFixed(2)
   }
   return out
@@ -93,11 +105,19 @@ export function planBreaks(wordCount: number, stop: number[], candidates: Candid
  * marked in one place always refers to the same phrases in another.
  */
 export function defaultBreakdown(surah: number, ayah: number, words: string[], pauses: Pause[] = []): Breakdown {
-  // The "do not stop" sign (ۙ) marks a place a reciter should not pause; it is never a practice break either.
-  const avoid = words.flatMap((w, i) => (w.includes('ۙ') ? [i] : []))
-  return planBreaks(words.length, suggestBoundaries(words).boundaries, candidatesFor(surah, ayah, words.length), pauses, avoid)
+  const stop = suggestBoundaries(words).boundaries, stopSet = new Set(stop)
+  // Never a practice break: the "do not stop" sign (ۙ), and a position just before a word that completes what precedes it
+  // (subordinating أَن or كَيۡ, the exception إِلَّا) unless the mushaf itself marks a pause there.
+  const avoid = words.flatMap((w, i) => (w.includes('ۙ') || (!stopSet.has(i) && i + 1 < words.length && attachesBackward(words[i + 1]!)) ? [i] : []))
+  return planBreaks(words.length, stop, candidatesFor(surah, ayah, words.length), pauses, avoid, reviewOf(surah, ayah))
 }
 export const defaultBoundaries = (surah: number, ayah: number, words: string[], pauses: Pause[] = []): number[] => defaultBreakdown(surah, ayah, words, pauses).boundaries
+
+/** A word that attaches to what comes BEFORE it, judged from spelling alone: subordinating أَن (hamza above, no shadda), كَيۡ, and إِلَّا. */
+export function attachesBackward(raw: string): boolean {
+  const n = baseLetters(raw)
+  return (n === 'ان' && raw.startsWith('أ') && !raw.includes('ّ')) || n === 'كي' || (n === 'الا' && raw.includes('ّ'))
+}
 
 // Letters only: no vowels, signs, tatweel or stop marks, with alef variants unified.
 const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/g

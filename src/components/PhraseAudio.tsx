@@ -26,16 +26,17 @@ function usePlayPart(surah: number, ayah: number) {
   const pt = usePhraseTiming(surah, ayah)
   const [fellBack, setFellBack] = useState<string | null>(null)
   const play = async (fromWord: number, toWord: number) => {
-    if (!pt.timing || !pt.recording) return
+    if (!pt.timing || !pt.recording || !pt.rec) return
     setFellBack(null)
     getPlayer().stop()
     const echo = settings.practiceMode === 'echo'
     const factor = echo ? (settings.echoPause === 0 ? 1 : settings.echoPause) : 0
     const reason = await phrasePlayer.play({
-      key: `${pt.reciter}|${pt.recording}|${surah}:${ayah}`,
+      // A whole-surah recording is decoded as a window around THIS phrase, so the cache key includes the range.
+      key: `${pt.reciter}|${pt.recording}|${surah}:${ayah}${pt.rec!.provenance.granularity === 'surah' ? `|${fromWord}-${toWord}` : ''}`,
       timing: pt.timing, fromWord, toWord, repeat: settings.repeatEach,
       gapSec: (len) => (factor ? len * factor : 0.5),
-      bytes: () => ayahBytes(pt.reciter, pt.recording!, surah, ayah),
+      bytes: (prop) => ayahBytes(pt.reciter, pt.rec!, surah, ayah, pt.timing!, prop),
     })
     if (reason) {                                   // graceful fallback: the whole ayah, in the same reciter, and say so
       setFellBack(`${WHY[reason]}. Playing the whole ayah instead.`)

@@ -14,6 +14,8 @@ export interface WordSegment { w0: number; w1: number; t0: number; t1: number }
 export interface AyahTiming {
   surah: number
   ayah: number
+  /** Where this ayah begins inside its audio file. 0 for per-ayah recordings; the ayah's start in a whole-surah recording. */
+  originMs?: number
   /** Length of the aligned audio file. A decoded file whose length differs is a different recording and is refused. */
   durationMs: number
   segments: WordSegment[]
@@ -23,12 +25,18 @@ export interface TimingProvenance {
   source: string
   licence: string
   url: string
-  /** What was aligned, e.g. "everyayah:Yasser_Ad-Dussary_128kbps". Must equal the recording being played. */
+  /** What was aligned, e.g. "everyayah:Yasser_Ad-Dussary_128kbps" or "mp3quran:maher". Must equal the recording being played. */
   recording: string
   method: string
   retrieved: string
+  /** 'ayah' (default): one audio file per ayah. 'surah': one file per surah; ayah times below are relative to the ayah's own start. */
+  granularity?: 'ayah' | 'surah'
+  /** Riwayah of the recitation and of the text the timings were aligned to. Only Hafs 'an 'Asim matches the app's text. */
+  riwayah?: string
+  /** For 'surah' recordings: where the audio comes from and how to cut a window out of it by bytes. */
+  audio?: { urlTemplate: string; files: Record<string, { bytes: number; kbps: number; dataOffset: number; durationMs: number }> }
 }
-export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; ayahs: Record<string, { d: number; s: [number, number, number, number][] }> }
+export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
 
 /** Largest disagreement tolerated between the aligned file's length and the decoded file's length. */
 export const DURATION_TOLERANCE_MS = 60
@@ -54,7 +62,7 @@ export function validateAyahTiming(t: AyahTiming, wordCount = wordsOfAyah(t.sura
 }
 
 export function expand(raw: RecordingTimings['ayahs'][string], surah: number, ayah: number): AyahTiming {
-  return { surah, ayah, durationMs: raw.d, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })) }
+  return { surah, ayah, durationMs: raw.d, originMs: raw.o ?? 0, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })) }
 }
 
 const segmentOf = (t: AyahTiming, word: number) => t.segments.findIndex((s) => word >= s.w0 && word < s.w1)
@@ -98,39 +106,56 @@ export function reciterPauses(t: AyahTiming): { afterWord: number; ms: number }[
 }
 
 // ---------- registry ----------
-// Timing files live in src/data/timings/<reciterId>.json (produced by scripts/import-timings.mjs, with provenance).
-// They are loaded lazily and only for the recording they describe. None are bundled until real, validated data exists.
+// Timing files live in src/data/timings/<reciterId>--<recording>.json (produced by scripts/import-timings.mjs, with provenance).
+// One reciter may have several recordings; each file describes exactly one and is never applied to another. Lazy-loaded.
 type Loader = () => Promise<{ default: RecordingTimings }>
 const files = import.meta.glob('/src/data/timings/*.json') as Record<string, Loader>
-const loaded = new Map<string, RecordingTimings | null>()
-const injected = new Map<string, RecordingTimings>()
+const loaded = new Map<string, RecordingTimings[]>()
+const injected = new Map<string, RecordingTimings[]>()
 
-/** Test and tooling hook: register timings without a file. */
-export function registerTimings(data: RecordingTimings) { injected.set(data.reciter, data); loaded.set(data.reciter, data) }
+/** Test and tooling hook: register timings without a file. A second registration of the same recording replaces the first. */
+export function registerTimings(data: RecordingTimings) {
+  const list = (injected.get(data.reciter) ?? []).filter((x) => x.provenance.recording !== data.provenance.recording)
+  injected.set(data.reciter, [...list, data]); loaded.delete(data.reciter)
+}
 export function clearTimings() { injected.clear(); loaded.clear() }
 // Test builds only (VITE_E2E=1, set by the browser-test server, never by a real build): let tests supply timings.
 if (import.meta.env.VITE_E2E === '1' && typeof window !== 'undefined') (window as unknown as { __hifzRegisterTimings?: typeof registerTimings }).__hifzRegisterTimings = registerTimings
 
-export async function timingsFor(reciter: string): Promise<RecordingTimings | null> {
-  if (loaded.has(reciter)) return loaded.get(reciter)!
-  const path = Object.keys(files).find((p) => p.endsWith(`/${reciter}.json`))
-  let data: RecordingTimings | null = null
-  if (path) { try { data = (await files[path]!()).default } catch { data = null } }
-  loaded.set(reciter, data)
-  return data
+/** Every recording that has word timings for this reciter (and, by construction, the app's own riwayah). */
+export async function recordingsFor(reciter: string): Promise<RecordingTimings[]> {
+  const hit = loaded.get(reciter)
+  if (hit) return hit
+  const out: RecordingTimings[] = [...(injected.get(reciter) ?? [])]
+  for (const path of Object.keys(files)) {
+    const name = path.split('/').pop()!.replace(/\.json$/, '')
+    if (name !== reciter && !name.startsWith(`${reciter}--`)) continue
+    try { const d = (await files[path]!()).default; if (d.reciter === reciter && (d.provenance.riwayah ?? 'hafs') === 'hafs') out.push(d) } catch { /* unreadable file: ignored */ }
+  }
+  loaded.set(reciter, out)
+  return out
 }
+/** Back-compat: the first recording's timings. */
+export async function timingsFor(reciter: string): Promise<RecordingTimings | null> { return (await recordingsFor(reciter))[0] ?? null }
 
 /** The timing of one ayah, only if it describes the recording that will actually be played. */
 export async function ayahTiming(reciter: string, recording: string, surah: number, ayah: number): Promise<AyahTiming | null> {
-  const f = await timingsFor(reciter)
-  if (!f || f.provenance.recording !== recording) return null
-  const raw = f.ayahs[`${surah}:${ayah}`]
-  if (!raw) return null
+  const f = (await recordingsFor(reciter)).find((x) => x.provenance.recording === recording)
+  const raw = f?.ayahs[`${surah}:${ayah}`]
+  if (!f || !raw) return null
   const t = expand(raw, surah, ayah)
   return validateAyahTiming(t) === null ? t : null
 }
 /** Is any timing available for this reciter's recording at all? (Cheap check for showing controls.) */
 export async function hasTimings(reciter: string, recording: string): Promise<boolean> {
-  const f = await timingsFor(reciter)
-  return !!f && f.provenance.recording === recording
+  return (await recordingsFor(reciter)).some((x) => x.provenance.recording === recording)
+}
+/**
+ * Which recording to use for an ayah: the reciter's per-ayah recordings first (cheapest to fetch), then whole-surah ones.
+ * Returns the timing together with the file that describes it, so audio is always taken from exactly that recording.
+ */
+export async function findTiming(reciter: string, surah: number, ayah: number): Promise<{ timing: AyahTiming; rec: RecordingTimings } | null> {
+  const recs = (await recordingsFor(reciter)).slice().sort((a, b) => ((a.provenance.granularity ?? 'ayah') === 'ayah' ? 0 : 1) - ((b.provenance.granularity ?? 'ayah') === 'ayah' ? 0 : 1))
+  for (const rec of recs) { const timing = await ayahTiming(reciter, rec.provenance.recording, surah, ayah); if (timing) return { timing, rec } }
+  return null
 }

@@ -3,9 +3,8 @@
 import { candidateUrls, offlineUrl, reciterById } from './sources'
 import { validateAudio } from './offline'
 import { ayahBytes } from './phraseSource'
-import { cutPoints, sameRecording, toMono } from './phraseAudio'
-import { ayahTiming, proposeRange, reciterPauses, timingsFor } from './timings'
-import { recordingId } from './sources'
+import { SLICE_TOLERANCE_MS, cutPoints, sameRecording, toMono } from './phraseAudio'
+import { ayahTiming, proposeRange, recordingsFor, reciterPauses } from './timings'
 import { fullSurahAudio, type SurahAudio } from './mp3quran'
 import { recordConfirmed, recordUnavailable } from './status'
 
@@ -88,36 +87,43 @@ export async function checkReciter(id: string, deps: { probe: Probe; fullSurah?:
  */
 export async function checkPhraseAudio(id: string, sample = 4): Promise<{ state: 'ok' | 'fail' | 'none'; detail: string }> {
   try {
-    const r = reciterById(id)
-    for (const e of r.endpoints) {
-      const recording = recordingId(e)
-      const f = await timingsFor(id)
-      if (!f || f.provenance.recording !== recording) continue
-      const keys = Object.keys(f.ayahs).sort((a, b) => (a.startsWith('20:') ? 0 : 1) - (b.startsWith('20:') ? 0 : 1)).slice(0, sample)
-      const AC = (typeof OfflineAudioContext !== 'undefined' ? OfflineAudioContext : null)
-      if (!AC) return { state: 'fail', detail: 'This browser cannot decode audio for phrase playback.' }
-      let boundaries = 0, clean = 0, wrongLength = 0, unreadable = 0
+    const recs = await recordingsFor(id)
+    if (!recs.length) return { state: 'none', detail: 'No verified phrase timings for this reciter yet.' }
+    const AC = typeof OfflineAudioContext !== 'undefined' ? OfflineAudioContext : null
+    if (!AC) return { state: 'fail', detail: 'This browser cannot decode audio for phrase playback.' }
+    const notes: string[] = []
+    for (const rec of recs) {
+      const recording = rec.provenance.recording
+      const keys = Object.keys(rec.ayahs).sort((a, b) => (a.startsWith('20:') ? 0 : 1) - (b.startsWith('20:') ? 0 : 1)).slice(0, sample)
+      let boundaries = 0, clean = 0, wrong = 0, unreadable = 0
       for (const k of keys) {
         const [s, a] = k.split(':').map(Number) as [number, number]
         const t = await ayahTiming(id, recording, s, a)
         if (!t) continue
-        let buf: AudioBuffer
-        try { buf = await new AC(1, 1, 44100).decodeAudioData((await ayahBytes(id, recording, s, a)).slice(0)) } catch { unreadable++; continue }
-        if (!sameRecording(t, buf.duration)) { wrongLength++; continue }
-        const pcm = { sampleRate: buf.sampleRate, samples: toMono(buf) }
-        for (const p of reciterPauses(t).filter((x) => x.ms >= 150)) {
-          boundaries++
+        for (const p of reciterPauses(t).filter((x) => x.ms >= 150).slice(0, 3)) {
           const prop = proposeRange(t, 0, p.afterWord)
-          if (prop && cutPoints(pcm, prop, buf.duration)) clean++
+          if (!prop) continue
+          boundaries++
+          try {
+            const got = await ayahBytes(id, rec, s, a, t, prop)
+            const buf = await new AC(1, 1, 44100).decodeAudioData(got.data.slice(0))
+            const ok = got.expectMs === undefined ? sameRecording(t, buf.duration) : Math.abs(buf.duration * 1000 - got.expectMs) <= SLICE_TOLERANCE_MS
+            if (!ok) { wrong++; continue }
+            const o = got.originMs
+            const local = { startMs: prop.startMs - o, endMs: prop.endMs - o, startGap: prop.startGap && ([prop.startGap[0] - o, prop.startGap[1] - o] as [number, number]), endGap: prop.endGap && ([prop.endGap[0] - o, prop.endGap[1] - o] as [number, number]) }
+            if (cutPoints({ sampleRate: buf.sampleRate, samples: toMono(buf) }, local, buf.duration)) clean++
+          } catch { unreadable++ }
         }
       }
-      if (unreadable === keys.length) return { state: 'fail', detail: 'The recording could not be read by the app (the host may not allow it). Phrase audio will fall back to the whole ayah.' }
-      if (wrongLength) return { state: 'fail', detail: `${wrongLength} of ${keys.length} sampled recordings differ in length from their timings, so phrase audio is switched off for them.` }
-      return boundaries && clean === boundaries ? { state: 'ok', detail: `Timings fit the real audio: ${clean} of ${boundaries} pauses in ${keys.length} sampled ayahs are genuine.` }
-        : { state: clean ? 'ok' : 'fail', detail: `${clean} of ${boundaries} pauses in ${keys.length} sampled ayahs are clean enough to cut at; the rest fall back to the whole ayah.` }
+      const label = (rec.provenance.granularity ?? 'ayah') === 'surah' ? 'whole-surah recording' : 'per-ayah recording'
+      if (boundaries && unreadable === boundaries) notes.push(`${label}: the host would not let the app read it (phrase audio falls back to the whole ayah)`)
+      else if (wrong) notes.push(`${label}: ${wrong} of ${boundaries} samples differ from their timings, so phrase audio is switched off for them`)
+      else notes.push(`${label}: ${clean} of ${boundaries} sampled pauses are genuine and clean to cut at`)
     }
+    const ok = notes.every((n) => /genuine and clean/.test(n)) && !notes.some((n) => /: 0 of/.test(n))
+    return { state: ok ? 'ok' : 'fail', detail: notes.join('. ') + '.' }
   } catch { /* fall through */ }
-  return { state: 'none', detail: 'No verified phrase timings for this reciter’s recordings yet.' }
+  return { state: 'none', detail: 'No verified phrase timings for this reciter yet.' }
 }
 
 export async function checkMyReciters(deps?: Parameters<typeof checkReciter>[1]): Promise<ReciterCheck[]> {

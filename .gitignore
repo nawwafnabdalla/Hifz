@@ -10,3 +10,6 @@ playwright-report
 .wrangler
 dist-cloud
 test-results
+
+# corpus-derived (GPL) developer-only outputs: never committed, never bundled
+data/gpl/

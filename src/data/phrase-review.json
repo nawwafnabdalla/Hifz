@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "note": "Decisions about automatic practice phrases made by a qualified reviewer, or provisionally by the engineers pending review. 'rejected' breaks are never used. 'approved' breaks may be used on grammar alone. Keys are surah:ayah, break positions are 0-based word indexes AFTER which the break falls. Status 'provisional' = engineering judgement, not yet reviewed by a qualified reader.",
+  "ayahs": {
+    "20:86": { "status": "provisional", "rejected": [12], "note": "separates the subject غَضَبٞ from its modifier مِّن رَّبِّكُمۡ (the break the grammar model rated lowest among those it used)" }
+  }
+}

@@ -12,7 +12,7 @@
 //   node scripts/build-phrase-candidates.mjs [--morph path/to/quran-morphology.txt]
 //   (downloads the pinned file from raw.githubusercontent.com when --morph is not given; the checksum below is verified.)
 //
-// Licence note: the corpus is distributed by its authors under the GNU GPL with attribution to corpus.quran.com (stated by the original
+// Licence note: with --features qac the corpus is distributed by its authors under the GNU GPL with attribution to corpus.quran.com (stated by the original
 // project; the fork does not restate it and the page could not be read here). The raw morphology is NOT committed or shipped; only the
 // derived per-position scores are.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
@@ -23,8 +23,10 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SOURCE = { dataset: 'Quranic Arabic Corpus morphology v0.4 (fork: mustafa0x/quran-morphology)', url: 'https://github.com/mustafa0x/quran-morphology', file: 'quran-morphology.txt', sha256: '742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f', licence: 'GNU GPL with attribution to corpus.quran.com (per the original project; not re-read here). Raw data not shipped.' }
 const argv = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : undefined }
+const MODE = argv('features') ?? 'qac'   // 'qac': corpus morphology (GPL); 'orth': spelling of the canonical text only, no third-party linguistic data
 
 async function loadMorph() {
+  if (MODE === 'orth') return ''
   let buf
   if (argv('morph')) buf = readFileSync(argv('morph'))
   else {
@@ -83,18 +85,42 @@ function boundaryFeatures(W, i, n, wordsText) {
   return f
 }
 
+
+// ---- orthographic-only features (no corpus; my own short lists of Arabic function words, read from spelling alone) ----
+const norm = (w) => w.replace(BASE, '').replace(/[أإآٱ]/g, 'ا')
+const PREP = new Set(['في', 'من', 'عن', 'علي', 'الي', 'مع', 'حتي', 'عند', 'بعد', 'قبل', 'بين', 'دون', 'غير', 'الا', 'لدي', 'فوق', 'تحت'])
+const NEGP = new Set(['لا', 'لم', 'لن', 'ما', 'ليس', 'ولا', 'فلا', 'وما', 'فما'])
+const REL = new Set(['الذي', 'الذين', 'التي', 'اللاتي', 'الذان', 'من', 'ما'])
+const OPEN = new Set(['ثم', 'اذ', 'اذا', 'قال', 'قالوا', 'قالت', 'قل', 'لكن', 'حتي', 'بل', 'ام', 'او', 'هل', 'يا', 'كلا', 'لو', 'ولو', 'انا', 'انه'])
+const VOC = new Set(['يا', 'يايها', 'ياايها', 'يقوم', 'يبني'])
+const DEMO = new Set(['هذا', 'هذه', 'ذلك', 'تلك', 'هولاء', 'اولئك'])
+// Words that attach to what comes BEFORE them (a complement or exception, not a new clause): subordinating أَن / كَيۡ and the exception إِلَّا.
+// Spelling decides: أَن (hamza above, no shadda) is the subordinator; إِنۡ (hamza below) is the conditional; with shadda it is أَنَّ / إِنَّ (a new sentence).
+export const subordinatorAt = (raw) => { const n = norm(raw); if (n === 'ان' && raw.startsWith('أ') && !raw.includes('ّ')) return 'subord'; if (n === 'كي') return 'subord'; if (n === 'الا' && raw.includes('ّ')) return 'illa'; if (n === 'ان' && raw.startsWith('إ') && !raw.includes('ّ')) return 'cond'; return '' }
+function orthFeatures(wt, i) {
+  const c = norm(wt[i]), x = norm(wt[i + 1]), n = wt.length, f = ['bias']
+  const kind = (w, raw) => [PREP.has(w) ? 'prep' : '', NEGP.has(w) ? 'neg' : '', REL.has(w) ? 'rel' : '', OPEN.has(w) ? 'open' : '', VOC.has(w) || w.startsWith('يا') ? 'voc' : '', DEMO.has(w) ? 'dem' : '',
+    w.length > 2 && (w.startsWith('و') || w.startsWith('ف')) ? 'wafa' : '', w.startsWith('ال') ? 'def' : '', /[ًٌٍ]/.test(raw) ? 'tanwin' : '', /[هكي]$/.test(w) || /(هم|هن|ها|كم|نا|ني)$/.test(w) ? 'suffpron' : '', w.length <= 2 ? 'tiny' : ''].filter(Boolean)
+  const ck = kind(c, wt[i]), xk = kind(x, wt[i + 1])
+  { const s = subordinatorAt(wt[i + 1]); if (s) xk.push(s) }
+  for (const k of ck) f.push(`cur=${k}`); for (const k of xk) f.push(`nxt=${k}`)
+  for (const a of ck.length ? ck : ['plain']) for (const b of xk.length ? xk : ['plain']) f.push(`x=${a}>${b}`)
+  f.push(`cur.len=${Math.min(letters(wt[i]), 8)}`, `nxt.len=${Math.min(letters(wt[i + 1]), 8)}`, `pos=${Math.floor((i / (n - 1)) * 5)}`, `fromEnd=${Math.min(n - 2 - i, 6)}`, `fromStart=${Math.min(i + 1, 8)}`)
+  return f
+}
+
 // ---- build the labelled set ----
 const POS = /[ۘۗۚۜ]/, NEG = /[ۙۖ]/
 const rows = []   // {s, a, i, f, y}
 const skipped = []
 for (const sInfo of q.surahs) for (let a = 1; a <= sInfo.count; a++) {
   const wt = words(sInfo.n, a), m = morph.get(sInfo.n * 1000 + a)
-  if (!m || m.length !== wt.length || m.some((x) => !x)) { skipped.push(`${sInfo.n}:${a}`); continue }
-  const W = m.map(info)
+  if (MODE === 'qac' && (!m || m.length !== wt.length || m.some((x) => !x))) { skipped.push(`${sInfo.n}:${a}`); continue }
+  const W = MODE === 'qac' ? m.map(info) : null
   for (let i = 0; i < wt.length - 1; i++) {
     const mark = wt[i]
     const y = POS.test(mark) ? 1 : (NEG.test(mark) || !/[ۘۗۚۛۜۖۙ]/.test(mark)) ? 0 : null   // paired sign (ۛ) is ambiguous: not used for learning
-    rows.push({ s: sInfo.n, a, i, n: wt.length, f: boundaryFeatures(W, i, wt.length, wt), y })
+    rows.push({ s: sInfo.n, a, i, n: wt.length, f: MODE === 'qac' ? boundaryFeatures(W, i, wt.length, wt) : orthFeatures(wt, i), y })
   }
 }
 
@@ -138,7 +164,7 @@ for (const hs of byAyah.values()) { if (!hs.some((h) => h[1] === 1)) continue; t
 // the same, for ayahs with exactly one sign (a clean test of "where would a pause go?")
 let one = 0, onen = 0
 for (const hs of byAyah.values()) { if (hs.filter((h) => h[1] === 1).length !== 1 || hs.length < 6) continue; onen++; if (hs.slice().sort((a, b) => b[0] - a[0])[0][1] === 1) one++ }
-const report = { positions: labelled.length, signPositions: allPos, baseRate: +base.toFixed(4), cvAuc: +cvAuc.toFixed(4), tau: TAU, precisionAtTau: +(tp / above.length).toFixed(4), recallAtTau: +(tp / allPos).toFixed(4), top1AgreementAnyAyahWithSign: +(top1 / top1n).toFixed(4), top1AgreementAyahsWithOneSign: +(one / onen).toFixed(4), ayahsWithOneSignTested: onen, skippedAyahs: skipped.length }
+const report = { mode: MODE, positions: labelled.length, signPositions: allPos, baseRate: +base.toFixed(4), cvAuc: +cvAuc.toFixed(4), tau: TAU, precisionAtTau: +(tp / above.length).toFixed(4), recallAtTau: +(tp / allPos).toFixed(4), top1AgreementAnyAyahWithSign: +(top1 / top1n).toFixed(4), top1AgreementAyahsWithOneSign: +(one / onen).toFixed(4), ayahsWithOneSignTested: onen, skippedAyahs: skipped.length }
 
 // ---- final model on everything; write candidates for ayahs longer than the whole-ayah limit ----
 const wAll = train(labelled)
@@ -150,11 +176,13 @@ for (const r of rows) {
   if (p < MIN_P) continue
   ;(ayahs[`${r.s}:${r.a}`] ??= { n: r.n, c: [] }).c.push([r.i, Math.round(p * 1000)])
 }
-const outFile = join(root, 'src/data/generated/phrase-candidates.json')
+// The SHIPPED model is the corpus-free one. Corpus-derived scores go to data/gpl/ (git-ignored, never bundled): developer cross-check only.
+const outFile = argv('out') ?? join(root, MODE === 'orth' ? 'src/data/generated/phrase-candidates.json' : 'data/gpl/phrase-candidates-qac.json')
 mkdirSync(dirname(outFile), { recursive: true })
-writeFileSync(outFile, JSON.stringify({ schema: 1, source: SOURCE, report, wholeLimit: WHOLE_LIMIT, ayahs }))
+const SRC = MODE === 'orth' ? { dataset: 'canonical text only (no third-party linguistic data)', note: 'spelling features and short function-word lists written for this project; trained on the mushaf\'s own stop signs' } : SOURCE
+writeFileSync(outFile, JSON.stringify({ schema: 1, source: SRC, report, wholeLimit: WHOLE_LIMIT, ayahs }))
 mkdirSync(join(root, 'data/crosscheck'), { recursive: true })
-writeFileSync(join(root, 'data/crosscheck/phrase-model-report.json'), JSON.stringify({ ...report, features: vocab.size, source: SOURCE }, null, 2))
+writeFileSync(join(root, MODE === 'orth' ? 'data/crosscheck/phrase-model-report.json' : 'data/crosscheck/phrase-model-report-qac-devonly.json'), JSON.stringify({ ...report, mode: MODE, features: vocab.size, source: SRC }, null, 2))
 // the strongest learned signals, for review
 const top = [...vocab.entries()].map(([k, j]) => [k, wAll[j]]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 14).map(([k, v]) => `${k}:${v.toFixed(2)}`)
 console.log(JSON.stringify(report, null, 1)); console.log('strongest signals:', top.join(' | ')); console.log(`wrote ${outFile} (${Object.keys(ayahs).length} ayahs)`)
