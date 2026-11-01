@@ -34,18 +34,16 @@ test.describe('core hifz loop', () => {
     await expect(page.getByTestId('plan-item').first()).toHaveAttribute('data-kind', 'new')
     await page.getByTestId('start-session').click()
     await expect(page).toHaveURL(/\/session/)
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-flow')).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/03-learn-sound.png' })
 
     // Audio path works against mocked host.
     await page.getByTestId('audio-play').click()
     await expect(page.getByTestId('audio-bar')).toContainText(/Ayah 1/)
 
-    await page.getByTestId('to-flow').click()
     await expect(page.getByTestId('stage-flow')).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/04-learn-flow.png' })
-    await page.getByTestId('said-it').click()
-    await page.getByTestId('rate-natural').click()
+    await page.getByTestId('ramp-next').click()
     await expect(page.getByTestId('stage-recall')).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/05-recall-hidden.png' })
     await page.getByTestId('reveal').click()
@@ -113,7 +111,7 @@ test.describe('core hifz loop', () => {
     await page.unrouteAll()
     await mockAudio(page, { failEveryAyah: true })
     await page.goto('/learn/1/1/1')
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-flow')).toBeVisible()
     const hosts: string[] = []
     page.on('request', (r) => { if (/\.mp3/.test(r.url())) hosts.push(new URL(r.url()).host) })
     await page.getByTestId('audio-play').click()
@@ -143,10 +141,9 @@ test.describe('continuity and long ayahs', () => {
 
   test('a very long ayah gets a conservative phrase ladder that keeps controls on screen', async ({ page }) => {
     await page.goto('/learn/2/282/282')           // the longest ayah (128 words)
-    await page.getByTestId('to-flow').click()
     await expect(page.getByTestId('stage-flow')).toBeVisible()
     await expect(page.getByText(/Long ayah: showing the part you are practising/)).toBeVisible()
-    await expect(page.getByTestId('said-it')).toBeInViewport()
+    await expect(page.getByTestId('ramp-next')).toBeInViewport()
     await page.getByTestId('edit-phrases').click()
     await expect(page.getByText(/not rulings on where to stop/)).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/09-phrase-editor.png' })

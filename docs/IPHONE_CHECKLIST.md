@@ -1,4 +1,12 @@
-# iPhone check: offline audio and your progress
+# iPhone check: the new practice flow, offline audio, your progress
+
+## New practice flow (this release)
+1. Learn an ayah from Ta-Ha: one screen, audio bar above **Said it**. Play it, say it aloud, tap. The next step shows only the first word; the rest is grey bars. Say it from the first word and tap; then recall. Does the first-word step read clearly in the Madinah font?
+2. On the faded step, tap **Show me**: the text returns. Do it twice on one ayah and learn it again another day: the app should offer to repair that joint.
+3. Leave mid-ayah and return: you land on the same step.
+
+---
+## Offline audio and progress
 
 **Verified on a real iPhone so far: nothing in this release.** Please tell me what you see.
 

@@ -30,14 +30,24 @@ export async function freshStart(page: Page) {
   await page.reload()
 }
 
+/** One step of practice: the ramp's single tap (or, for the repeated-recitation arm, a repetition then a rating). */
+export async function tapFlowStep(page: Page) {
+  const next = page.getByTestId('ramp-next')
+  if (await next.count()) { await next.click(); return }
+  await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
+}
+/** Walk the practice ramp until recall appears. */
+export async function walkRamp(page: Page) {
+  for (let i = 0; i < 30 && (await page.getByTestId('learn-flow').getAttribute('data-stage')) === 'flow'; i++) { await tapFlowStep(page); await page.waitForTimeout(40) }
+}
+
 /** Drive the Learn flow to completion, choosing ratings/grades. */
 export async function completeLearning(page: Page, opts: { grade?: 'independent' | 'hesitant' | 'prompted' | 'failed' } = {}) {
   const grade = opts.grade ?? 'independent'
   for (let guard = 0; guard < 60; guard++) {
     const stage = await page.locator('[data-testid="learn-flow"]').getAttribute('data-stage')
     if (stage === 'done') return
-    if (stage === 'sound') await page.getByTestId('to-flow').click()
-    else if (stage === 'flow') { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() }
+    if (stage === 'flow') await tapFlowStep(page)
     else if (stage === 'recall' || stage === 'connect') {
       if (await page.getByTestId('stage-repair').count()) { await page.getByText('Move on for now').click(); continue }
       await page.getByTestId('reveal').click()

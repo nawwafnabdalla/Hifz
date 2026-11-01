@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { freshStart, mockAudio, idbRows } from './helpers'
+import { freshStart, mockAudio, idbRows, walkRamp } from './helpers'
 
 test.describe('Madinah Mushaf script', () => {
   test.beforeEach(async ({ page }) => { await mockAudio(page); await freshStart(page) })
@@ -35,7 +35,6 @@ test.describe('Madinah Mushaf script', () => {
     await expect(page.locator('.arabic .w')).toHaveCount(1)                       // exactly one word revealed, in the official script
     await page.screenshot({ path: 'test-results/shots/51-hint-madinah.png' })
     await page.goto('/learn/2/110/110')                                           // 17 words, three phrases: dimming applies
-    await page.getByTestId('to-flow').click()
     await expect(page.getByTestId('stage-flow')).toBeVisible()
     await expect(page.locator('.arabic .w.dim').first()).toBeVisible()            // phrase dimming still works word by word
     await page.screenshot({ path: 'test-results/shots/52-ladder-madinah.png' })
@@ -44,10 +43,7 @@ test.describe('Madinah Mushaf script', () => {
   test('Ta-Ha opens in the Madinah script and the Learn flow completes', async ({ page }) => {
     await page.goto('/learn/20/1/3')
     await expect(page.locator('html')).toHaveAttribute('data-script', 'madinah')
-    await page.getByTestId('to-flow').click()
-    for (let i = 0; i < 12 && (await page.getByTestId('learn-flow').getAttribute('data-stage')) === 'flow'; i++) {
-      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
-    }
+    await walkRamp(page)
     await page.getByTestId('reveal').click()
     await page.getByTestId('grade-independent').click()
     await expect(page.getByTestId('learn-flow')).toBeVisible()
@@ -55,7 +51,7 @@ test.describe('Madinah Mushaf script', () => {
   })
 
   test('the phrase editor, junction drill and saved passages draw in the same script', async ({ page }) => {
-    await page.goto('/learn/2/255/255'); await page.getByTestId('to-flow').click()
+    await page.goto('/learn/2/255/255')
     await page.getByTestId('edit-phrases').click()
     await expect(page.getByText(/not rulings on where to stop/)).toBeVisible()
     expect(await page.locator('.sheet .arabic .w').first().evaluate((e) => getComputedStyle(e).fontFamily)).toContain('KFGQPC')
@@ -93,13 +89,8 @@ test.describe('reciter verification on the device', () => {
 test('a slip repair is not followed by a second, duplicate repair prompt', async ({ page }) => {
   await mockAudio(page); await freshStart(page)
   await page.goto('/learn/2/255/255')
-  await page.getByTestId('to-flow').click()
-  const saidIt = page.getByTestId('said-it'), reveal = page.getByTestId('reveal')
-  for (let i = 0; i < 40; i++) {                                                   // walk the ladder until the recall step shows
-    await expect(saidIt.or(reveal)).toBeVisible()
-    if (await reveal.isVisible()) break
-    await saidIt.click(); await page.getByTestId('rate-natural').click()
-  }
+  await walkRamp(page)
+  const reveal = page.getByTestId('reveal')
   await reveal.click()
   await page.locator('[data-word="12"]').click()
   await page.getByTestId('grade-prompted').click()
