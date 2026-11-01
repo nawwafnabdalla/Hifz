@@ -52,7 +52,9 @@ async function surahWindow(rec: RecordingTimings, surah: number, timing: AyahTim
   const origin = timing.originMs ?? 0
   const w = byteWindow(file, origin + prop.startMs - WINDOW_PAD_MS, Math.min(file.durationMs, origin + prop.endMs + WINDOW_PAD_MS))
   const ctl = new AbortController()
-  const res = await fetch(audio.urlTemplate.replace('{SSS}', pad3(surah)), { mode: 'cors', credentials: 'omit', headers: { Range: `bytes=${w.start}-${w.end}` }, signal: ctl.signal })
+  const url = audio.urls?.[String(surah)] ?? audio.urlTemplate?.replace('{SSS}', pad3(surah))
+  if (!url) throw new Error('no audio address for this surah')
+  const res = await fetch(url, { mode: 'cors', credentials: 'omit', headers: { Range: `bytes=${w.start}-${w.end}` }, signal: ctl.signal })
   if (res.status === 200) {                                                  // the host ignored Range
     const len = Number(res.headers.get('content-length') ?? Infinity)
     if (len > MAX_UNRANGED_BYTES) { ctl.abort(); throw new Error('host does not support range requests') }

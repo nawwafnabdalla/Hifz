@@ -34,7 +34,7 @@ export interface TimingProvenance {
   /** Riwayah of the recitation and of the text the timings were aligned to. Only Hafs 'an 'Asim matches the app's text. */
   riwayah?: string
   /** For 'surah' recordings: where the audio comes from and how to cut a window out of it by bytes. */
-  audio?: { urlTemplate: string; files: Record<string, { bytes: number; kbps: number; dataOffset: number; durationMs: number }> }
+  audio?: { /** `{SSS}` template, or an explicit URL per surah (catalogues list one per chapter) */ urlTemplate?: string; urls?: Record<string, string>; files: Record<string, { bytes: number; kbps: number; dataOffset: number; durationMs: number }> }
 }
 export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
 
@@ -42,6 +42,8 @@ export interface RecordingTimings { schema: 1; reciter: string; provenance: Timi
 export const DURATION_TOLERANCE_MS = 60
 const MAX_GAP_PAD_MS = 150
 const TAIL_MS = 160
+/** Words inside one phrase follow each other; a longer silence than this between two of them means the recitation left the text (a repeated passage, a sermon-style aside), and the phrase is refused. */
+export const MAX_INNER_GAP_MS = 1200
 
 export type TimingProblem = 'empty' | 'out-of-order' | 'overlap' | 'bad-span' | 'word-out-of-range' | 'past-end' | 'sparse'
 
@@ -85,6 +87,7 @@ export function proposeRange(t: AyahTiming, from: number, to: number): RangeProp
   if (a < 0 || b < 0 || a > b) return null
   const sa = t.segments[a]!, sb = t.segments[b]!
   if (sa.w0 !== from || sb.w1 - 1 !== to) return null          // would cut inside a grouped segment
+  for (let i = a + 1; i <= b; i++) if (t.segments[i]!.t0 - t.segments[i - 1]!.t1 > MAX_INNER_GAP_MS) return null
   const prev = t.segments[a - 1], next = t.segments[b + 1]
   // A neighbour with no gap (or a slightly overlapping one) is still a boundary that needs a real pause; only the file's edges do not.
   const startGap: [number, number] | null = prev ? [Math.min(prev.t1, sa.t0), Math.max(prev.t1, sa.t0)] : null

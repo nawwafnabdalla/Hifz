@@ -1,0 +1,3187 @@
+{
+ "release": "v4.0.0",
+ "created": "2026-10-24T19:09:29Z",
+ "license": "CC-BY-4.0",
+ "recitations": [
+  {
+   "slug": "abdul_hamid_ghraio_2025_yt",
+   "name": "Abdul Hamid Ghraio",
+   "reciterId": "abdul_hamid_ghraio",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "taraweeh",
+   "year": 2025,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 25,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 162,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdul_hamid_ghraio_2026_yt",
+   "name": "Abdul Hamid Ghraio",
+   "reciterId": "abdul_hamid_ghraio",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "taraweeh",
+   "year": 2026,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 48,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 154,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulaziz_al_turki_yt",
+   "name": "Abdulaziz Al-Turki",
+   "reciterId": "abdulaziz_al_turki",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": 2025,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6115,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 112,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 28,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6115,
+    "usableAyahs": 6115,
+    "ofWhichRepeatedPassage": 429,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulbasit_abdulsamad_mujawwad_tarteel",
+   "name": "Abdulbasit Abdulsamad",
+   "reciterId": "abdulbasit_abdulsamad",
+   "channel": "tarteel",
+   "style": "mujawwad",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 606,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulbasit_abdulsamad_tarteel",
+   "name": "Abdulbasit Abdulsamad",
+   "reciterId": "abdulbasit_abdulsamad",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 407,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulbasit_abdulsamad_warsh_qdc",
+   "name": "Abdulbasit Abdulsamad",
+   "reciterId": "abdulbasit_abdulsamad",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "abdullah_al_buaijan_2025_yt",
+   "name": "Abdullah Al-Buaijan",
+   "reciterId": "abdullah_al_buaijan",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": 2025,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 1,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 67,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdullah_al_mattrod_qdc",
+   "name": "Abdullah Al-Mattrod",
+   "reciterId": "abdullah_al_mattrod",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 22050,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 336,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdullah_al_qarafi_mp3quran",
+   "name": "Abdullah Al-Qarafi",
+   "reciterId": "abdullah_al_qarafi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 460,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdullah_basfar_qdc",
+   "name": "Abdullah Basfar",
+   "reciterId": "abdullah_basfar",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1521,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdullah_kamel_way2quran",
+   "name": "Abdullah Kamel",
+   "reciterId": "abdullah_kamel",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1665,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulmohsin_al_qasim_qdc",
+   "name": "Abdulmohsin Al-Qasim",
+   "reciterId": "abdulmohsin_al_qasim",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 43,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulrahman_al_sudais_tarteel",
+   "name": "Abdulrahman Al-Sudais",
+   "reciterId": "abdulrahman_al_sudais",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 648,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulrahman_al_sudais_yt",
+   "name": "Abdulrahman Al-Sudais",
+   "reciterId": "abdulrahman_al_sudais",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": 2026,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6234,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 113,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6234,
+    "usableAyahs": 6234,
+    "ofWhichRepeatedPassage": 680,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulrahman_az_zawawi_way2quran",
+   "name": "Abdulrahman Az-Zawawi",
+   "reciterId": "abdulrahman_az_zawawi",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 32,
+    "mode": "cbr",
+    "sampleRate": 16000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 1114,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdulwadood_haneef_mp3quran",
+   "name": "Abdulwadood Haneef",
+   "reciterId": "abdulwadood_haneef",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 718,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdur_rashid_sufi_qdc",
+   "name": "Abdur-Rashid Sufi",
+   "reciterId": "abdur_rashid_sufi",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 240,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abdur_rashid_sufi_shubah_qdc",
+   "name": "Abdur-Rashid Sufi",
+   "reciterId": "abdur_rashid_sufi",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "shubah_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6219,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 1,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6219,
+    "usableAyahs": 6219,
+    "ofWhichRepeatedPassage": 236,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "abu_bakr_al_shatri_tarteel",
+   "name": "Abu Bakr Al-Shatri",
+   "reciterId": "abu_bakr_al_shatri",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1853,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "adel_al_karbalaei_archive_v2",
+   "name": "Adel Al-Karbalaei",
+   "reciterId": "adel_al_karbalaei",
+   "channel": "archive_org",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "archive.org"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 182,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmad_naseem_ali_ahmad_2019_yt",
+   "name": "Ahmad Naseem Ali Ahmad",
+   "reciterId": "ahmad_naseem_ali_ahmad",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": 2019,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 48000,
+    "withOffsets": 114,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 755,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_abdurahman_darar_tvquran",
+   "name": "Ahmed Abdurahman Darar",
+   "reciterId": "ahmed_abdurahman_darar",
+   "channel": "tvquran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6234,
+   "audio": {
+    "hosts": [
+     "download.tvquran.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 48000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6234,
+    "usableAyahs": 6234,
+    "ofWhichRepeatedPassage": 46,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_al_ajmi_qdc",
+   "name": "Ahmed Al-Ajmi",
+   "reciterId": "ahmed_al_ajmi",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 160,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 1456,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_al_swailem_mp3quran",
+   "name": "Ahmed Al-Suwailem",
+   "reciterId": "ahmed_al_swailem",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 320,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 349,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_amer_tvquran",
+   "name": "Ahmed Amer",
+   "reciterId": "ahmed_amer",
+   "channel": "tvquran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.tvquran.com"
+    ],
+    "chapters": 114,
+    "kbps": 64,
+    "mode": "cbr",
+    "sampleRate": 22050,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 342,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_deban_qalon_mp3quran",
+   "name": "Ahmed Deban",
+   "reciterId": "ahmed_deban",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 320,
+    "mode": "cbr",
+    "sampleRate": 48000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "ahmed_issa_al_maasaraawi_mp3quran",
+   "name": "Ahmed Issa Al-Maasaraawi",
+   "reciterId": "ahmed_issa_al_maasaraawi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6234,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6234,
+    "usableAyahs": 6234,
+    "ofWhichRepeatedPassage": 258,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_kaseb_way2quran",
+   "name": "Ahmed Kaseb",
+   "reciterId": "ahmed_kaseb",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 32000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 308,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_khader_al_trabulsi_qalon_tvquran",
+   "name": "Ahmed Khader Al-Trabulsi",
+   "reciterId": "ahmed_khader_al_trabulsi",
+   "channel": "tvquran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6213,
+   "audio": {
+    "hosts": [
+     "download.tvquran.com"
+    ],
+    "chapters": 114,
+    "kbps": 64,
+    "mode": "cbr",
+    "sampleRate": 22050,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "ahmed_nuayna_qdc",
+   "name": "Ahmed Nuayna",
+   "reciterId": "ahmed_nuayna",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 162,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_saleh_rajab_qalon_way2quran",
+   "name": "Ahmed Saleh Rajab",
+   "reciterId": "ahmed_saleh_rajab",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6213,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 32,
+    "mode": "cbr",
+    "sampleRate": 16000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "ahmed_saud_mp3quran",
+   "name": "Ahmed Saud",
+   "reciterId": "ahmed_saud",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 327,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 30,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 327,
+    "usableAyahs": 327,
+    "ofWhichRepeatedPassage": 2,
+    "skipped": {},
+    "taha94": null,
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_shaheen_mp3quran",
+   "name": "Ahmed Khalil Shaheen",
+   "reciterId": "ahmed_shaheen",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 730,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ahmed_talib_bin_humaid_mp3quran",
+   "name": "Ahmed Talib bin Hameed",
+   "reciterId": "ahmed_talib_bin_humaid",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 5561,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 107,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 5561,
+    "usableAyahs": 5561,
+    "ofWhichRepeatedPassage": 601,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "akram_al_alaqmi_qdc",
+   "name": "Akram Al-Alaqmi",
+   "reciterId": "akram_al_alaqmi",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1001,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "al_dokali_mohammed_alaalim_qalon_mp3quran",
+   "name": "Al-Dokali Mohammed Al-Aalim",
+   "reciterId": "al_dokali_mohammed_alaalim",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "al_hussayni_al_azazy_kids_qdc",
+   "name": "Al-Hussayni Al-Azazy",
+   "reciterId": "al_hussayni_al_azazy",
+   "channel": "quranicaudio",
+   "style": "children_repeat",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6234,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6234,
+    "usableAyahs": 6234,
+    "ofWhichRepeatedPassage": 2074,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "alaa_aqel_way2quran",
+   "name": "Alaa Aqel",
+   "reciterId": "alaa_aqel",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 32,
+    "mode": "cbr",
+    "sampleRate": 16000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 798,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ali_al_huthaifi_mp3quran",
+   "name": "Ali Al-Huthaifi",
+   "reciterId": "ali_al_huthaifi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 64,
+    "mode": "cbr",
+    "sampleRate": 24000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 935,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ali_hajjaj_al_souasi_qdc",
+   "name": "Ali Hajjaj Al-Souasi",
+   "reciterId": "ali_hajjaj_al_souasi",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 282,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "aloyoon_al_koshi_warsh_mp3quran",
+   "name": "Aloyoon Al-Koshi",
+   "reciterId": "aloyoon_al_koshi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "anas_almiman_yt",
+   "name": "Anas Al-Miman",
+   "reciterId": "anas_almiman",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": 2026,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 47,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 256,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ayman_swed_muallim_yt",
+   "name": "Ayman Suwayd",
+   "reciterId": "ayman_swed",
+   "channel": "youtube",
+   "style": "muallim",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 52,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1339,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "aziz_alili_qdc",
+   "name": "Aziz Alili",
+   "reciterId": "aziz_alili",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 189,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "badr_al_turki_yt",
+   "name": "Badr Al-Turki",
+   "reciterId": "badr_al_turki",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 19,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 646,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "bandar_baleela_qdc",
+   "name": "Bandar Baleela",
+   "reciterId": "bandar_baleela",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 938,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "fatih_seferagic_way2quran",
+   "name": "Fatih Seferagic",
+   "reciterId": "fatih_seferagic",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 48000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 64,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "haitham_al_dukhain_mp3quran",
+   "name": "Haitham Al-Dukhain",
+   "reciterId": "haitham_al_dukhain",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1113,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "hani_al_rifai_qdc_128k",
+   "name": "Hani Al-Rifai",
+   "reciterId": "hani_al_rifai",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 529,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 240
+   }
+  },
+  {
+   "slug": "hatem_fareed_al_waer_mp3quran",
+   "name": "Hatem Fareed Al-Waer",
+   "reciterId": "hatem_fareed_al_waer",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 411,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "ibrahim_al_akhdar_drive",
+   "name": "Ibrahim Al-Akhdar",
+   "reciterId": "ibrahim_al_akhdar",
+   "channel": "drive",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "drive.google.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 71,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 130,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "imad_zuhair_hafez_mp3quran",
+   "name": "Imad Zuhair Hafez",
+   "reciterId": "imad_zuhair_hafez",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 48,
+    "mode": "cbr",
+    "sampleRate": 22050,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 581,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "islam_sobhi_mp3quran",
+   "name": "Islam Sobhi",
+   "reciterId": "islam_sobhi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 5333,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 106,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 5333,
+    "usableAyahs": 5333,
+    "ofWhichRepeatedPassage": 648,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "kamel_al_bayli_warsh_way2quran",
+   "name": "Kamel Al-Bayli",
+   "reciterId": "kamel_al_bayli",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6213,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 32,
+    "mode": "cbr",
+    "sampleRate": 11025,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "khalid_al_mohana_drive",
+   "name": "Khalid Al-Mohana",
+   "reciterId": "khalid_al_mohana",
+   "channel": "drive",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "drive.google.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 111,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 262,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "khalid_al_qahtani_mp3quran",
+   "name": "Khalid Al-Qahtani",
+   "reciterId": "khalid_al_qahtani",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6234,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6234,
+    "usableAyahs": 6234,
+    "ofWhichRepeatedPassage": 892,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "khalifa_al_tunaiji_tarteel",
+   "name": "Khalifa Al-Tunaiji",
+   "reciterId": "khalifa_al_tunaiji",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 22050,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 314,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "maher_al_muaiqly_qdc",
+   "name": "Maher Al-Muaiqly",
+   "reciterId": "maher_al_muaiqly",
+   "channel": "quranicaudio",
+   "style": "mujawwad",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 96,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 326,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "maher_al_muaiqly_tarteel",
+   "name": "Maher Al-Muaiqly",
+   "reciterId": "maher_al_muaiqly",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1497,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mahmoud_abdul_hakam_mp3quran",
+   "name": "Mahmoud Abdul Hakam",
+   "reciterId": "mahmoud_abdul_hakam",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 576,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mahmoud_ali_al_banna_qdc",
+   "name": "Mahmoud Ali Al-Banna",
+   "reciterId": "mahmoud_ali_al_banna",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 420,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mahmoud_khalil_al_husary_mp3quran",
+   "name": "Mahmoud Khalil Al-Husary",
+   "reciterId": "mahmoud_khalil_al_husary",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 328,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mahmoud_khalil_al_husary_mujawwad_tarteel",
+   "name": "Mahmoud Khalil Al-Husary",
+   "reciterId": "mahmoud_khalil_al_husary",
+   "channel": "tarteel",
+   "style": "mujawwad",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 48000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 577,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mahmoud_khalil_al_husary_qdc_128k",
+   "name": "Mahmoud Khalil Al-Husary",
+   "reciterId": "mahmoud_khalil_al_husary",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 307,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "majed_al_zamil_yt",
+   "name": "Majed Al-Zamil",
+   "reciterId": "majed_al_zamil",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": 2025,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 57,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 603,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mishary_rashid_al_afasy_2008_qdc",
+   "name": "Mishary Rashid Al-Afasy",
+   "reciterId": "mishary_rashid_al_afasy",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "taraweeh",
+   "year": 2008,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 944,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mishary_rashid_al_afasy_mp3quran",
+   "name": "Mishary Rashid Al-Afasy",
+   "reciterId": "mishary_rashid_al_afasy",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 831,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "moaz_mahmoud_hamed_qalon_way2quran",
+   "name": "Moaz Mahmoud Hamed",
+   "reciterId": "moaz_mahmoud_hamed",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6177,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 113,
+    "kbps": 32,
+    "mode": "cbr",
+    "sampleRate": 16000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "mohammed_abdulkareem_qdc",
+   "name": "Mohammed Abdulkareem",
+   "reciterId": "mohammed_abdulkareem",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 32000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 1275,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_al_luhaidan_mp3quran",
+   "name": "Mohammed Al-Luhaidan",
+   "reciterId": "mohammed_al_luhaidan",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 1137,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_al_tablawi_qdc",
+   "name": "Mohammed Al-Tablawi",
+   "reciterId": "mohammed_al_tablawi",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 90,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_alghazali_archive",
+   "name": "Mohammed Al-Ghazali",
+   "reciterId": "mohammed_alghazali",
+   "channel": "archive_org",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "ia601406.us.archive.org"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1117,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_ayyub_drive",
+   "name": "Mohammed Ayyub",
+   "reciterId": "mohammed_ayyub",
+   "channel": "drive",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "drive.google.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 110,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 697,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_burhaji_yt",
+   "name": "Mohammed Burhaji",
+   "reciterId": "mohammed_burhaji",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": 2026,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1071,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_saayed_warsh_mp3quran",
+   "name": "Mohammed Saayed",
+   "reciterId": "mohammed_saayed",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "mohammed_siddiq_al_minshawi_1967_drive",
+   "name": "Mohammed Siddiq Al-Minshawi",
+   "reciterId": "mohammed_siddiq_al_minshawi",
+   "channel": "drive",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": 1967,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "drive.google.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 6,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 546,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_siddiq_al_minshawi_mp3quran",
+   "name": "Mohammed Siddiq Al-Minshawi",
+   "reciterId": "mohammed_siddiq_al_minshawi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 469,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mohammed_siddiq_al_minshawi_mujawwad_mp3quran",
+   "name": "Mohammed Siddiq Al-Minshawi",
+   "reciterId": "mohammed_siddiq_al_minshawi",
+   "channel": "mp3quran",
+   "style": "mujawwad",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 907,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "muammar_zainal_al_sukaini_way2quran",
+   "name": "Muammar Zainal Al-Sukaini",
+   "reciterId": "muammar_zainal_al_sukaini",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6229,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 32,
+    "mode": "cbr",
+    "sampleRate": 16000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6229,
+    "usableAyahs": 6229,
+    "ofWhichRepeatedPassage": 419,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mukhtar_al_haj_mp3quran",
+   "name": "Mukhtar Al-Haj",
+   "reciterId": "mukhtar_al_haj",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 818,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "mustafa_ismail_mp3quran",
+   "name": "Mustafa Ismail",
+   "reciterId": "mustafa_ismail",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 313,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "nabil_al_rifai_mp3quran",
+   "name": "Nabil Al-Rifai",
+   "reciterId": "nabil_al_rifai",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 160,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 946,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "nasser_al_qatami_mp3quran",
+   "name": "Nasser Al-Qatami",
+   "reciterId": "nasser_al_qatami",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 96,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1699,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "omar_al_qazabri_warsh_mp3quran",
+   "name": "Omar Al-Qazabri",
+   "reciterId": "omar_al_qazabri",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "raad_al_kurdi_mp3quran",
+   "name": "Raad Al-Kurdi",
+   "reciterId": "raad_al_kurdi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6230,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6230,
+    "usableAyahs": 6230,
+    "ofWhichRepeatedPassage": 806,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "saad_al_ghamdi_tarteel",
+   "name": "Saad Al-Ghamdi",
+   "reciterId": "saad_al_ghamdi",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 752,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "saber_abdulhakam_qalon_way2quran",
+   "name": "Saber Abdulhakam",
+   "reciterId": "saber_abdulhakam",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "saber_abdulhakam_shubah_way2quran",
+   "name": "Saber Abdulhakam",
+   "reciterId": "saber_abdulhakam",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "shubah_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 320,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 782,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "saber_abdulhakam_warsh_way2quran",
+   "name": "Saber Abdulhakam",
+   "reciterId": "saber_abdulhakam",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "saber_abdulhakam_yt",
+   "name": "Saber Abdulhakam",
+   "reciterId": "saber_abdulhakam",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "studio",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 114,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 606,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "salah_al_budair_mp3quran",
+   "name": "Salah Al-Budair",
+   "reciterId": "salah_al_budair",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 320,
+    "mode": "cbr",
+    "sampleRate": 48000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 743,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "salah_al_budair_qdc",
+   "name": "Salah Al-Budair",
+   "reciterId": "salah_al_budair",
+   "channel": "quranicaudio",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.quranicaudio.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 752,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "saud_al_shuraim_mp3quran",
+   "name": "Saud Al-Shuraim",
+   "reciterId": "saud_al_shuraim",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 439,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "tawfiq_as_sayegh_mp3quran",
+   "name": "Tawfiq As-Sayegh",
+   "reciterId": "tawfiq_as_sayegh",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 664,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 120
+   }
+  },
+  {
+   "slug": "wadie_al_yamani_tvquran",
+   "name": "Wadie Al-Yamani",
+   "reciterId": "wadie_al_yamani",
+   "channel": "tvquran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "download.tvquran.com"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 680,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "walid_al_naihi_qalon_mp3quran",
+   "name": "Walid Al-Naihi",
+   "reciterId": "walid_al_naihi",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "qalon_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "walid_atef_way2quran",
+   "name": "Walid Atef",
+   "reciterId": "walid_atef",
+   "channel": "way2quran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6235,
+   "audio": {
+    "hosts": [
+     "media.way2quran.com"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "mixed",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6235,
+    "usableAyahs": 6235,
+    "ofWhichRepeatedPassage": 1269,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "yasser_al_dosari_archive",
+   "name": "Yasser Al-Dosari",
+   "reciterId": "yasser_al_dosari",
+   "channel": "archive_org",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": "taraweeh",
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "archive.org"
+    ],
+    "chapters": 114,
+    "kbps": 128,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1082,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "yasser_al_dosari_tarteel",
+   "name": "Yasser Al-Dosari",
+   "reciterId": "yasser_al_dosari",
+   "channel": "tarteel",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "audio-cdn.tarteel.ai"
+    ],
+    "chapters": 114,
+    "kbps": null,
+    "mode": "cbr",
+    "sampleRate": 48000,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 1102,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "yasser_al_dosari_yt",
+   "name": "Yasser Al-Dosari",
+   "reciterId": "yasser_al_dosari",
+   "channel": "youtube",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": 2026,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6236,
+   "audio": {
+    "hosts": [
+     "www.youtube.com"
+    ],
+    "chapters": 114,
+    "kbps": 192,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 38,
+    "streamable": false
+   },
+   "words": {
+    "canonicalRows": 6236,
+    "usableAyahs": 6236,
+    "ofWhichRepeatedPassage": 393,
+    "skipped": {},
+    "taha94": "usable",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  },
+  {
+   "slug": "yassin_al_jazaery_warsh_mp3quran",
+   "name": "Yassin Al-Jazaery",
+   "reciterId": "yassin_al_jazaery",
+   "channel": "mp3quran",
+   "style": "murattal",
+   "riwayah": "warsh_an_nafi",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6214,
+   "audio": {
+    "hosts": [
+     "cdn.mp3quran.net"
+    ],
+    "chapters": 114,
+    "kbps": 96,
+    "mode": "cbr",
+    "sampleRate": 44100,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "error": "TypeError: Cannot read properties of undefined (reading 'split')"
+   }
+  },
+  {
+   "slug": "yusuf_bin_noah_ahmed_tvquran",
+   "name": "Yusuf bin Noah Ahmed",
+   "reciterId": "yusuf_bin_noah_ahmed",
+   "channel": "tvquran",
+   "style": "murattal",
+   "riwayah": "hafs_an_asim",
+   "context": null,
+   "year": null,
+   "zipSha256Ok": true,
+   "coverageAyahs": 6144,
+   "audio": {
+    "hosts": [
+     "download.tvquran.com"
+    ],
+    "chapters": 114,
+    "kbps": 64,
+    "mode": "cbr",
+    "sampleRate": 22050,
+    "withOffsets": 0,
+    "streamable": true
+   },
+   "words": {
+    "canonicalRows": 6144,
+    "usableAyahs": 6144,
+    "ofWhichRepeatedPassage": 2141,
+    "skipped": {},
+    "taha94": "usable (last take of a repeated passage)",
+    "medianGapMs": 0,
+    "p90GapMs": 0
+   }
+  }
+ ]
+}

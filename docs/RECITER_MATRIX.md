@@ -2,6 +2,19 @@
 
 Written 1 Nov 2026. **Honest summary: no reciter is yet "Ready".** The engine, the importers and the validators are built and tested on synthetic recordings; no *real* word timings or real recordings have been reachable from the build environment, so nothing has been validated on a real recitation. Classes are assigned from what was actually read, and "Promising" is never presented as verified.
 
+## Update after Route A (network allowlist), 1 Nov 2026
+**Reachable now:** `github.com` release assets (including the `objects`/`release-assets` redirect), `huggingface.co` API and `qul.tarteel.ai`. **Still blocked (`403 CONNECT tunnel failed`):** every audio host, and Hugging Face's file storage (`us.aws.cdn.hf.co`, `cas-bridge.xethub.hf.co`, `cdn-lfs.huggingface.co`, `cdn.hf.co`).
+
+**Obtained and checked, from the real v4.0.0 release:** `manifest.json`, `catalog.json` and all 102 recitation zips. Every zip's SHA-256 matches the manifest. Every ayah's word count in the timing files equals this app's canonical text (no text-edition mismatch found). 86 recitations are Hafs ʿan ʿĀṣim; 16 are other qirāʾāt and are refused. Full per-recitation table: [`QUA_V4_MATRIX.md`](QUA_V4_MATRIX.md).
+
+**What changed from the earlier guesses (now evidence):**
+* QUA aligns to **specific whole-surah files at specific URLs** (the catalogue lists one per chapter) and times words edge to edge (median gap 0 ms), so pauses must come from the audio, as the player already does.
+* **Maher:** `maher_al_muaiqly_qdc` (download.quranicaudio.com, 96 kbps, *mujawwad* style) and `maher_al_muaiqly_tarteel` (audio-cdn.tarteel.ai, 128 kbps, murattal). Both are 6,236 ayahs and Hafs. Neither is the EveryAyah file the app currently plays for Maher.
+* **Yasser:** `yasser_al_dosari_tarteel` (audio-cdn.tarteel.ai, 48 kHz CBR) and `yasser_al_dosari_archive` (archive.org, 128 kbps, taraweeh recording) are streamable. `yasser_al_dosari_yt` is YouTube-only.
+* **Minshawi:** `mohammed_siddiq_al_minshawi_mp3quran` (cdn.mp3quran.net, 128 kbps) is streamable.
+* **Badr Al-Turki:** QUA has full timings, but they are aligned to a **YouTube** upload (192 kbps with chapter offsets). An app cannot stream or legitimately re-host that, and the MP3Quran recording of Badr is a different file, so QUA's timings must not be applied to it. Status: **Unavailable for now**; the route is to align the MP3Quran recording ourselves (see `ALIGNMENT.md`), which needs that audio reachable.
+* 61 recitations (Hafs, streamable, constant bitrate) are **Promising**; 0 are **Ready**, because Ready requires the audio itself to have been fetched and checked against the timings.
+
 ## What "Ready" requires (all of these, for one specific recording)
 1. Word timings that describe that exact recording (source, file, edition, byte size, bitrate, duration; never "the same reciter").
 2. Same riwayah as the app's text (Hafs ʿan ʿĀṣim). No silent mixing of qirāʾāt.

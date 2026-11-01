@@ -1,30 +1,39 @@
-# Getting the real data: exact files and the simplest legitimate route
+# Unblocking the audio: exact hostnames and files
 
-The build environment's proxy denies GitHub, Hugging Face, QUL, EveryAyah and MP3Quran. Nothing was bypassed. Pick one:
+**State after Route A (1 Nov 2026).** The timing data is in hand. The audio is not: every audio host answers `403 CONNECT tunnel failed` from this environment's proxy. Verified by direct probe of each hostname.
 
-## Route A: allow hosts for one session (simplest)
-Cloud environment → Network access → Allowed domains, add:
-`github.com`, `api.github.com`, `codeload.github.com`, `release-assets.githubusercontent.com`, `objects.githubusercontent.com`
-and, for audio checks, the audio hosts of the recitations you want (read them from `catalog.json`; typically `server10.mp3quran.net`, `everyayah.com`).
-Optional: `huggingface.co`, `qul.tarteel.ai`. Then ask me to continue: the importer, the Ta-Ha validation and the expansion run without any other manual step.
+## Allow these hostnames (Cloud environment → Network access → Allowed domains)
+Needed first, for the Ta-Ha validation of Maher and Yasser:
 
-## Route B: send the files
-From https://github.com/QUD-Technologies/quranic-universal-audio/releases (v4.0.0, 24 Oct 2026), for **one** recitation first (Maher or Yasser):
-1. The release manifest and `catalog.json` (to get recitation ids, audio URLs, recording metadata, riwayah and licence).
-2. That recitation's package: its word-timestamp file (`word_timestamps.json` or `.json.gz`) and `data/surah_info.json` if present, plus the checksum listed in the manifest. **Verify the checksum yourself** (`shasum -a 256`).
-3. The **matching** surah recordings for Ta-Ha (`020.mp3`) at minimum, from the exact URL the catalogue lists for that recitation. Do not substitute an EveryAyah or Islamic Network copy: different encodings shift positions by tens of milliseconds, and timings of one recording are not valid for another.
-Put them in a folder and run:
+| Hostname | Why | Recitations that use it |
+|---|---|---|
+| `audio-cdn.tarteel.ai` | Yasser (tarteel, 48 kHz CBR) and Maher (tarteel, 128 kbps) | 9 |
+| `download.quranicaudio.com` | Maher (qdc, 96 kbps) | 19 |
+| `archive.org` and `ia601406.us.archive.org` (archive.org redirects to `ia*.us.archive.org`; allow `*.us.archive.org` if wildcards are accepted) | Yasser (archive, 128 kbps) | 3 |
+| `cdn.mp3quran.net` | Minshawi and 26 more | 27 |
+
+For the wider expansion: `media.way2quran.com` (7) and `download.tvquran.com` (4).
+Optional, for developer-only listening checks against per-ayah clips embedded in the QUA dataset: `us.aws.cdn.hf.co`, `cas-bridge.xethub.hf.co`, `cdn-lfs.huggingface.co`, `cdn.hf.co`.
+Optional, to align recordings that have no timings (Badr Al-Turki on MP3Quran): `hetchyy-quranic-universal-aligner.hf.space`.
+
+Then run (nothing else is needed; it checks Range support, the byte size, bitrate and MP3 header of each surah file, and stores them):
 ```
-node scripts/import-qua.mjs --inspect --timings word_timestamps.json.gz
-node scripts/import-qua.mjs --reciter maher --recording qua:<id> --timings word_timestamps.json.gz \
-  --audio-dir ./maher-surahs --url-template 'https://<host>/<path>/{SSS}.mp3' \
-  --source "Quranic Universal Audio v4.0.0" --licence "<from catalog>" \
-  --url https://github.com/QUD-Technologies/quranic-universal-audio --riwayah hafs --surahs 20
+node scripts/import-qua.mjs --release-dir <folder with manifest.json, catalog.json and the zips> \
+   --slug yasser_al_dosari_tarteel --reciter dossary --surahs 20 --probe
 ```
-Read the "skipped" list. If `--inspect` prints `NOTHING understood`, send me the first lines of the file: the reader needs one small adjustment (`ayahsOf` in `scripts/import-qua.mjs`).
+Download the release folder with `curl -L https://github.com/QUD-Technologies/quranic-universal-audio/releases/download/v4.0.0/<file>` for `manifest.json`, `catalog.json` and each `<slug>.zip` (all 102 were already fetched and checked in this session; they are not committed).
 
-## Route C: Quran Align (EveryAyah-style per-ayah recordings)
-Quran Align release JSON for the reciter plus the same reciter's per-ayah MP3s from EveryAyah (`020001.mp3` …), then `scripts/import-timings.mjs --format align` (command in `PHRASE_AUDIO_SOURCES.md`).
+## Route B: send files instead (no allowlisting)
+The exact files, from `data/crosscheck/qua-v4.0.0-taha-audio-urls.txt` (Ta-Ha is surah 20, file `020.mp3`). Download them yourself, from those URLs, and put them in one folder per recitation (`<slug>/020.mp3`):
+1. `https://audio-cdn.tarteel.ai/quran/surah/yasserAlDosari/murattal/mp3/020.mp3` → `yasser_al_dosari_tarteel/020.mp3`
+2. `https://download.quranicaudio.com/quran/maher_almu3aiqly/year1440/020.mp3` → `maher_al_muaiqly_qdc/020.mp3`
+3. `https://audio-cdn.tarteel.ai/quran/surah/maherAlMuaiqly/murattal/mp3/020.mp3` → `maher_al_muaiqly_tarteel/020.mp3`
+4. `https://archive.org/download/Yasser_Aldosari_MP3_Quran/020.mp3` → `yasser_al_dosari_archive/020.mp3`
+Use the file exactly as served (no re-encoding; a re-encoded copy has different timing). Then:
+```
+node scripts/import-qua.mjs --release-dir <release folder> --slug yasser_al_dosari_tarteel --reciter dossary --surahs 20 --audio-dir yasser_al_dosari_tarteel
+```
+The importer refuses a file whose bitrate differs from the catalogue's, or that is variable-bitrate.
 
 ## After import
-`ReciterCheck` (Settings) reports whether phrase audio is available for the selected reciter and why not. On the phone: Learn → Ta-Ha → verse 94, listen to each phrase, then follow `IPHONE_CHECKLIST.md`.
+`ReciterCheck` (Settings) reports phrase audio for the selected reciter. On the phone: Learn → Ta-Ha → verse 94, listen to each phrase, then follow `IPHONE_CHECKLIST.md`.

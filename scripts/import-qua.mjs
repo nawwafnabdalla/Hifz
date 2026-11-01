@@ -8,7 +8,16 @@
 //                        --source "Quranic Universal Audio v4.0.0" --licence "CC BY 4.0 (timings); recordings: see audio rights" \
 //                        --url https://github.com/QUD-Technologies/quranic-universal-audio --riwayah hafs [--times absolute|relative]
 //
-// STATUS: the real QUA files were not reachable from the environment this was written in, so the input shape is NOT verified against
+// Directly from a Quranic Universal Audio release (the real shape: <slug>.zip + manifest.json + catalog.json in one folder):
+//
+//   node scripts/import-qua.mjs --release-dir ./v4.0.0 --slug yasser_al_dosari_tarteel --reciter dossary [--surahs 20] [--probe | --audio-dir ./surahs]
+//
+//   --probe reads the first 64 KB of each surah file from the audio host (HTTP Range) to learn its exact byte size, bitrate and where the audio
+//   starts; --audio-dir does the same from local copies (named SSS.mp3). Either way the facts are stored so the app can refuse a different edition.
+//   The release folder's zip is checked against manifest.json's sha256 first; riwayah must be hafs_an_asim; YouTube/Drive sources are refused.
+//
+// STATUS: the generic reader below was written before the real files were seen; the --release-dir reader matches the real v4.0.0 files.
+// The older note follows. The real QUA files were not reachable from the environment this was written in, so the input shape is NOT verified against
 // a real release. The reader below accepts the shapes such datasets use (see `ayahsOf`) and --inspect prints exactly what it found,
 // so the first run on a real file should be --inspect, then a small --surahs 20 import, then reading the report. Nothing is written for
 // an ayah unless every check below passes; everything skipped is listed with its reason. Never edit the output by hand.
@@ -19,15 +28,18 @@
 //  - the audio file must be constant-bitrate MP3 (phrase windows are cut by byte position), and its size, bitrate, data offset and length
 //    are stored so the app can refuse a different edition of the "same" recording,
 //  - --riwayah other than hafs is refused (the app's text is Hafs 'an 'Asim and qira'at are never mixed).
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs'
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync, statSync } from 'node:fs'
 import { gunzipSync } from 'node:zlib'
-import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { inspectMp3 } from './lib/mp3.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const has = (n) => process.argv.includes(`--${n}`)
+const haveFfprobe = () => { try { execFileSync('ffprobe', ['-version'], { stdio: 'ignore' }); return true } catch { return false } }
 const arg = (n, d) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : d }
 const need = (n) => { const v = arg(n); if (!v) { console.error(`missing --${n}`); process.exit(2) } return v }
 const pad3 = (n) => String(n).padStart(3, '0')
@@ -81,10 +93,10 @@ function describe(raw) {
   console.log(`first entry: ${JSON.stringify(sample)?.slice(0, 400)}`)
 }
 
-const timingsPath = need('timings')
+const releaseDir = arg('release-dir')
 const unit = arg('unit', 'ms')
-const raw = load(timingsPath)
-if (has('inspect')) {
+const raw = releaseDir ? null : load(need('timings'))
+if (has('inspect') && !releaseDir) {
   describe(raw)
   const found = ayahsOf(raw, unit)
   const surahs = new Set(found.map((a) => a.surah))
@@ -93,11 +105,32 @@ if (has('inspect')) {
   process.exit(found.length ? 0 : 1)
 }
 
-const reciter = need('reciter'), recording = need('recording'), audioDir = need('audio-dir'), urlTemplate = need('url-template')
-const source = need('source'), licence = need('licence'), url = need('url')
-const riwayah = arg('riwayah', 'unknown')
+const reciter = need('reciter')
+let recording = arg('recording'), audioDir = arg('audio-dir'), urlTemplate = arg('url-template')
+let source = arg('source'), licence = arg('licence'), url = arg('url')
+let riwayah = arg('riwayah', 'unknown')
+let release = null                                           // set in --release-dir mode
+if (releaseDir) {
+  const slug = need('slug')
+  const manifest = JSON.parse(readFileSync(join(releaseDir, 'manifest.json'), 'utf8'))
+  const cat = JSON.parse(readFileSync(join(releaseDir, 'catalog.json'), 'utf8')).recitations.find((r) => r.slug === slug)
+  const mrec = manifest.recitations?.[slug]
+  if (!cat || !mrec) { console.error(`refused: ${slug} is not in this release`); process.exit(3) }
+  const zip = join(releaseDir, mrec.zip)
+  const sha = createHash('sha256').update(readFileSync(zip)).digest('hex')
+  if (sha !== mrec.sha256) { console.error(`refused: ${mrec.zip} does not match the release manifest's sha256 (${sha} vs ${mrec.sha256}). Re-download it.`); process.exit(3) }
+  if (cat.riwayah !== 'hafs_an_asim') { console.error(`refused: ${slug} is ${cat.riwayah}; the app's text is Hafs 'an 'Asim and qira'at are never mixed`); process.exit(3) }
+  const urls = cat.audio?.chapter_urls ?? {}
+  if (Object.values(urls).some((u) => /youtube\.com|youtu\.be|drive\.google/.test(u))) { console.error(`refused: ${slug} is aligned to a YouTube/Drive source, which an app cannot stream and play.`); process.exit(3) }
+  release = { slug, manifest, cat, mrec, urls, offsets: cat.audio?.chapter_offsets_ms ?? {} }
+  recording = `qua:${slug}`
+  source = `Quranic Universal Audio ${manifest.release_version} (${slug}, ${mrec.ts_version})`
+  licence = `${manifest.license} for the timings. The recording belongs to its reciter and host (${[...new Set(Object.values(urls).map((u) => new URL(u).host))].join(', ')}); it is streamed from there, never copied.`
+  url = `https://github.com/QUD-Technologies/quranic-universal-audio/releases/tag/${manifest.release_version}`
+  riwayah = 'hafs'
+} else { recording = need('recording'); audioDir = need('audio-dir'); urlTemplate = need('url-template'); source = need('source'); licence = need('licence'); url = need('url') }
 if (riwayah !== 'hafs') { console.error(`refused: riwayah is "${riwayah}". Only Hafs 'an 'Asim matches the app's text; pass --riwayah hafs once the recitation's riwayah is confirmed from its catalogue entry.`); process.exit(3) }
-if (!urlTemplate.includes('{SSS}')) { console.error('--url-template must contain {SSS} (the three-digit surah number)'); process.exit(2) }
+if (!release && !urlTemplate.includes('{SSS}')) { console.error('--url-template must contain {SSS} (the three-digit surah number)'); process.exit(2) }
 const times = arg('times', 'absolute')                       // absolute: times are positions in the surah file; relative: from each ayah's own start (then there is no origin to recover)
 if (times !== 'absolute') { console.error('only --times absolute is supported: ayah windows are recovered from positions in the surah file'); process.exit(2) }
 const only = arg('surahs') ? new Set(arg('surahs').split(',').map(Number)) : null
@@ -123,20 +156,61 @@ function wordsToSegments(words, count) {
   return words.length / count < 0.85 ? { why: 'too few words timed' } : { segs }
 }
 
+/** The reciter's last continuous take: when words repeat (a passage recited twice) the earlier, abandoned attempt is dropped from the chain. */
+function lastTake(words) {
+  const out = []
+  for (const w of words) { while (out.length && out.at(-1).word >= w.word) out.pop(); out.push(w) }
+  return out
+}
+/** Release mode: the canonical rows of word_timestamps.json.gz, in the generic {surah, ayah, words} shape (times shifted by the chapter's offset in its source file). */
+function releaseAyahs() {
+  const zip = join(releaseDir, release.mrec.zip)
+  const rows = JSON.parse(gunzipSync(execFileSync('unzip', ['-p', zip, 'word_timestamps.json.gz'], { maxBuffer: 1 << 28 }))).rows
+  return rows.filter((r) => r[3] === true).map((r) => {
+    const [surah, ayah] = r[0].split(':').map(Number), off = release.offsets[String(surah)] ?? 0
+    return { surah, ayah, repeated: r[5].some((w, i) => i && w[0] <= r[5][i - 1][0]), words: lastTake(r[5].map(([w, s, e]) => ({ word: w - 1, t0: s + off, t1: e + off }))) }
+  })
+}
+/** Facts about one surah file, from a local copy (--audio-dir) or from the first 64 KB at the host (--probe, HTTP Range). { why } when it cannot be used. */
+async function fileFacts(surah) {
+  let head, bytes, durationMs
+  if (audioDir) {
+    const path = join(audioDir, `${pad3(surah)}.mp3`)
+    if (!existsSync(path)) return { why: 'surah audio file missing' }
+    head = readFileSync(path); bytes = statSync(path).size
+  } else {
+    const u = release?.urls[String(surah)]
+    if (!u) return { why: 'the release lists no audio for this surah' }
+    // curl, not fetch: it honours the environment's HTTPS proxy settings, which Node's fetch does not.
+    const tmp = mkdtempSync(join(tmpdir(), 'probe-')), hdr = join(tmp, 'h'), body = join(tmp, 'b')
+    const r = spawnSync('curl', ['-sSL', '-m', '90', '-r', '0-65535', '-D', hdr, '-o', body, '-w', '%{http_code}', u], { encoding: 'utf8' })
+    const code = Number(r.stdout.trim())
+    if (r.status !== 0 || !code) return { why: `audio host unreachable (${new URL(u).host}: ${(r.stderr || 'no response').trim().split('\n').pop().slice(0, 90)})` }
+    if (code !== 206) return { why: `audio host answered ${code} to a Range request (needs 206)` }
+    const heads = readFileSync(hdr, 'latin1').split(/\r?\n\r?\n/).filter(Boolean).at(-1)
+    bytes = Number(/content-range:\s*bytes\s+\d+-\d+\/(\d+)/i.exec(heads)?.[1])
+    if (!(bytes > 0)) return { why: 'audio host sent no usable Content-Range' }
+    head = readFileSync(body)
+  }
+  let m
+  try { m = inspectMp3(head) } catch { return { why: 'not an MP3' } }
+  if (!m.constantBitrate) return { why: 'variable-bitrate MP3 (cannot be cut by byte position)' }
+  const nominal = release?.cat.audio?.bitrate_kbps_nominal
+  if (nominal && nominal !== m.kbps) return { why: `bitrate ${m.kbps} kbps differs from the catalogue's ${nominal} kbps: not the recording that was aligned` }
+  durationMs = audioDir && existsSync(join(audioDir, `${pad3(surah)}.mp3`)) && haveFfprobe() ? seconds(join(audioDir, `${pad3(surah)}.mp3`)) : Math.round(((bytes - m.dataOffset) * 8) / m.kbps)
+  return { facts: { bytes, kbps: m.kbps, dataOffset: m.dataOffset, durationMs } }
+}
+
 const bySurah = new Map()
-for (const a of ayahsOf(raw, unit)) { if (!only || only.has(a.surah)) (bySurah.get(a.surah) ?? bySurah.set(a.surah, []).get(a.surah)).push(a) }
+for (const a of release ? releaseAyahs() : ayahsOf(raw, unit)) { if (!only || only.has(a.surah)) (bySurah.get(a.surah) ?? bySurah.set(a.surah, []).get(a.surah)).push(a) }
 
 const ayahs = {}, files = {}, skipped = {}
 const skip = (why, k) => { (skipped[why] ??= []).push(k) }
 for (const [surah, list] of [...bySurah].sort((x, y) => x[0] - y[0])) {
-  const path = join(audioDir, `${pad3(surah)}.mp3`)
-  if (!existsSync(path)) { list.forEach((a) => skip('surah audio file missing', `${surah}:${a.ayah}`)); continue }
-  const buf = readFileSync(path)
-  let m
-  try { m = inspectMp3(buf) } catch { list.forEach((a) => skip('not an MP3', `${surah}:${a.ayah}`)); continue }
-  if (!m.constantBitrate) { list.forEach((a) => skip('variable-bitrate MP3 (cannot be cut by byte position)', `${surah}:${a.ayah}`)); continue }
-  const total = seconds(path)
-  files[String(surah)] = { bytes: statSync(path).size, kbps: m.kbps, dataOffset: m.dataOffset, durationMs: total }
+  const f = await fileFacts(surah)
+  if (f.why) { list.forEach((a) => skip(f.why, `${surah}:${a.ayah}`)); continue }
+  const total = f.facts.durationMs
+  files[String(surah)] = f.facts
 
   const parsed = list.sort((x, y) => x.ayah - y.ayah).map((a) => {
     if (!q.text[surah - 1]?.[a.ayah - 1]) return { a, why: 'not a valid ayah' }
@@ -162,7 +236,7 @@ for (const [surah, list] of [...bySurah].sort((x, y) => x[0] - y[0])) {
 mkdirSync(dirname(out), { recursive: true })
 const data = {
   schema: 1, reciter,
-  provenance: { source, licence, url, recording, method: 'published word timestamps for a whole-surah recording', retrieved: new Date().toISOString().slice(0, 10), granularity: 'surah', riwayah, audio: { urlTemplate, files } },
+  provenance: { source, licence, url, recording, method: 'published word timestamps for a whole-surah recording', retrieved: new Date().toISOString().slice(0, 10), granularity: 'surah', riwayah, audio: release ? { urls: Object.fromEntries(Object.keys(files).map((s) => [s, release.urls[s]])), files } : { urlTemplate, files } },
   ayahs,
 }
 writeFileSync(out, JSON.stringify(data))
