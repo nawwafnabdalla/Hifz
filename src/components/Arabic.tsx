@@ -32,10 +32,8 @@ export function visibleAt(cue: Cue, i: number): boolean {
   return false
 }
 
-export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, onWord, marked, wordState }: {
+export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, onWord, marked }: {
   surah: number; ayah: number; cue?: Cue
-  /** Per-word drawing, used by the practice ramp: shown, masked (first words only), dimmed, or left out entirely. Overrides the other visibility props. */
-  wordState?: (index: number) => 'show' | 'mask' | 'dim' | 'none'
   /** When set, exactly the first N words are visible (progressive hints) and `cue` is ignored. */
   revealCount?: number
   /** Makes each word tappable (used to mark where a recitation slipped). */
@@ -52,10 +50,8 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
   return (
     <>
       {words.map((w, i) => {
-        const ws = wordState?.(i)
-        if (ws === 'none') return <span key={i} />
-        const shown = ws ? ws !== 'mask' : revealCount !== undefined ? i < revealCount : visibleAt(cue, i)
-        const dim = ws ? ws === 'dim' : dimOutside && (i < dimOutside[0] || i > dimOutside[1])
+        const shown = revealCount !== undefined ? i < revealCount : visibleAt(cue, i)
+        const dim = dimOutside && (i < dimOutside[0] || i > dimOutside[1])
         const drawn = drawnWord(surah, ayah, i, w, mushaf)
         const alt = mushaf ? '' : wordFontClass(w)
         return (
