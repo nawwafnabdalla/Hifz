@@ -1,5 +1,7 @@
 # Timing sources investigated (1 Nov 2026)
 
+> Superseded for planning by `RECITER_MATRIX.md` (per-reciter status), `PHRASE_AUDIO_LEGAL.md` (licences) and `PHRASE_AUDIO_UNBLOCK.md` (exact files to provide). This page is the original probe log.
+
 **Network context.** This build environment sends every outbound connection through a policy proxy that answers `403` to most hosts. Reachable: `raw.githubusercontent.com`, the npm registry, PyPI, crates, Go proxy. Blocked: everything below marked 403. A 403 from the proxy is a policy decision for this environment, not evidence the resource does not exist. Nothing was circumvented.
 
 | Route | Result | Detail |
