@@ -98,7 +98,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
     if (single && slip !== null) {
       const words = wordsOfAyah(range.surah, range.start)
       const markersFor = markers.find((m) => m.id === `${range.surah}:${range.start}`)
-      const phrases = buildPhrases(words, markersFor ? markersFor.boundaries : defaultBoundaries(words, pauses))
+      const phrases = buildPhrases(words, markersFor ? markersFor.boundaries : defaultBoundaries(range.surah, range.start, words, pauses))
       const r = slipRung(slip, phrases)
       // The slip itself is recorded as a tangled mark on that joint; practising it naturally clears it.
       await logFlow({ surah: range.surah, ayah: range.start, fromPhrase: r.from, toPhrase: r.to, phraseCount: phrases.length, rating: 'tangled', reps: 0, durationMs: 0 })
@@ -111,7 +111,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   if (repair) {
     const words = wordsOfAyah(range.surah, range.start)
     const m = markers.find((x) => x.id === `${range.surah}:${range.start}`)
-    const boundaries = m ? m.boundaries : defaultBoundaries(words, pauses)
+    const boundaries = m ? m.boundaries : defaultBoundaries(range.surah, range.start, words, pauses)
     const phrases = buildPhrases(words, boundaries)
     const label = repair.from === repair.to ? (phrases.length === 1 ? 'the whole ayah' : `phrase ${String.fromCharCode(65 + repair.from)}`) : `${String.fromCharCode(65 + repair.from)} → ${String.fromCharCode(65 + repair.to)}`
     return (

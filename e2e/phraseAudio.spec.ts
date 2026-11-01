@@ -2,15 +2,14 @@ import { expect, test, type Page } from '@playwright/test'
 import { freshStart, mockAudio } from './helpers'
 import { synth, wordHz, type SynthWord } from './synthAudio'
 
-// Ta-Ha 22 has eleven words. The synthetic recitation has eleven words too, with a long breath after the sixth: that is where the
-// app places its break, because it is where this "reciter" really paused.
-const WORDS: SynthWord[] = [
-  { ms: 260, gapAfterMs: 70 }, { ms: 300, gapAfterMs: 90 }, { ms: 340, gapAfterMs: 80 }, { ms: 280, gapAfterMs: 100 }, { ms: 320, gapAfterMs: 110 }, { ms: 360, gapAfterMs: 450 },
-  { ms: 300, gapAfterMs: 90 }, { ms: 330, gapAfterMs: 85 }, { ms: 300, gapAfterMs: 95 }, { ms: 320, gapAfterMs: 100 }, { ms: 380, gapAfterMs: 0 },
-]
+// Ta-Ha 94 has eighteen words. The app breaks it automatically after the 7th (a clause boundary: grammar model p≈0.4), and the synthetic
+// "reciter" really breathes there (450 ms), so the audio and the automatic phrases agree. Phrase A = words 1-7, phrase B = words 8-18.
+const NA = 7, N = 18
+const gaps = (i: number) => (i === NA - 1 ? 450 : 70 + ((i * 17) % 50))
+const WORDS: SynthWord[] = Array.from({ length: N }, (_, i) => ({ ms: 260 + ((i * 37) % 100), gapAfterMs: i === N - 1 ? 0 : gaps(i) }))
 const S = synth(WORDS)
-const SURAH = 20, AYAH = 22
-const URL_RE = /everyayah\.com\/data\/MaherAlMuaiqly128kbps\/020022\.mp3/
+const SURAH = 20, AYAH = 94
+const URL_RE = /everyayah\.com\/data\/MaherAlMuaiqly128kbps\/020094\.mp3/
 
 type W = typeof window & { __hifzRegisterTimings: (d: unknown) => void; __hifzPhrasePlayer: { ensureContext(): AudioContext; tap: AudioNode | null; state: { status: string } }; __cap: Float32Array[]; __capRate: number }
 
@@ -94,15 +93,15 @@ test.describe('phrase-only audio', () => {
     await untilPlayed(page)
     const { x, rate } = await captured(page)
     const share = wordShare(x, rate)
-    share.slice(0, 6).forEach((v, i) => expect(v, `word ${i + 1} should be heard in full`).toBeGreaterThan(0.8))
-    share.slice(6).forEach((v, i) => expect(v, `word ${i + 7} must not be heard`).toBeLessThan(0.03))
+    share.slice(0, NA).forEach((v, i) => expect(v, `word ${i + 1} should be heard in full`).toBeGreaterThan(0.8))
+    share.slice(NA).forEach((v, i) => expect(v, `word ${i + NA + 1} must not be heard`).toBeLessThan(0.03))
 
     await startCapture(page)
     await page.getByTestId('phrase-chip-1').click()
     await untilPlayed(page)
     const b = wordShare((await captured(page)).x, rate)
-    b.slice(6).forEach((v, i) => expect(v, `word ${i + 7} should be heard in full`).toBeGreaterThan(0.8))
-    b.slice(0, 6).forEach((v, i) => expect(v, `word ${i + 1} must not be heard`).toBeLessThan(0.03))
+    b.slice(NA).forEach((v, i) => expect(v, `word ${i + NA + 1} should be heard in full`).toBeGreaterThan(0.8))
+    b.slice(0, NA).forEach((v, i) => expect(v, `word ${i + 1} must not be heard`).toBeLessThan(0.03))
   })
 
   test('a phrase repeated three times plays three whole, evenly spaced copies and nothing else', async ({ page }) => {
@@ -114,7 +113,7 @@ test.describe('phrase-only audio', () => {
     const { x, rate } = await captured(page)
     const share = wordShare(x, rate)
     expect(share[0]!).toBeGreaterThan(2.6); expect(share[0]!).toBeLessThan(3.6)          // three copies of the first word
-    expect(Math.max(...share.slice(6))).toBeLessThan(0.1)                                // the tone detector's own leakage grows with three copies; a real extra word would read ~1
+    expect(Math.max(...share.slice(NA))).toBeLessThan(0.1)                                // the tone detector's own leakage grows with three copies; a real extra word would read ~1
     // first-word onsets: three, evenly spaced
     const times = audibleTimes(x, rate, 0)
     const onsets = times.filter((t, i) => i === 0 || t - times[i - 1]! > 100)
@@ -128,15 +127,23 @@ test.describe('phrase-only audio', () => {
     await page.getByTestId('repeat-1').click()
     await page.getByTestId('to-flow').click()
     // the ladder starts with phrase A; step to the joining step (A → B)
-    for (let i = 0; i < 6 && !(await page.getByTestId('stage-flow').innerText()).includes('A → B'); i++) { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() }
+    const seen: string[] = []
+    for (let i = 0; i < 6; i++) {
+      const txt = await page.getByTestId('stage-flow').innerText({ timeout: 3000 }).catch(() => '<left the flow step>')
+      seen.push(txt.split('\n').filter(Boolean).slice(0, 3).join(' | '))
+      if (txt.includes('A → B') || txt.startsWith('<')) break
+      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
+      await page.waitForTimeout(250)                                              // let the step advance before reading it again
+    }
+    expect(seen.join('  >>  ')).toContain('A → B')
     await expect(page.getByTestId('stage-flow')).toContainText('A → B')
     await startCapture(page)
     await page.getByTestId('hear-part-play').click()
     await untilPlayed(page)
     const { x, rate } = await captured(page)
     wordShare(x, rate).forEach((v, i) => expect(v, `word ${i + 1}`).toBeGreaterThan(0.8))
-    const w5 = audibleTimes(x, rate, 5), w6 = audibleTimes(x, rate, 6)
-    const heardGap = w6[0]! - (w5.at(-1)! + 20), trueGap = S.active[6]!.t0 - S.active[5]!.t1
+    const wa = audibleTimes(x, rate, NA - 1), wb = audibleTimes(x, rate, NA)
+    const heardGap = wb[0]! - (wa.at(-1)! + 20), trueGap = S.active[NA]!.t0 - S.active[NA - 1]!.t1
     expect(Math.abs(heardGap - trueGap)).toBeLessThan(50)
     await page.screenshot({ path: 'test-results/shots/81-hear-part.png' })
   })
@@ -144,7 +151,7 @@ test.describe('phrase-only audio', () => {
   test('timings that are off by 70 ms still never clip or add a neighbouring word', async ({ page }) => {
     await prepare(page, timingData({ shift: 70 }))
     await page.getByTestId('repeat-1').click()
-    for (const [chip, inc, exc] of [[0, [0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10]], [1, [6, 7, 8, 9, 10], [0, 1, 2, 3, 4, 5]]] as const) {
+    for (const [chip, inc, exc] of [[0, Array.from({ length: NA }, (_, i) => i), Array.from({ length: N - NA }, (_, i) => NA + i)], [1, Array.from({ length: N - NA }, (_, i) => NA + i), Array.from({ length: NA }, (_, i) => i)]] as const) {
       await startCapture(page)
       await page.getByTestId(`phrase-chip-${chip}`).click()
       await untilPlayed(page)
@@ -159,11 +166,11 @@ test.describe('phrase-only audio', () => {
     await prepare(page, timingData({ durationMs: S.durationMs + 400 }))
     await page.getByTestId('phrase-chip-0').click()
     await expect(page.getByTestId('phrase-fallback')).toContainText('does not match its timings. Playing the whole ayah instead.')
-    await expect(page.getByTestId('audio-status')).toContainText('Ayah 22', { timeout: 15000 })
+    await expect(page.getByTestId('audio-status')).toContainText('Ayah 94', { timeout: 15000 })
   })
 
   test('a boundary where the reciter does not pause cleanly is refused rather than cut through a word', async ({ page }) => {
-    const flow = synth(WORDS.map((w, i) => (i === 5 ? { ...w, gapAfterMs: 0 } : w)))
+    const flow = synth(WORDS.map((w, i) => (i === NA - 1 ? { ...w, gapAfterMs: 0 } : w)))
     await mockAudio(page); await freshStart(page)
     await page.route(URL_RE, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: Buffer.from(flow.wav), headers: { 'access-control-allow-origin': '*' } }))
     await page.goto('/settings'); await page.getByLabel('Reciter').selectOption('maher')
@@ -194,7 +201,7 @@ test.describe('phrase-only audio', () => {
 
   test('with no timings at all the Learn flow is exactly the familiar one', async ({ page }) => {
     await mockAudio(page); await freshStart(page)
-    await page.goto('/learn/20/22/22')
+    await page.goto('/learn/20/94/94')
     await expect(page.getByTestId('stage-sound')).toBeVisible()
     await expect(page.getByTestId('phrase-chips')).toHaveCount(0)
     await page.getByTestId('to-flow').click()
@@ -202,13 +209,39 @@ test.describe('phrase-only audio', () => {
     await expect(page.getByTestId('said-it')).toBeVisible()
   })
 
-  test('long ayahs without stop signs now offer a breakdown, and "Whole ayah" restores the single block', async ({ page }) => {
+  test('the learner never chooses where to split: long ayahs are prepared automatically, with one quiet way to learn them whole', async ({ page }) => {
     await mockAudio(page); await freshStart(page)
-    await page.goto('/learn/20/40/40')                                                // 34 words, no stop sign
-    await expect(page.getByTestId('breakdown-choice')).toBeVisible()
+    await page.goto('/learn/20/40/40')                                                // 34 words: prepared automatically into phrases
+    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('breakdown-choice')).toHaveCount(0)                  // no split controls in the normal experience
+    await expect(page.getByTestId('edit-phrases')).toBeHidden()                        // manual editing is an advanced fallback only
     await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('stage-flow')).toContainText(/Chain|A → B|A/)
-    expect(await page.locator('[role="group"][aria-label="How does it feel on the tongue?"]').count()).toBe(1)
-    await page.getByRole('button', { name: 'Leave' }).click().catch(() => undefined)
+    await expect(page.getByTestId('stage-flow')).toContainText('A')
+    await expect(page.getByTestId('stage-flow')).not.toContainText('Whole ayah')
+    await page.getByTestId('advanced-toggle').click()
+    await expect(page.getByTestId('edit-phrases')).toBeVisible()
+    await page.screenshot({ path: 'test-results/shots/82-auto-phrases.png' })
+  })
+
+  test('"Learn this ayah whole" is one tap, makes the ayah a single piece, and can be undone', async ({ page }) => {
+    await mockAudio(page); await freshStart(page)
+    await page.goto('/learn/20/40/40')
+    await page.getByTestId('learn-whole').click()
+    await page.getByTestId('to-flow').click()
+    await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')
+    await page.getByRole('button', { name: 'Leave' }).click()
+    await page.goto('/learn/20/40/40')
+    await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')           // the choice is remembered, and the position resumes
+    await page.getByTestId('learn-phrases').click()
+    await expect(page.getByTestId('stage-flow')).not.toContainText('Whole ayah')
+  })
+
+  test('short ayahs are never broken and show no breakdown controls at all', async ({ page }) => {
+    await mockAudio(page); await freshStart(page)
+    await page.goto('/learn/20/2/2')                                                  // 5 words
+    await expect(page.getByTestId('learn-whole')).toHaveCount(0)
+    await expect(page.getByTestId('learn-phrases')).toHaveCount(0)
+    await page.getByTestId('to-flow').click()
+    await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')
   })
 })

@@ -56,7 +56,7 @@ test.describe('Madinah Mushaf script', () => {
 
   test('the phrase editor, junction drill and saved passages draw in the same script', async ({ page }) => {
     await page.goto('/learn/2/255/255'); await page.getByTestId('to-flow').click()
-    await page.getByTestId('edit-phrases').click()
+    await page.getByTestId('advanced-toggle').click(); await page.getByTestId('edit-phrases').click()
     await expect(page.getByText(/not rulings on where to stop/)).toBeVisible()
     expect(await page.locator('.sheet .arabic .w').first().evaluate((e) => getComputedStyle(e).fontFamily)).toContain('KFGQPC')
   })

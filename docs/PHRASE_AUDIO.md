@@ -3,7 +3,7 @@
 Status: **built and tested against synthetic recitation; dormant in production until real timing data is imported and checked on a phone.** Lives on branch `claude/hifz-os-phrase-audio`, not deployed.
 
 ## What the learner gets (when a reciter's timings are installed)
-* **Sound step:** under the player, "Hear a phrase on its own": tap A, B, C to hear only that phrase, in the chosen reciter's own recording; repeat chips 1× / 3× / 5×. Long ayahs also offer **Whole ayah / In phrases**.
+* **Sound step:** under the player, "Hear a phrase on its own": tap A, B, C to hear only that phrase, in the chosen reciter's own recording; repeat chips 1× / 3× / 5×. Long ayahs offer one quiet link, "Learn this ayah whole".
 * **Flow step:** under the familiar counter and ratings, **Hear this part** plays exactly the part being practised (A, then A → B, then the whole chain), with the reciter's own breaths kept between phrases. The old repetition counter, fluency rating and ladder are unchanged.
 * **Recall, Connect, revision:** unchanged.
 * **Without timings** (most reciters today, and every ayah not yet aligned) the Learn flow is exactly the familiar one; no new control appears. If a boundary cannot be cut cleanly, that part says so and plays the whole ayah in the same reciter.
@@ -16,11 +16,7 @@ Status: **built and tested against synthetic recitation; dormant in production u
 5. **Offline:** a saved copy is used only when it came from the same recording as the timings (Islamic Network copies match Islamic Network timings only).
 
 ## How phrase breaks are chosen
-Stop signs first (unchanged). Then, only inside a stretch too long to learn in one piece (> 10 words; 71% of ayahs have no stop sign, and Ta-Ha 40, 71, 86, 97 have 26–34 words), **practice breaks** are added about every 7 words:
-* **With a reciter's timing:** only where the reciter really paused (≥ 100 ms, preferring ≥ 150 ms). A stretch of up to 15 words with no pause is left whole rather than guessed at (spelling cannot see grammar).
-* **Without timing:** at the start of a clause judged from spelling (a conjunction or clause-opening particle), never straight after a short preposition or particle, and never before أَن (it completes the verb before it).
-Example, Ta-Ha 97 (28 words) without timing: `قَالَ فَٱذۡهَبۡ فَإِنَّ لَكَ فِي ٱلۡحَيَوٰةِ أَن تَقُولَ لَا مِسَاسَ` | `وَإِنَّ لَكَ مَوۡعِدٗا لَّن تُخۡلَفَهُۥ` | `وَٱنظُرۡ إِلَىٰٓ إِلَٰهِكَ … لَّنُحَرِّقَنَّهُۥ` | `ثُمَّ لَنَنسِفَنَّهُۥ فِي ٱلۡيَمِّ نَسۡفًا`. Some splits are only second-best (Ta-Ha 86 separates أَن يَحِلَّ from its subject): that is why they are suggestions, labelled as practice breaks and never as places to stop, and why the learner can choose **Whole ayah**, **In phrases**, or edit them. Not reviewed by a qualified reader.
-All consumers (Learn, the slip repair after Recall) use one function, `defaultBoundaries`, so a slip marked in one place always refers to the same phrases in another.
+Automatically, from printed stop signs, a grammar model and, when timings exist, the reciter's pauses. The learner never places a break; see `docs/PHRASE_MODEL.md` for the evidence, validation and limits, and `docs/PHRASE_GALLERY.md` for hard cases.
 
 ## Sources investigated
 See `docs/PHRASE_AUDIO_SOURCES.md`.

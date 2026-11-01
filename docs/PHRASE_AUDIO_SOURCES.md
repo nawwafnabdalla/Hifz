@@ -15,6 +15,9 @@
 | Audio hosts (EveryAyah, Islamic Network CDN, Quran.com audio) | **blocked (403)** | So alignments cannot be generated or validated here: there is no lawfully reachable audio. |
 | Generating alignments ourselves | **not possible here** | Needs the audio plus an Arabic forced aligner or recogniser; neither audio nor a validated aligner is reachable. An on-device recogniser exists on npm (`@tilawi/quran-asr`), unevaluated. |
 
+## Linguistic evidence (found, and used)
+`raw.githubusercontent.com` serves `mustafa0x/quran-morphology/master/quran-morphology.txt` (6.3 MB, 130,030 segments; Quranic Arabic Corpus v0.4 fork). Used at build time to learn grammatical clause boundaries (see `PHRASE_MODEL.md`). Its licence is not restated in the fork; see the note there. `kaisdukes/quranic-corpus` (QAC v2) README was readable but its data files were not located.
+
 ## What this means
 Phrase audio is built, tested on synthetic audio, and **waiting for real timing data**. Two ways to supply it:
 

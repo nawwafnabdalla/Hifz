@@ -8,7 +8,7 @@ import { PhraseEditor } from '@/components/PhraseEditor'
 import { HearThisPart, PhraseChips } from '@/components/PhraseAudio'
 import { usePhraseTiming } from '@/lib/audio/usePhraseTiming'
 import { reciterPauses } from '@/lib/audio/timings'
-import { defaultBoundaries } from '@/lib/engine/breakdown'
+import { defaultBreakdown } from '@/lib/engine/breakdown'
 import { RungPractice } from '@/components/RungPractice'
 import { RecallCard } from '@/components/RecallCard'
 import { Icon } from '@/components/Icon'
@@ -106,10 +106,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const marker = snap.markers.find((m) => m.id === `${range.surah}:${ayah}`)
   // Your own breaks win. Otherwise: stop signs, plus practice breaks inside any stretch too long to learn in one piece, preferring places
   // where the reciter really pauses when timings are available. These are for practice only, never rulings on where to stop.
-  const boundaries = useMemo(() => {
-    if (marker) return marker.boundaries
-    return defaultBoundaries(words, pt.timing ? reciterPauses(pt.timing) : [])
-  }, [marker, words, pt.timing])
+  const auto = useMemo(() => defaultBreakdown(range.surah, ayah, words, pt.timing ? reciterPauses(pt.timing) : []), [range.surah, ayah, words, pt.timing])
+  const boundaries = marker ? marker.boundaries : auto.boundaries
   const phrases = useMemo(() => buildPhrases(words, boundaries), [words, boundaries])
   const methodA = arm === 'A'
 
@@ -144,6 +142,13 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
   if (!armReady || pt.status === 'loading') return <div className="grid min-h-[60dvh] place-items-center text-muted">Preparing…</div>
 
+  // One quiet way to learn an automatically phrased ayah whole (and back). The phrases themselves are never something the learner has to set.
+  const wholeToggle = !methodA && auto.boundaries.length > 0 ? (
+    boundaries.length > 0
+      ? <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
+      : <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">Learn it in phrases</button></div>
+  ) : null
+
   return (
     <div className="mx-auto max-w-[680px]" data-testid="learn-flow" data-stage={stage} data-arm={arm ?? 'none'}>
       {embedded ? (
@@ -164,12 +169,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             {snap.settings.translation && <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2">{tr?.[ayah - 1] ?? ''}</p>}
           </div>
           <div className="mt-3"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`s-${ayah}`} onListened={() => setListened(true)} /></div>
-          {words.length >= 8 && !methodA && (
-            <div className="mt-3 flex items-center justify-center gap-2" role="group" aria-label="How to learn this ayah" data-testid="breakdown-choice">
-              <button className="chip" aria-pressed={boundaries.length === 0} onClick={() => { void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Whole ayah</button>
-              <button className="chip" aria-pressed={boundaries.length > 0} onClick={() => { void setMarker(range.surah, ayah, defaultBoundaries(words, pt.timing ? reciterPauses(pt.timing) : [])); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">In phrases</button>
-            </div>
-          )}
+          {wholeToggle}
           {!methodA && <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} />}
           {snap.settings.practiceMode === 'echo'
             ? <Coach id="sound-echo" className="mt-3 text-center text-sm text-ink-2" full="Echo is on: listen, then say it in the pause." short="Listen, then say it." />
@@ -190,11 +190,15 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           {!methodA && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />}
           <div className="mt-3 flex items-center justify-center gap-1">
             <button className="btn btn-ghost btn-sm" onClick={() => setHear((h) => !h)}><Icon name="headphones" size={15} />Hear it</button>
-            {!methodA && <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)} data-testid="edit-phrases"><Icon name="scissors" size={15} />Phrases</button>}
             <button className="btn btn-ghost btn-sm" onClick={() => setStage('recall')}>Skip to recall</button>
           </div>
           {hear && <div className="mt-2"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`f-${ayah}`} onListened={() => setListened(true)} /></div>}
           <Coach id="flow-note" className="mt-3 text-center text-xs text-muted" full="Flow is about the mouth, memory is separate: this rating never changes your retention estimate." />
+          {wholeToggle}
+          {!methodA && (
+            <details className="mt-2 text-center" data-testid="advanced"><summary className="cursor-pointer select-none text-xs text-muted" data-testid="advanced-toggle">Advanced</summary>
+              <button className="btn btn-ghost btn-sm mt-1" onClick={() => setEdit(true)} data-testid="edit-phrases"><Icon name="scissors" size={15} />Adjust phrases</button></details>
+          )}
           <PhraseEditor open={edit} onClose={() => setEdit(false)} surah={range.surah} ayah={ayah} boundaries={boundaries} onSave={(b) => { void setMarker(range.surah, ayah, b); setLadder(null); setRungIdx(0); say('Phrases saved') }} />
         </section>
       )}

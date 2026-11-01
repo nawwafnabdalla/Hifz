@@ -1,87 +1,104 @@
-// Practice breaks for long ayahs.
+// Automatic practice phrases.
 //
-// Stop signs (phrases.ts) are the first and best source, but 71% of ayahs have none and many long ayahs (Ta-Ha 40 has 34 words, 97 has 28,
-// 71 and 86 have 26) would otherwise be one unbroken block. This adds PRACTICE breaks inside any stretch that is too long to learn
-// in one piece. They are for memorising, not rulings on where to stop when reciting, and are never presented as authoritative.
-//
-// Where a break goes, in order of trust:
-//   1. a pause the reciter actually made (from measured word timings), if a timing is available;
-//   2. otherwise the start of a new clause, judged only from spelling (a conjunction or a clause-opening particle), and never between a
-//      short particle or preposition and what follows it. Spelling cannot see grammar, so when a reciter's timing IS available it is
-//      trusted instead: breaks go only where the reciter paused, and a stretch with no pause is left longer rather than guessed at.
-// Pieces aim for about TARGET words, never fewer than MIN.
+// The learner never chooses where to split. For each ayah the app decides, from several kinds of evidence, whether to break it at all and where:
+//   1. Recitation guidance printed in the text: stop signs that permit or prefer a pause (phrases.ts).
+//   2. Grammar: a model learned from every printed stop sign in the Qur'an (morphology: particles, case, construct phrases, verbs) gives each
+//      word boundary a probability of being a natural clause boundary. It never breaks after a relative pronoun, a vocative or a negation,
+//      nor between a noun and its adjective, and it was judged on surahs it never saw (data/crosscheck/phrase-model-report.json).
+//   3. The reciter's own pauses, when verified word timings exist for the recording: they strengthen a grammatical candidate or veto one
+//      the reciter ran straight through. A pause on its own is never enough to create a break.
+// Short ayahs stay whole. A longer stretch is only broken where the evidence is good; if it is not, the stretch is left whole rather than guessed at.
+// These are PRACTICE phrases for memorising. They are never presented as places to stop when reciting.
+import cand from '@/data/generated/phrase-candidates.json'
 import { suggestBoundaries } from './phrases'
 
-export const MAX_PIECE = 10
-export const TARGET_PIECE = 7
-/** With a reciter's timing, a stretch up to this long is left whole if the reciter never paused in it. */
-export const TIMED_MAX_PIECE = 15
-const SHORT_PAUSE_MS = 100
+/** Ayahs up to this many words are learned whole. */
+export const WHOLE_LIMIT = 12
 export const MIN_PIECE = 3
-const REAL_PAUSE_MS = 150
-
-// Letters only: no vowels, signs, tatweel or stop marks, with alef variants unified.
-const BASE = /[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/g
-export const baseLetters = (w: string) => w.replace(BASE, '').replace(/[أإآٱ]/g, 'ا')
-
-/** Clause-opening words: a new thought starts here, so a practice break just before them is natural. */
-const OPENERS = new Set(['ثم', 'اذ', 'اذا', 'قال', 'قالوا', 'قالت', 'قل', 'لكن', 'حتي', 'بل', 'ام', 'او', 'انا', 'انه', 'ولقد', 'ولكن', 'فلما', 'وما', 'ولا', 'ومن', 'كذلك', 'الم', 'هل', 'يا', 'يايها', 'فاذا', 'ولو', 'لو', 'كلا', 'والذين', 'الذين', 'ومن'])
-/** Short words that belong with what follows: a break straight after them would separate a preposition or particle from its object. */
-const BINDERS = new Set(['في', 'من', 'عن', 'علي', 'الي', 'ب', 'ل', 'لا', 'ما', 'لم', 'لن', 'ان', 'ا', 'ك', 'و', 'ف', 'ثم', 'بل', 'يا', 'ها', 'مع', 'حتي', 'ان', 'اي', 'لدي', 'عند', 'بعد', 'قبل', 'كل', 'بين', 'دون', 'غير', 'الا', 'قد', 'لقد', 'ولا', 'فلا', 'وما', 'فما'])
-
-function score(words: string[], i: number): number {
-  // Break after word i: the next piece starts with words[i + 1].
-  const next = baseLetters(words[i + 1]!), cur = baseLetters(words[i]!)
-  let s = 0
-  if (OPENERS.has(next)) s += 3
-  else if (next.length > 2 && (next.startsWith('و') || next.startsWith('ف'))) s += 2          // a conjunction attached to the next word
-  if (BINDERS.has(cur) || cur.length <= 2) s -= 5
-  if (cur.length <= 3 && /^[بلكوف]/.test(cur)) s -= 2
-  return s
-}
+/** A piece longer than this is increasingly costly; a stretch up to about this long is left whole unless a good break exists. */
+export const COMFORT = 14
+/** Inside a long ayah (over 16 words) pieces are held to a tighter length, so a 28-word ayah is not offered as two 14-word blocks. */
+export const COMFORT_LONG = 10
+/** Probability above which a grammatical boundary is worth a break on its own. */
+export const BREAK_P = 0.15
+const LAMBDA = 0.3
+const logit = (p: number) => Math.log(p / (1 - p))
 
 export interface Pause { afterWord: number; ms: number }
-export interface Breakdown { boundaries: number[]; reasons: Record<number, string> }
+export interface Candidate { after: number; p: number }
+export type Basis = 'stop sign' | 'grammar' | 'grammar and the reciter’s pause'
+export interface Breakdown { boundaries: number[]; basis: Record<number, Basis>; confidence: Record<number, number> }
 
-/**
- * Split any stretch longer than MAX_PIECE into pieces of about TARGET_PIECE words. `fixed` are boundaries that already exist (stop signs).
- */
-export function suggestBreakdown(words: string[], fixed: number[], pauses: Pause[] = []): Breakdown {
-  const boundaries = new Set(fixed)
-  const reasons: Record<number, string> = {}
+type File = { ayahs: Record<string, { n: number; c: [number, number][] }> }
+const FILE = cand as unknown as File
+/** Grammar candidates for an ayah, or none if the data does not describe this exact text (word counts must match). */
+export function candidatesFor(surah: number, ayah: number, wordCount: number): Candidate[] {
+  const e = FILE.ayahs[`${surah}:${ayah}`]
+  return e && e.n === wordCount ? e.c.map(([after, p]) => ({ after, p: p / 1000 })) : []
+}
+
+/** Long pieces cost more the longer they are; pieces of one or two words are almost never worth a break. */
+const penalty = (len: number, comfort: number) => LAMBDA * Math.max(0, len - comfort) ** 2 + (len < 3 ? 40 : len < 4 ? 5 : 0)
+
+/** Pure selection: which of the candidate boundaries to use. */
+export function planBreaks(wordCount: number, stop: number[], candidates: Candidate[], pauses: Pause[] = [], avoid: number[] = []): Breakdown {
+  const out: Breakdown = { boundaries: [], basis: {}, confidence: {} }
+  if (wordCount <= WHOLE_LIMIT) return out
+  const timed = pauses.length > 0
   const pauseAfter = new Map(pauses.map((p) => [p.afterWord, p.ms]))
-  const cuts = [-1, ...[...boundaries].sort((a, b) => a - b), words.length - 1]
-  for (let c = 0; c + 1 < cuts.length; c++) {
-    const lo = cuts[c]! + 1, hi = cuts[c + 1]!
-    const len = hi - lo + 1
-    if (len <= MAX_PIECE) continue
-    const timed = pauses.length > 0
-    const k = Math.ceil(len / TARGET_PIECE)
-    const placed: number[] = []
-    for (let n = 1; n < k; n++) {
-      const ideal = lo + Math.round((len * n) / k) - 1
-      let best = -1, bestScore = -Infinity, bestPause = 0
-      const from = Math.max(lo + MIN_PIECE - 1, (placed.at(-1) ?? lo - 1) + MIN_PIECE, ideal - 3)
-      for (let i = from; i <= Math.min(hi - MIN_PIECE, ideal + 3); i++) {
-        const ms = pauseAfter.get(i) ?? 0
-        // A measured pause outweighs spelling clues; among equals, nearer to the ideal size wins.
-        if (timed && ms < SHORT_PAUSE_MS && len <= TIMED_MAX_PIECE) continue         // the reciter did not pause here: do not invent a break
-        const sc = (ms >= REAL_PAUSE_MS ? 100 + ms / 10 : 0) + score(words, i) - Math.abs(i - ideal) * 0.6
-        if (sc > bestScore) { bestScore = sc; best = i; bestPause = ms }
-      }
-      if (best >= 0) {
-        placed.push(best)
-        boundaries.add(best)
-        reasons[best] = bestPause >= REAL_PAUSE_MS ? `the reciter pauses here (about ${Math.round(bestPause / 10) * 10} ms)` : 'a practice break so the phrase is a manageable length'
-      }
+  const gain = new Map<number, { g: number; p: number; stop: boolean; paused: boolean }>()
+  const stopSet = new Set(stop)
+  const ps = new Map(candidates.map((c) => [c.after, c.p]))
+  const avoidSet = new Set(avoid)
+  for (const b of new Set([...ps.keys(), ...stop])) {
+    if (b < 0 || b >= wordCount - 1 || avoidSet.has(b)) continue
+    const stopped = stopSet.has(b)
+    const p = Math.min(0.97, Math.max(ps.get(b) ?? 0.02, stopped ? 0.85 : 0))
+    let s = logit(p)
+    const ms = pauseAfter.get(b)
+    let paused = false
+    if (timed) { if ((ms ?? 0) >= 150) { s += 1.2; paused = true } else if ((ms ?? 0) >= 100) { s += 0.5; paused = true } else if ((ms ?? 0) < 40) s -= 2.0 }
+    gain.set(b, { g: s - logit(BREAK_P), p, stop: stopped, paused })
+  }
+  const NEG = -1e9
+  const comfort = wordCount > 16 ? COMFORT_LONG : COMFORT
+  const dp = new Array<number>(wordCount).fill(NEG), from = new Array<number>(wordCount).fill(-2)
+  for (let j = 0; j < wordCount; j++) {
+    const last = j === wordCount - 1
+    const here = last ? 0 : gain.get(j)?.g
+    if (here === undefined) continue
+    for (let i = -1; i < j; i++) {
+      const prev = i === -1 ? 0 : dp[i]!
+      if (prev <= NEG / 2) continue
+      const v = prev - penalty(j - i, comfort) + here
+      if (v > dp[j]!) { dp[j] = v; from[j] = i }
     }
   }
-  return { boundaries: [...boundaries].sort((a, b) => a - b), reasons }
+  let j = wordCount - 1
+  const picks: number[] = []
+  while (j >= 0 && from[j]! !== -2) { const i = from[j]!; if (i >= 0) picks.push(i); j = i }
+  picks.reverse()
+  for (const b of picks) {
+    const g = gain.get(b)!
+    out.boundaries.push(b)
+    out.basis[b] = g.stop ? 'stop sign' : g.paused ? 'grammar and the reciter’s pause' : 'grammar'
+    out.confidence[b] = +g.p.toFixed(2)
+  }
+  return out
 }
 
 /**
- * THE default phrase breaks of an ayah when the learner has not set their own: stop signs plus practice breaks in long stretches.
- * Every place that needs an ayah's phrases (learning, the slip repair after recall, the planner's repair ladder) must use this one
- * function, so a slip recorded in one place always refers to the same phrases in another.
+ * THE default phrase breaks of an ayah when the learner has not set their own (which is almost always).
+ * Every place that needs an ayah's phrases (learning, the slip repair after Recall) must use this one function, so a slip
+ * marked in one place always refers to the same phrases in another.
  */
-export const defaultBoundaries = (words: string[], pauses: Pause[] = []): number[] => suggestBreakdown(words, suggestBoundaries(words).boundaries, pauses).boundaries
+export function defaultBreakdown(surah: number, ayah: number, words: string[], pauses: Pause[] = []): Breakdown {
+  // The "do not stop" sign (ۙ) marks a place a reciter should not pause; it is never a practice break either.
+  const avoid = words.flatMap((w, i) => (w.includes('ۙ') ? [i] : []))
+  return planBreaks(words.length, suggestBoundaries(words).boundaries, candidatesFor(surah, ayah, words.length), pauses, avoid)
+}
+export const defaultBoundaries = (surah: number, ayah: number, words: string[], pauses: Pause[] = []): number[] => defaultBreakdown(surah, ayah, words, pauses).boundaries
+
+// Letters only: no vowels, signs, tatweel or stop marks, with alef variants unified.
+const MARKS = /[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/g
+export const baseLetters = (w: string) => w.replace(MARKS, '').replace(/[أإآٱ]/g, 'ا')

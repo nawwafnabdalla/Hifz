@@ -1,0 +1,21 @@
+{
+  "positions": 71145,
+  "signPositions": 2617,
+  "baseRate": 0.0368,
+  "cvAuc": 0.9376,
+  "tau": 0.2,
+  "precisionAtTau": 0.396,
+  "recallAtTau": 0.5663,
+  "top1AgreementAnyAyahWithSign": 0.7141,
+  "top1AgreementAyahsWithOneSign": 0.6787,
+  "ayahsWithOneSignTested": 1304,
+  "skippedAyahs": 4,
+  "features": 320,
+  "source": {
+    "dataset": "Quranic Arabic Corpus morphology v0.4 (fork: mustafa0x/quran-morphology)",
+    "url": "https://github.com/mustafa0x/quran-morphology",
+    "file": "quran-morphology.txt",
+    "sha256": "742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f",
+    "licence": "GNU GPL with attribution to corpus.quran.com (per the original project; not re-read here). Raw data not shipped."
+  }
+}

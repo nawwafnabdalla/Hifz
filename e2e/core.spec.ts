@@ -147,7 +147,7 @@ test.describe('continuity and long ayahs', () => {
     await expect(page.getByTestId('stage-flow')).toBeVisible()
     await expect(page.getByText(/Long ayah: showing the part you are practising/)).toBeVisible()
     await expect(page.getByTestId('said-it')).toBeInViewport()
-    await page.getByTestId('edit-phrases').click()
+    await page.getByTestId('advanced-toggle').click(); await page.getByTestId('edit-phrases').click()
     await expect(page.getByText(/not rulings on where to stop/)).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/09-phrase-editor.png' })
   })
