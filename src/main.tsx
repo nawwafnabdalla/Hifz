@@ -8,6 +8,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
 
+// Browser-test builds only (VITE_E2E=1; a normal build removes this): expose the hooks tests use to supply timings and listen to playback.
+if (import.meta.env.VITE_E2E === '1') { void import('./lib/audio/timings'); void import('./lib/audio/phraseAudio') }
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

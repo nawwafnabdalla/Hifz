@@ -6,7 +6,10 @@ import { RungPractice } from './RungPractice'
 import { Icon } from './Icon'
 import { useApp } from '@/app/store'
 import { rangeTitle } from '@/lib/format'
-import { buildPhrases, suggestBoundaries } from '@/lib/engine/phrases'
+import { buildPhrases } from '@/lib/engine/phrases'
+import { defaultBoundaries } from '@/lib/engine/breakdown'
+import { usePhraseTiming } from '@/lib/audio/usePhraseTiming'
+import { reciterPauses } from '@/lib/audio/timings'
 import { slipRung } from '@/lib/engine/repair'
 import type { FlowRating, Grade, PracticeContext, Range, ReviewEvent, StumbleKind } from '@/lib/engine/types'
 import { loadTranslation, wordsOfAyah } from '@/lib/quran/data'
@@ -45,6 +48,9 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
 }) {
   const logReview = useApp((s) => s.logReview)
   const logFlow = useApp((s) => s.logFlow)
+  // The same default phrases the learner practised, including where the reciter paused when timings exist.
+  const pt = usePhraseTiming(range.surah, range.start)
+  const pauses = pt.timing ? reciterPauses(pt.timing) : []
   const markers = useApp((s) => s.snap.markers)
   const n = range.end - range.start + 1
   const single = n === 1
@@ -92,7 +98,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
     if (single && slip !== null) {
       const words = wordsOfAyah(range.surah, range.start)
       const markersFor = markers.find((m) => m.id === `${range.surah}:${range.start}`)
-      const phrases = buildPhrases(words, markersFor ? markersFor.boundaries : suggestBoundaries(words).boundaries)
+      const phrases = buildPhrases(words, markersFor ? markersFor.boundaries : defaultBoundaries(words, pauses))
       const r = slipRung(slip, phrases)
       // The slip itself is recorded as a tangled mark on that joint; practising it naturally clears it.
       await logFlow({ surah: range.surah, ayah: range.start, fromPhrase: r.from, toPhrase: r.to, phraseCount: phrases.length, rating: 'tangled', reps: 0, durationMs: 0 })
@@ -105,7 +111,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   if (repair) {
     const words = wordsOfAyah(range.surah, range.start)
     const m = markers.find((x) => x.id === `${range.surah}:${range.start}`)
-    const boundaries = m ? m.boundaries : suggestBoundaries(words).boundaries
+    const boundaries = m ? m.boundaries : defaultBoundaries(words, pauses)
     const phrases = buildPhrases(words, boundaries)
     const label = repair.from === repair.to ? (phrases.length === 1 ? 'the whole ayah' : `phrase ${String.fromCharCode(65 + repair.from)}`) : `${String.fromCharCode(65 + repair.from)} → ${String.fromCharCode(65 + repair.to)}`
     return (

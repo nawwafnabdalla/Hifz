@@ -9,6 +9,7 @@ import { Icon } from './Icon'
 import { Sheet } from './ui'
 import { OfflineAudioCard } from './OfflineAudio'
 import { offlineAudio } from '@/lib/audio/offline'
+import { phrasePlayer } from '@/lib/audio/phraseAudio'
 
 let player: AyahPlayer | null = null
 export function getPlayer(): AyahPlayer {
@@ -78,7 +79,7 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
   }, [st.current?.surah, st.current?.ayah, st.reciterId, p, st])
 
   const playing = st.status === 'playing' || st.status === 'loading'
-  const start = (id = chosen) => p.load(queue, { reciterId: id, repeatEach: settings.repeatEach, repeatPassage: loop ? 'infinite' : 1, rate: settings.playbackRate, gapMs: 250, echoPause: echo ? settings.echoPause : undefined })
+  const start = (id = chosen) => { phrasePlayer.stop(); p.load(queue, { reciterId: id, repeatEach: settings.repeatEach, repeatPassage: loop ? 'infinite' : 1, rate: settings.playbackRate, gapMs: 250, echoPause: echo ? settings.echoPause : undefined }) }
   const onPlay = () => (st.status === 'idle' || st.status === 'error' ? start() : p.toggle())
 
   const fallbackId = useMemo(() => {

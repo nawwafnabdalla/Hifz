@@ -101,6 +101,11 @@ export function candidateUrls(reciterId: string, surah: number, ayah: number): {
   return reciterById(reciterId).endpoints.map((e) => ({ url: SOURCES[e.source].urlFor(e.ref, surah, ayah), source: SOURCES[e.source].label }))
 }
 
+/** Identity of one specific recording (source and folder). Word timings belong to exactly one of these, never to a reciter in general. */
+export const recordingId = (e: Endpoint) => `${e.source}:${e.ref}`
+export const endpointByRecording = (reciterId: string, recording: string): Endpoint | null => reciterById(reciterId).endpoints.find((e) => recordingId(e) === recording) ?? null
+export const urlForEndpoint = (e: Endpoint, surah: number, ayah: number) => SOURCES[e.source].urlFor(e.ref, surah, ayah)
+
 /** True when at least one verse-by-verse candidate exists for this reciter. */
 export const hasAyahCandidates = (reciterId: string) => reciterById(reciterId).endpoints.length > 0
 

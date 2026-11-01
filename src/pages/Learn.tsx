@@ -5,10 +5,14 @@ import { ensureArm, useApp } from '@/app/store'
 import { AyahWords, Medallion, Passage } from '@/components/Arabic'
 import { AudioBar } from '@/components/AudioBar'
 import { PhraseEditor } from '@/components/PhraseEditor'
+import { HearThisPart, PhraseChips } from '@/components/PhraseAudio'
+import { usePhraseTiming } from '@/lib/audio/usePhraseTiming'
+import { reciterPauses } from '@/lib/audio/timings'
+import { defaultBoundaries } from '@/lib/engine/breakdown'
 import { RungPractice } from '@/components/RungPractice'
 import { RecallCard } from '@/components/RecallCard'
 import { Icon } from '@/components/Icon'
-import { buildLadder, buildPhrases, suggestBoundaries, type Rung } from '@/lib/engine/phrases'
+import { buildLadder, buildPhrases, type Rung } from '@/lib/engine/phrases'
 import { buildRepairLadder, troubledRungs } from '@/lib/engine/repair'
 import { ayahKey, type FlowRating, type PracticeContext, type Range, type Strategy } from '@/lib/engine/types'
 import { isValidRef, loadTranslation, wordsOfAyah } from '@/lib/quran/data'
@@ -71,6 +75,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const [repair, setRepair] = useState(false)
   const [tr, setTr] = useState<string[] | null>(null)
   const ayah = range.start + idx
+  // Word timings for the chosen reciter's recording of this ayah, if verified ones exist. They only ever add: nothing below depends on them.
+  const pt = usePhraseTiming(range.surah, ayah)
 
   // Lead-in: up to two ayahs just before this passage that are already known, so the new ayah is joined to what precedes it.
   const leadIn = useMemo(() => {
@@ -98,7 +104,12 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
   const words = wordsOfAyah(range.surah, ayah)
   const marker = snap.markers.find((m) => m.id === `${range.surah}:${ayah}`)
-  const boundaries = useMemo(() => (marker ? marker.boundaries : suggestBoundaries(words).boundaries), [marker, words])
+  // Your own breaks win. Otherwise: stop signs, plus practice breaks inside any stretch too long to learn in one piece, preferring places
+  // where the reciter really pauses when timings are available. These are for practice only, never rulings on where to stop.
+  const boundaries = useMemo(() => {
+    if (marker) return marker.boundaries
+    return defaultBoundaries(words, pt.timing ? reciterPauses(pt.timing) : [])
+  }, [marker, words, pt.timing])
   const phrases = useMemo(() => buildPhrases(words, boundaries), [words, boundaries])
   const methodA = arm === 'A'
 
@@ -131,7 +142,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
     else setRungIdx(rungIdx + 1)
   }
 
-  if (!armReady) return <div className="grid min-h-[60dvh] place-items-center text-muted">Preparing…</div>
+  if (!armReady || pt.status === 'loading') return <div className="grid min-h-[60dvh] place-items-center text-muted">Preparing…</div>
 
   return (
     <div className="mx-auto max-w-[680px]" data-testid="learn-flow" data-stage={stage} data-arm={arm ?? 'none'}>
@@ -153,6 +164,13 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             {snap.settings.translation && <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2">{tr?.[ayah - 1] ?? ''}</p>}
           </div>
           <div className="mt-3"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`s-${ayah}`} onListened={() => setListened(true)} /></div>
+          {words.length >= 8 && !methodA && (
+            <div className="mt-3 flex items-center justify-center gap-2" role="group" aria-label="How to learn this ayah" data-testid="breakdown-choice">
+              <button className="chip" aria-pressed={boundaries.length === 0} onClick={() => { void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Whole ayah</button>
+              <button className="chip" aria-pressed={boundaries.length > 0} onClick={() => { void setMarker(range.surah, ayah, defaultBoundaries(words, pt.timing ? reciterPauses(pt.timing) : [])); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">In phrases</button>
+            </div>
+          )}
+          {!methodA && <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} />}
           {snap.settings.practiceMode === 'echo'
             ? <Coach id="sound-echo" className="mt-3 text-center text-sm text-ink-2" full="Echo is on: listen, then say it in the pause." short="Listen, then say it." />
             : <Coach id="sound-listen" className="mt-3 text-center text-sm text-ink-2" full="Listen first, with the text in front of you. Notice the sounds and where the voice rests." short="Listen with the text." />}
@@ -169,6 +187,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((rungIdx + 1) / rungs.length) * 100}%` }} /></div>
           <RungPractice surah={range.surah} ayah={ayah} words={words} phrases={phrases} boundaries={boundaries} from={rung.from} to={rung.to}
             focusOnly={focusOnly} dimOthers={!methodA} resetKey={`${ayah}:${rungIdx}:${rung.label}`} onRate={rate} />
+          {!methodA && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />}
           <div className="mt-3 flex items-center justify-center gap-1">
             <button className="btn btn-ghost btn-sm" onClick={() => setHear((h) => !h)}><Icon name="headphones" size={15} />Hear it</button>
             {!methodA && <button className="btn btn-ghost btn-sm" onClick={() => setEdit(true)} data-testid="edit-phrases"><Icon name="scissors" size={15} />Phrases</button>}

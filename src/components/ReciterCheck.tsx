@@ -21,6 +21,7 @@ export function ReciterCheck() {
               <div className={`mt-1 flex gap-2 ${tone(r.verse.state)}`}><span className="w-4 flex-none">{mark(r.verse.state)}</span><span><b>Verse by verse:</b> {r.verse.detail}</span></div>
               <div className={`mt-1 flex gap-2 ${tone(r.full.state)}`}><span className="w-4 flex-none">{mark(r.full.state)}</span><span><b>Full surah:</b> {r.full.detail}</span></div>
               <div className={`mt-1 flex gap-2 ${tone(r.save.state)}`}><span className="w-4 flex-none">{mark(r.save.state)}</span><span><b>Offline saving:</b> {r.save.detail}</span></div>
+              <div className={`mt-1 flex gap-2 ${tone(r.phrase.state)}`}><span className="w-4 flex-none">{mark(r.phrase.state)}</span><span><b>Phrase audio:</b> {r.phrase.detail}</span></div>
             </li>
           ))}
         </ul>
