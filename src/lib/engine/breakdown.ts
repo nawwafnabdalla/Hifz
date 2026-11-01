@@ -7,12 +7,16 @@
 // Where a break goes, in order of trust:
 //   1. a pause the reciter actually made (from measured word timings), if a timing is available;
 //   2. otherwise the start of a new clause, judged only from spelling (a conjunction or a clause-opening particle), and never between a
-//      short particle or preposition and what follows it.
+//      short particle or preposition and what follows it. Spelling cannot see grammar, so when a reciter's timing IS available it is
+//      trusted instead: breaks go only where the reciter paused, and a stretch with no pause is left longer rather than guessed at.
 // Pieces aim for about TARGET words, never fewer than MIN.
 import { suggestBoundaries } from './phrases'
 
 export const MAX_PIECE = 10
 export const TARGET_PIECE = 7
+/** With a reciter's timing, a stretch up to this long is left whole if the reciter never paused in it. */
+export const TIMED_MAX_PIECE = 15
+const SHORT_PAUSE_MS = 100
 export const MIN_PIECE = 3
 const REAL_PAUSE_MS = 150
 
@@ -21,7 +25,7 @@ const BASE = /[ؐ-ًؚ-ٰٟۖ-ۭـ࣓-ࣿ]/g
 export const baseLetters = (w: string) => w.replace(BASE, '').replace(/[أإآٱ]/g, 'ا')
 
 /** Clause-opening words: a new thought starts here, so a practice break just before them is natural. */
-const OPENERS = new Set(['ثم', 'اذ', 'اذا', 'قال', 'قالوا', 'قالت', 'قل', 'لكن', 'حتي', 'بل', 'ام', 'او', 'ان', 'انا', 'انه', 'ولقد', 'ولكن', 'فلما', 'وما', 'ولا', 'ومن', 'كذلك', 'الم', 'هل', 'يا', 'يايها', 'فاذا', 'ولو', 'لو', 'كلا', 'والذين', 'الذين', 'ومن'])
+const OPENERS = new Set(['ثم', 'اذ', 'اذا', 'قال', 'قالوا', 'قالت', 'قل', 'لكن', 'حتي', 'بل', 'ام', 'او', 'انا', 'انه', 'ولقد', 'ولكن', 'فلما', 'وما', 'ولا', 'ومن', 'كذلك', 'الم', 'هل', 'يا', 'يايها', 'فاذا', 'ولو', 'لو', 'كلا', 'والذين', 'الذين', 'ومن'])
 /** Short words that belong with what follows: a break straight after them would separate a preposition or particle from its object. */
 const BINDERS = new Set(['في', 'من', 'عن', 'علي', 'الي', 'ب', 'ل', 'لا', 'ما', 'لم', 'لن', 'ان', 'ا', 'ك', 'و', 'ف', 'ثم', 'بل', 'يا', 'ها', 'مع', 'حتي', 'ان', 'اي', 'لدي', 'عند', 'بعد', 'قبل', 'كل', 'بين', 'دون', 'غير', 'الا', 'قد', 'لقد', 'ولا', 'فلا', 'وما', 'فما'])
 
@@ -51,6 +55,7 @@ export function suggestBreakdown(words: string[], fixed: number[], pauses: Pause
     const lo = cuts[c]! + 1, hi = cuts[c + 1]!
     const len = hi - lo + 1
     if (len <= MAX_PIECE) continue
+    const timed = pauses.length > 0
     const k = Math.ceil(len / TARGET_PIECE)
     const placed: number[] = []
     for (let n = 1; n < k; n++) {
@@ -60,6 +65,7 @@ export function suggestBreakdown(words: string[], fixed: number[], pauses: Pause
       for (let i = from; i <= Math.min(hi - MIN_PIECE, ideal + 3); i++) {
         const ms = pauseAfter.get(i) ?? 0
         // A measured pause outweighs spelling clues; among equals, nearer to the ideal size wins.
+        if (timed && ms < SHORT_PAUSE_MS && len <= TIMED_MAX_PIECE) continue         // the reciter did not pause here: do not invent a break
         const sc = (ms >= REAL_PAUSE_MS ? 100 + ms / 10 : 0) + score(words, i) - Math.abs(i - ideal) * 0.6
         if (sc > bestScore) { bestScore = sc; best = i; bestPause = ms }
       }

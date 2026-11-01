@@ -65,4 +65,15 @@ describe('practice breaks for long ayahs', () => {
     expect(baseLetters('ثُمَّ')).toBe('ثم')
     expect(baseLetters('إِذْ')).toBe('اذ')
   })
+  it('with a reciter\'s timing, never invents a break where the reciter did not pause (up to a generous length)', () => {
+    const w = wordsOfAyah(20, 63), stop = suggestBoundaries(w)               // 13 words
+    const timed = suggestBreakdown(w, stop.boundaries, [{ afterWord: 3, ms: 20 }, { afterWord: 7, ms: 30 }])
+    expect(timed.boundaries).toEqual(stop.boundaries)                         // no pauses: left as the stop signs give it
+  })
+  it('without any timing, does not put a break before أَن (it completes the verb before it)', () => {
+    for (const a of [97, 86]) {
+      const { w, b } = plan(20, a)
+      for (const i of b.boundaries) if (b.reasons[i]?.startsWith('a practice break')) expect(baseLetters(w[i + 1]!), `20:${a}`).not.toBe('ان')
+    }
+  })
 })
