@@ -51,7 +51,8 @@ export default defineConfig({
         // planner and logging work offline. Audio is deliberately NOT cached.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,ttf,json}'],
         // Per-recording phrase timings (<reciter>--<recording>-hash.js) are fetched on demand, never precached: they are large and need the network audio anyway.
-        globIgnores: ['**/assets/*--*.js'],
+        // (a folder of their own: a name pattern such as *--*.js also matched ordinary chunks whose random hash happens to start with "-", which then were not available offline)
+        globIgnores: ['**/assets/timings/*.js'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//],
@@ -60,7 +61,10 @@ export default defineConfig({
   ],
   // Shown in Settings → About so a deployed preview can be matched to the commit it was built from.
   define: { __HIFZ_BUILD__: JSON.stringify(branch ? `${branch} @ ${(process.env.WORKERS_CI_COMMIT_SHA ?? process.env.CF_PAGES_COMMIT_SHA ?? '').slice(0, 7) || 'unknown commit'}` : 'local build') },
-  build: { target: 'es2022', sourcemap: false },
+  build: {
+    target: 'es2022', sourcemap: false,
+    rollupOptions: { output: { chunkFileNames: (c: { facadeModuleId?: string | null }) => (c.facadeModuleId?.includes('/src/data/timings/') ? 'assets/timings/[name]-[hash].js' : 'assets/[name]-[hash].js') } },
+  },
   // Local `vite preview` (used by the browser tests) also answers to *.workers.dev names, so a Cloudflare-style address can be rehearsed on this computer.
   preview: { allowedHosts: ['.workers.dev'] },
   test: {
