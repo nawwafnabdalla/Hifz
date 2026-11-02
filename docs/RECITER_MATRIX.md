@@ -15,6 +15,13 @@ Written 1 Nov 2026. **Honest summary: no reciter is yet "Ready".** The engine, t
 * **Badr Al-Turki:** QUA has full timings, but they are aligned to a **YouTube** upload (192 kbps with chapter offsets). An app cannot stream or legitimately re-host that, and the MP3Quran recording of Badr is a different file, so QUA's timings must not be applied to it. Status: **Unavailable for now**; the route is to align the MP3Quran recording ourselves (see `ALIGNMENT.md`), which needs that audio reachable.
 * 61 recitations (Hafs, streamable, constant bitrate) are **Promising**; 0 are **Ready**, because Ready requires the audio itself to have been fetched and checked against the timings.
 
+## Verified on real audio (2 Nov 2026): see [`PHRASE_AUDIO_VALIDATION.md`](PHRASE_AUDIO_VALIDATION.md)
+| Recording | Ta-Ha result | Class |
+|---|---|---|
+| **Yasser Al-Dosari**, QUA `yasser_al_dosari_tarteel`, audio-cdn.tarteel.ai | 159 phrases cut from the real file, 156 verified exact, 0 leaks; Ta-Ha 94 played A / B / ×3 / joined in a real browser from the real host | **Ready for Ta-Ha** (other surahs not yet imported) |
+| **Maher Al-Mu'aiqly**, QUA `maher_al_muaiqly_tarteel`, audio-cdn.tarteel.ai | 146 phrases cut, 144 verified exact, 0 leaks; one phrase correctly refused (abandoned take with no pause) | **Ready for Ta-Ha** (same limits) |
+Ready means: timings and audio verified together for the surahs imported, not rights cleared (see `PHRASE_AUDIO_LEGAL.md` §2a: no licence found for the audio; nothing is cached or redistributed).
+
 ## What "Ready" requires (all of these, for one specific recording)
 1. Word timings that describe that exact recording (source, file, edition, byte size, bitrate, duration; never "the same reciter").
 2. Same riwayah as the app's text (Hafs ʿan ʿĀṣim). No silent mixing of qirāʾāt.

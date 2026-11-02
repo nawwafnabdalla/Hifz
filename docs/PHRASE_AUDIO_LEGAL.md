@@ -26,6 +26,22 @@ Until one of these is chosen, production must not carry corpus-derived data.
 * Per-recitation licences may differ inside the QUA catalogue (not read). The importer takes `--licence` explicitly and refuses to run without it; check the catalogue entry per recitation before importing.
 * Caching of byte ranges by the service worker is a form of saving: do not enable it for a host whose terms disallow it.
 
+
+### 2a. The recordings used so far (what was actually found, 2 Nov 2026)
+Technical compatibility and permission are different questions, and only the first has been answered by testing.
+
+| Question | Yasser / Maher on `audio-cdn.tarteel.ai` |
+|---|---|
+| Can a browser app stream it? | **Yes, technically**: public, no authentication, CORS `*`, Range `206`, `Content-Range` exposed, 6-month `cache-control`. |
+| Is there a licence or terms for the audio? | **None found.** The QUA release states the recordings "remain the property of their respective reciters, producers, and original sources, and are **not** relicensed by this project" (`NOTICE.md`). QUL's FAQ says resources "vary in their copyright status" and tells users to check each resource's own licensing; the QUL recitation list shows no licence text for these entries. Tarteel's own site terms were unreachable from the build environment. |
+| May the app stream it from the host? | Reasonable and the same model as QUA's own catalogue (links, no re-hosting), but **not explicitly granted**. The owner should decide, ideally with a written word from the host/Tarteel and the reciters' representatives. QUA offers takedown "within a few days, no questions asked", so a rights holder can ask for removal; the app should degrade (it already falls back to the whole ayah) if a URL disappears. |
+| May the app cache it / save it for offline? | **No permission found; not done.** Only decoded byte-windows of the phrase being practised are held in memory (≤5), and the browser's normal HTTP cache applies. The app's "save for offline" feature stays limited to sources whose terms allow it (`SOURCE_RIGHTS`); QUA-hosted recordings are **not** saveable. |
+| May the app redistribute it? | **No.** Nothing is copied into the repository or the app bundle. Only timing numbers and provenance are. |
+| Timings | CC BY 4.0 (attribution + indication of changes). The imported file records source, release, `ts_version`, licence and URL; **About must credit Quranic Universal Audio before any build containing it ships** (not yet added). We changed the data (rebased to ayah windows, dropped abandoned takes), and the credit must say so. |
+| Quran text/fonts in QUA | Not used. QUA's text is KFGQPC under its own terms; the app keeps its own canonical text. |
+
+Technical compatibility of a recording therefore does **not** imply permission. The matrix says "streamable" for the former only.
+
 ## 3. Integrity rules (enforced in code)
 * Canonical text is never altered; timings only point into it, and an ayah whose word count differs from the canonical text is dropped.
 * Riwayah: only `hafs` is accepted by the importer and the registry. Other qirāʾāt are never mixed, even for the same reciter.

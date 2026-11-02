@@ -35,8 +35,9 @@ async function startCapture(page: Page) {
 }
 async function untilPlayed(page: Page) {
   const t0 = Date.now()
-  await page.waitForFunction(() => (window as W).__hifzPhrasePlayer.state.status === 'playing', null, { timeout: 60000 })
+  await page.waitForFunction(() => ['playing', 'unavailable'].includes((window as W).__hifzPhrasePlayer.state.status), null, { timeout: 60000 })
   const ttfs = Date.now() - t0
+  if (await page.evaluate(() => (window as W).__hifzPhrasePlayer.state.status === 'unavailable')) return -1          // refused: the app says so and plays the whole ayah instead
   await page.waitForFunction(() => (window as W).__hifzPhrasePlayer.state.status === 'idle', null, { timeout: 120000 })
   await page.waitForTimeout(300)
   return ttfs
@@ -58,18 +59,19 @@ test('real recording: every phrase of the ayah, repeated, and joined', async ({ 
   page.on('requestfailed', (r) => { if (/audio-cdn/.test(r.url())) fails.push(`${r.url()} ${r.failure()?.errorText}`) })
   await mockAudio(page); await freshStart(page)
   await page.goto('/settings'); await page.getByLabel('Reciter').selectOption(RECITER)
-  await page.evaluate((d) => (window as W).__hifzRegisterTimings(d), data)
+  if (!process.env.REAL_BUILTIN) await page.evaluate((d) => (window as W).__hifzRegisterTimings(d), data)           // REAL_BUILTIN=1: use the timing file shipped in src/data/timings
   await page.evaluate((a) => { history.pushState({}, '', `/learn/20/${a}/${a}`); window.dispatchEvent(new PopStateEvent('popstate')) }, AYAH)
   const phrases = await page.evaluate(([a, p]) => (window as W).__hifzPhrases(20, a as number, p), [AYAH, pauses] as const)
   const meta: Record<string, unknown> = { reciter: RECITER, surah: SURAH, ayah: AYAH, phrases, chips: [] as unknown[] }
   await page.getByTestId('repeat-1').click()
   const heap = async () => page.evaluate(() => (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0)
   const heap0 = await heap()
-  if (phrases.length > 1) await expect(page.getByTestId('phrase-chips')).toBeVisible()
+  if (phrases.length > 1) { await expect(page.getByTestId('phrase-chips')).toBeVisible(); await page.screenshot({ path: join(OUT, 'learn.png') }) }
   for (let c = 0; c < phrases.length; c++) {
     await startCapture(page)
     await page.getByTestId(phrases.length > 1 ? `phrase-chip-${c}` : 'audio-play').click()
     const ttfs = await untilPlayed(page)
+    if (ttfs < 0) { ;(meta.chips as unknown[]).push({ chip: c, words: phrases[c], refused: true, message: (await page.getByTestId('phrase-fallback').innerText().catch(() => '')) }); continue }
     const { x, rate } = await captured(page)
     const file = `chip${c}.wav`; writeFileSync(join(OUT, file), wav(x, rate))
     ;(meta.chips as unknown[]).push({ chip: c, words: phrases[c], file, seconds: +(x.length / rate).toFixed(2), ttfsMs: ttfs, heapMB: +((await heap()) / 1e6).toFixed(1) })
