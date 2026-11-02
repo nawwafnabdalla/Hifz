@@ -100,7 +100,7 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
     : st.waiting ? <span className="font-semibold text-accent">Your turn. Tap Continue when you’re done.</span>
     : st.phase === 'recite' && st.status === 'playing' ? <span className="font-semibold text-accent">Your turn · {st.silenceSeconds}s</span>
     : st.status === 'loading' ? 'Loading…'
-    : (st.status === 'playing' || st.status === 'paused') && st.current ? `Ayah ${st.current.ayah}${st.ayahRepeat ? ` · repeat ${st.ayahRepeat + 1}` : ''}${st.saved ? ' · saved offline' : ''}`
+    : (st.status === 'playing' || st.status === 'paused') && st.current ? `Ayah ${st.current.ayah}${st.ayahRepeat ? ` · repeat ${st.ayahRepeat + 1}` : ''}${st.saved ? ' · saved offline' : ''}${st.via?.includes('same recording') ? ' · same recording as the phrases' : ''}`
     : null
 
   return (

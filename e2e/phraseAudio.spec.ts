@@ -302,6 +302,7 @@ test.describe('phrase audio from a whole-surah MP3 (byte-window decoding)', () =
     await page.getByTestId('audio-play').click()
     await expect.poll(() => requests.length, { timeout: 20000 }).toBeGreaterThan(before)       // a Range window of the surah file was fetched
     await expect(page.getByTestId('audio-status')).toContainText('Ayah 94', { timeout: 20000 })
+    await expect(page.getByTestId('audio-status')).toContainText('same recording as the phrases')
     expect(everyayah, 'no other recording of this reciter was requested').toEqual([])
     for (const r of requests) expect(r.range).toMatch(/^bytes=\d+-\d+$/)
   })

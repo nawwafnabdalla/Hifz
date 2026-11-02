@@ -15,8 +15,8 @@
 | 4 | Set **3×**, tap **A** | Three whole copies, even gaps, no clicks, no cut-off first or last syllable | Y/N, any click |
 | 5 | Tap **B** | "Innī khashītu an taqūla… qawlī", nothing from phrase A | Y/N |
 | 6 | Continue to Flow; reach **A → B** and tap **Hear this part** | One smooth recitation of both phrases with the reciter's own pause | Y/N |
-| 7 | Tap the ordinary play button | The line under it names `audio-cdn.tarteel.ai (same recording as the phrases)`; the voice/room matches the phrases | Y/N |
-| 8 | Open Ta-Ha **71** (not verified for Yasser) | No phrase panel; ordinary audio; the line names the ordinary source | Y/N |
+| 7 | Tap the ordinary play button | The line under it reads "Ayah 94 · same recording as the phrases"; the voice/room matches the phrases | Y/N |
+| 8 | Open Ta-Ha **71** (not verified for Yasser) | No phrase panel; ordinary audio; the line does not say "same recording as the phrases" | Y/N |
 | 9 | While a phrase plays: lock the phone; then return | Stops cleanly (does not play on); next tap works | Y/N |
 | 10 | Silent switch **on**, tap **A** | Report whether you hear it (Web Audio and the ringer switch behave differently across iOS versions) | heard? |
 | 11 | From the Home Screen icon (installed mode): repeat 3 and 4 | Same as in Safari | Y/N |
