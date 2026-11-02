@@ -105,6 +105,7 @@ describe('Quranic Universal Audio release folder (real v4.0.0 layout)', async ()
     expect(r.status, r.stderr).toBe(0)
     const segs = JSON.parse(readFileSync(out, 'utf8')).ayahs['20:22'].s as number[][]
     expect(segs.map((x) => x[0])).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])              // one pass through the words, no repeats
+    expect(JSON.parse(readFileSync(out, 'utf8')).ayahs['20:22'].x).toEqual([3])                 // the seam is recorded: no phrase may span words 3|4
     expect(segs[3]![2] - segs[2]![3]).toBeGreaterThan(1500)                                  // the seam is visible in the data: the abandoned take sits in it
   })
   it('refuses a zip whose checksum is not the release manifest\'s, a non-Hafs recitation, and a YouTube-aligned one', () => {

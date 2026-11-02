@@ -128,7 +128,11 @@ describe('timings are checked and scoped to one recording', () => {
 describe('a repeated passage inside the recitation', () => {
   const seg = (w: number, t0: number, t1: number) => ({ w0: w, w1: w + 1, t0, t1 })
   // Words 1-3, then (after the reciter went back) 4-6 again after a long silence in the file: a seam between word 3 and word 4.
-  const t: AyahTiming = { surah: 20, ayah: 5, durationMs: 20000, segments: [seg(0, 0, 500), seg(1, 500, 1000), seg(2, 1000, 1500), seg(3, 6000, 6500), seg(4, 6500, 7000), seg(5, 7000, 7500)] }
+  const t: AyahTiming = { surah: 20, ayah: 5, durationMs: 20000, seams: [3], segments: [seg(0, 0, 500), seg(1, 500, 1000), seg(2, 1000, 1500), seg(3, 6000, 6500), seg(4, 6500, 7000), seg(5, 7000, 7500)] }
+  it('a long breath inside a phrase is not a seam: only recorded seams (and absurd gaps) refuse a phrase', () => {
+    const u: AyahTiming = { ...t, seams: undefined, segments: t.segments.map((s, i) => (i >= 3 ? { ...s, t0: s.t0 - 2500 + 1500, t1: s.t1 - 2500 + 1500 } : s)) }   // a 1.5 s pause between word 3 and 4
+    expect(proposeRange(u, 1, 4)).not.toBeNull()
+  })
   it('refuses a phrase that would run across the seam, and still allows phrases on either side', () => {
     expect(proposeRange(t, 1, 4)).toBeNull()
     expect(proposeRange(t, 0, 2)).not.toBeNull()
