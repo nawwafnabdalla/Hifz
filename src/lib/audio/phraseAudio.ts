@@ -15,8 +15,12 @@ export interface Pcm { sampleRate: number; samples: Float32Array }
 
 const HOP_MS = 5
 const WIN_MS = 10
-/** How far from the proposed boundary to look for the quiet moment (published alignments drift by roughly this much). */
-const SNAP_MS = 110
+/**
+ * How far beyond the timed gap between two words a cut may be placed. Measured on real recordings (Yasser, Ta-Ha/Al-Baqarah/Saba/Al-A'raf, ~1,500
+ * phrases): a wider search (110 ms) let 86 cuts begin more than 40 ms after the timed start of the first word (a closure inside a word taken for
+ * a pause; the transcription check confirmed first words lost); 40 ms removed all of them and cost 3% more refusals. Refusing is safe; clipping is not.
+ */
+export const cutTuning = { snapMs: 40 }
 const FADE_SEC = 0.006
 /** A window cut out of a whole-surah file may decode up to this much shorter or longer than its bytes imply (first-frame priming, frame rounding). */
 export const SLICE_TOLERANCE_MS = 120
@@ -86,7 +90,7 @@ export function cutPoints(p: Pcm, prop: RangeProposal, durationSec = p.samples.l
   const fr = frameRms(p)
   const ref = speechLevel(fr)
   if (!(ref > 0)) return null
-  const snap = SNAP_MS / 1000
+  const snap = cutTuning.snapMs / 1000
   let dip = 0
   let startSec: number, endSec: number
 

@@ -12,7 +12,8 @@ import { wordsOfAyah, ayahCount } from '@/lib/quran/data'
 import { buildPhrases } from '@/lib/engine/phrases'
 import { defaultBoundaries } from '@/lib/engine/breakdown'
 import { expand, proposeRange, validateAyahTiming, reciterPauses, type RecordingTimings, type RangeProposal } from '@/lib/audio/timings'
-import { cutPoints, frameRms, speechLevel, quietRunNear } from '@/lib/audio/phraseAudio'
+import { cutPoints, cutTuning, frameRms, speechLevel, quietRunNear } from '@/lib/audio/phraseAudio'
+if (process.env.REAL_SNAP) cutTuning.snapMs = Number(process.env.REAL_SNAP)
 import { byteWindow, WINDOW_PAD_MS } from '@/lib/audio/phraseSource'
 
 const T = process.env.REAL_TIMINGS, M = process.env.REAL_MP3 ?? process.env.REAL_MP3_DIR, OUT = process.env.REAL_OUT, SURAH_ENV = process.env.REAL_SURAH ?? '20', MP3_DIR = process.env.REAL_MP3_DIR
@@ -61,7 +62,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
           const fr = frameRms({ sampleRate: 44100, samples: pcm }), ref = speechLevel(fr), off = (win.startMs - o) / 1000
           t.pauses = t.segments.slice(0, -1).map((s, i) => {
             if (t.seams?.includes(i + 1)) return 0
-            const n = t.segments[i + 1]!, lo = Math.min(s.t1, n.t0) / 1000 - off - 0.11, hi = Math.max(s.t1, n.t0) / 1000 - off + 0.11
+            const n = t.segments[i + 1]!, lo = Math.min(s.t1, n.t0) / 1000 - off - cutTuning.snapMs / 1000, hi = Math.max(s.t1, n.t0) / 1000 - off + cutTuning.snapMs / 1000
             const q = quietRunNear(fr, lo, hi, ref, (s.t1 + n.t0) / 2000 - off)
             return q ? Math.round(q.ms) : 0
           })
