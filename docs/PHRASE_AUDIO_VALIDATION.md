@@ -61,3 +61,26 @@ REAL_TIMINGS=… REAL_MP3=… REAL_OUT=… npx vitest run tests/realAudio.gen.te
 REAL_BUILTIN=1 REAL_TIMINGS=… REAL_RECITER=dossary REAL_OUT=… npx playwright test e2e/realAudio.spec.ts --project=mobile
 ```
 The transcription step is a short Python script using `sherpa-onnx` and the Whisper turbo model from the k2-fsa GitHub release; it is not part of the app.
+
+## 6. Whole Qur'an (2 Nov 2026): Maher and Yasser, Tarteel recordings
+Imported by remote probe in ~30 s each (114 surahs, 6,236 ayahs, nothing skipped). All 114 audio files downloaded (1.2–1.4 GB each) and the app's engine run over **every ayah**: every phrase the app would offer was cut from the real file, the file size was checked against the recorded size (identity), and cuts were measured acoustically (padding, energy outside the timed words).
+
+| | Yasser | Maher |
+|---|---|---|
+| Phrases offered by the engine | 10,680 | 10,746 |
+| Cut cleanly | 8,498 (79.6%) | 7,879 (73.3%) |
+| Refused: no genuine pause | 1,525 | 1,919 |
+| Not isolatable (the ayah contains the reciter's abandoned attempt) | 657 | 948 |
+| Ayahs containing an abandoned take | 1,102 | 1,497 |
+| **Ayahs verified (every phrase cut cleanly, no unexplained acoustic warning)** | **4,891 (78.4%)** | **4,508 (72.3%)** |
+| Surahs fully verified / ≥90% / <50% | 39 / 57 / 4 | 36 / 55 / 14 |
+| Transcription sample (every 30th cut, all surahs) | 283 clips, 281 exact-best, 0 clear defects, mean similarity 0.982 | 262 clips, all exact-best, 0 clear defects, 0.977 |
+| Acoustically warned phrases, all re-cut and transcribed | 165 / 165 exact-best | 229 / 229 exact-best |
+
+The acoustic warning (≥250 ms padding containing speech-level energy) turned out to be over-cautious: all 394 warned phrases transcribe to the exact phrase, so the warning marks natural decay or elongation of the last word, not a neighbouring word. They are counted as verified because each was transcribed, not because the warning was ignored.
+Low-coverage surahs are real, not misalignment: for Surah 9 (Yasser, 58% of phrases refused) and Surah 60 (Maher, 0 of 13 ayahs verified) the timings were checked by transcribing the timed spans directly (similarity 0.89–1.0, one long ayah truncated by the recogniser's 30 s limit) and the audio simply has no clean pauses at the proposed boundaries; the engine correctly refuses.
+**The five non-exact results** of the Ta-Ha transcription: four were the same phrase ("لَأٓيَٰتٖ لِّأُوْلِي ٱلنُّهَىٰ", recognised as "لاولنها", margin < 0.01); one (Yasser 20:40, phrase 4) was Whisper repeating its output: transcribing each half of the clip separately gives the phrase once. None is a clip or a leak.
+
+**What the app now does with it:** `verified` ayah lists are stored inside each timing file (`scripts/apply-verification.mjs`); phrase audio and whole-ayah-from-this-recording are offered **only** for those ayahs. For the others the ordinary source plays and nothing phrase-related appears. Checked in a real browser against the real host: whole-ayah audio cut by the app from the same recording transcribes to the full ayah (Yasser 20:94 0.957, 20:2 0.957; Maher 20:2, 20:5 1.0, 20:71 0.996) and is *not* offered for ayahs that are not verified (Yasser 20:71, Maher 20:94).
+
+**Not done / limits:** transcription is a sample plus the warned set, not all ≈21,000 phrases; the recogniser can miss a partial-syllable leak; no human review of any boundary; no iPhone. Cut-by-cut transcription of every phrase was done only for Ta-Ha (all phrases) and for the warned set; elsewhere it is the sample, plus direct timing checks on Surahs 9 and 60.
