@@ -21,6 +21,8 @@ export interface AyahTiming {
   segments: WordSegment[]
   /** Segment indexes i where the recitation is not continuous between segment i-1 and i (an abandoned take was dropped between them). No phrase may span one. */
   seams?: number[]
+  /** For each seam: [when the abandoned attempt's speech begins, when it ends], ms on this ayah's clock. A cut may not reach past these. */
+  seamSpans?: [number, number][]
 }
 export interface TimingProvenance {
   /** Where the timings come from (dataset name and version). */
@@ -38,7 +40,7 @@ export interface TimingProvenance {
   /** For 'surah' recordings: where the audio comes from and how to cut a window out of it by bytes. */
   audio?: { /** `{SSS}` template, or an explicit URL per surah (catalogues list one per chapter) */ urlTemplate?: string; urls?: Record<string, string>; files: Record<string, { bytes: number; kbps: number; dataOffset: number; durationMs: number }> }
 }
-export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** seams: see AyahTiming */ x?: number[]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
+export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** seams: see AyahTiming */ x?: number[]; /** seam spans: see AyahTiming */ xs?: [number, number][]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
 
 /** Largest disagreement tolerated between the aligned file's length and the decoded file's length. */
 export const DURATION_TOLERANCE_MS = 60
@@ -69,7 +71,7 @@ export function validateAyahTiming(t: AyahTiming, wordCount = wordsOfAyah(t.sura
 }
 
 export function expand(raw: RecordingTimings['ayahs'][string], surah: number, ayah: number): AyahTiming {
-  return { surah, ayah, durationMs: raw.d, originMs: raw.o ?? 0, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })), ...(raw.x?.length ? { seams: raw.x } : {}) }
+  return { surah, ayah, durationMs: raw.d, originMs: raw.o ?? 0, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })), ...(raw.x?.length ? { seams: raw.x, ...(raw.xs ? { seamSpans: raw.xs } : {}) } : {}) }
 }
 
 const segmentOf = (t: AyahTiming, word: number) => t.segments.findIndex((s) => word >= s.w0 && word < s.w1)
@@ -81,6 +83,9 @@ export interface RangeProposal {
   /** Where the neighbouring words sit, so the audio can be searched for a real dip between them. */
   startGap: [number, number] | null
   endGap: [number, number] | null
+  /** Hard limits from an abandoned take next to the phrase: a cut must lie at or after startLimitMs / at or before endLimitMs. */
+  startLimitMs?: number
+  endLimitMs?: number
 }
 
 /**
@@ -101,6 +106,7 @@ export function proposeRange(t: AyahTiming, from: number, to: number): RangeProp
   //    at a genuine pause within NEAR_WORD_MS of the phrase's own word; if there is none the phrase is refused rather than cut through speech;
   //  - a WIDE gap (a long breath / waqf): the middle of the gap is a second or more of silence, so the cut is made close to the phrase's own word.
   const seamBefore = !!t.seams?.includes(a), seamAfter = !!t.seams?.includes(b + 1)
+  const spanAfter = seamAfter ? t.seamSpans?.[t.seams!.indexOf(b + 1)] : undefined, spanBefore = seamBefore ? t.seamSpans?.[t.seams!.indexOf(a)] : undefined
   const near = (lo: number, hi: number): [number, number] => [Math.min(lo, hi), Math.max(lo, hi)]
   const narrow = (g: [number, number], edge: 'start' | 'end'): [number, number] => (g[1] - g[0] > WIDE_GAP_MS ? (edge === 'end' ? [g[0], g[0] + NEAR_WORD_MS] : [g[1] - NEAR_WORD_MS, g[1]]) : g)
   const startGap: [number, number] | null = seamBefore ? [sa.t0 - NEAR_WORD_MS, sa.t0] : prev ? narrow(near(prev.t1, sa.t0), 'start') : null
@@ -108,7 +114,7 @@ export function proposeRange(t: AyahTiming, from: number, to: number): RangeProp
   const startMs = prev && !seamBefore ? Math.max((prev.t1 + sa.t0) / 2, sa.t0 - MAX_GAP_PAD_MS) : Math.max(0, sa.t0 - MAX_GAP_PAD_MS)
   const endMs = next && !seamAfter ? Math.min((sb.t1 + next.t0) / 2, sb.t1 + TAIL_MS) : Math.min(t.durationMs, sb.t1 + TAIL_MS)
   if (!(endMs > startMs)) return null
-  return { startMs, endMs, startGap, endGap }
+  return { startMs, endMs, startGap, endGap, ...(spanBefore ? { startLimitMs: spanBefore[1] } : {}), ...(spanAfter ? { endLimitMs: spanAfter[0] } : {}) }
 }
 
 /** The pauses the reciter actually made inside an ayah: gaps between consecutive words, longest first. Used to suggest practice breaks. */

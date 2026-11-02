@@ -49,6 +49,7 @@ async function captured(page: Page) {
 test('real recording: every phrase of the ayah, repeated, and joined', async ({ page }) => {
   mkdirSync(OUT, { recursive: true })
   const data = JSON.parse(readFileSync(T!, 'utf8'))
+  data.reciter = RECITER
   const raw = data.ayahs[`${SURAH}:${AYAH}`]
   const pauses = raw.s.slice(0, -1).map((s: number[], i: number) => ({ afterWord: s[1] - 1, ms: Math.max(0, raw.s[i + 1][2] - s[3]) }))
   const net: { url: string; status: number; range: string | undefined; contentRange: string | null; acao: string | null; bytes: number }[] = []

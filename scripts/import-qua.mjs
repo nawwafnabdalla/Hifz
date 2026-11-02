@@ -159,7 +159,16 @@ function wordsToSegments(words, count) {
 /** The reciter's last continuous take: when words repeat (a passage recited twice) the earlier, abandoned attempt is dropped from the chain. */
 function lastTake(words) {
   const out = []; let seams = []
-  for (const w of words) { const before = out.length; while (out.length && out.at(-1).word >= w.word) out.pop(); if (out.length < before) { while (seams.length && seams.at(-1) > out.length) seams.pop(); seams.push(out.length) } out.push(w) }
+  for (const w of words) {
+    const before = out.length, dropped = []
+    while (out.length && out.at(-1).word >= w.word) dropped.push(out.pop())
+    if (out.length < before) {
+      while (seams.length && seams.at(-1).at > out.length) seams.pop()
+      // When the abandoned attempt's speech begins and ends: a cut next to it must stop short of these.
+      seams.push({ at: out.length, from: Math.min(...dropped.map((d) => d.t0)), to: Math.max(...dropped.map((d) => d.t1)) })
+    }
+    out.push(w)
+  }
   return { words: out, seams }
 }
 /** Release mode: the canonical rows of word_timestamps.json.gz, in the generic {surah, ayah, words} shape (times shifted by the chapter's offset in its source file). */
@@ -215,7 +224,7 @@ for (const [surah, list] of [...bySurah].sort((x, y) => x[0] - y[0])) {
   const parsed = list.sort((x, y) => x.ayah - y.ayah).map((a) => {
     if (!q.text[surah - 1]?.[a.ayah - 1]) return { a, why: 'not a valid ayah' }
     const r = wordsToSegments(a.words, wordCount(surah, a.ayah))
-    return r.why ? { a, why: r.why } : { a, segs: r.segs, seams: (a.seams ?? []).filter((x) => x > 0 && x < r.segs.length) }
+    return r.why ? { a, why: r.why } : { a, segs: r.segs, seams: (a.seams ?? []).filter((x) => x.at > 0 && x.at < r.segs.length) }
   })
   for (const p of parsed) if (p.why) skip(p.why, `${surah}:${p.a.ayah}`)
   const good = parsed.filter((p) => p.segs)
@@ -229,7 +238,7 @@ for (const [surah, list] of [...bySurah].sort((x, y) => x[0] - y[0])) {
     const end = consecutive(next) ? Math.round((last + next.segs[0][2]) / 2) : Math.min(total, last + 200)
     if (last > total + 60) { skip('runs past the end of the audio file', `${surah}:${a.ayah}`); continue }
     if (end <= origin) { skip('empty window', `${surah}:${a.ayah}`); continue }
-    ayahs[`${surah}:${a.ayah}`] = { d: end - origin, o: origin, s: segs.map(([w0, w1, t0, t1]) => [w0, w1, t0 - origin, t1 - origin]), ...(seams.length ? { x: seams } : {}) }
+    ayahs[`${surah}:${a.ayah}`] = { d: end - origin, o: origin, s: segs.map(([w0, w1, t0, t1]) => [w0, w1, t0 - origin, t1 - origin]), ...(seams.length ? { x: seams.map((x) => x.at), xs: seams.map((x) => [Math.round(x.from - origin), Math.round(x.to - origin)]) } : {}) }
   }
 }
 

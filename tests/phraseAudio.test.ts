@@ -150,6 +150,11 @@ describe('where a phrase ends when the silence next to it is not ordinary', () =
     expect(p.endMs).toBeLessThanOrEqual(1500 + 160)
     expect(proposeRange(t, 3, 3)!.startGap).toEqual([4600, 5000])
   })
+  it('the abandoned attempt\'s own span becomes a hard limit: a cut may not reach into it', () => {
+    const t: AyahTiming = { ...base, seams: [3], seamSpans: [[1500, 4800]], segments: [seg(0, 0, 500), seg(1, 500, 1000), seg(2, 1000, 1500), seg(3, 5000, 5500)] }
+    expect(proposeRange(t, 0, 2)!.endLimitMs).toBe(1500)
+    expect(proposeRange(t, 3, 3)!.startLimitMs).toBe(4800)
+  })
   it('a long breath after the phrase is searched near the phrase, not in the middle of the silence', () => {
     const t: AyahTiming = { ...base, segments: [seg(0, 0, 500), seg(1, 500, 1000), seg(2, 4000, 4500)] }
     expect(proposeRange(t, 0, 1)!.endGap).toEqual([1000, 1400])

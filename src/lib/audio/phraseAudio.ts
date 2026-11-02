@@ -92,7 +92,7 @@ export function cutPoints(p: Pcm, prop: RangeProposal, durationSec = p.samples.l
 
   if (prop.startGap) {
     const mid = (prop.startGap[0] + prop.startGap[1]) / 2000
-    const q = quietRunNear(fr, prop.startGap[0] / 1000 - snap, prop.startGap[1] / 1000 + snap, ref, mid)
+    const q = quietRunNear(fr, Math.max(prop.startGap[0] / 1000 - snap, (prop.startLimitMs ?? -Infinity) / 1000), prop.startGap[1] / 1000 + snap, ref, mid)
     if (!q) return null
     startSec = q.sec; dip = Math.max(dip, q.dip)
   } else {
@@ -101,7 +101,7 @@ export function cutPoints(p: Pcm, prop: RangeProposal, durationSec = p.samples.l
   }
   if (prop.endGap) {
     const mid = (prop.endGap[0] + prop.endGap[1]) / 2000
-    const q = quietRunNear(fr, prop.endGap[0] / 1000 - snap, prop.endGap[1] / 1000 + snap, ref, mid)
+    const q = quietRunNear(fr, prop.endGap[0] / 1000 - snap, Math.min(prop.endGap[1] / 1000 + snap, (prop.endLimitMs ?? Infinity) / 1000), ref, mid)
     if (!q) return null
     endSec = q.sec; dip = Math.max(dip, q.dip)
   } else {
@@ -192,7 +192,7 @@ export class PhrasePlayer {
     try { d = await this.decoded(req, ctx as AudioContext, prop) } catch { return { reason: 'no-audio' } }
     if (!d) return { reason: 'wrong-recording' }
     // The proposal is on the ayah's clock; the decoded buffer may start part-way in (a window of a whole-surah file).
-    const o = d.originMs, local: RangeProposal = { startMs: prop.startMs - o, endMs: prop.endMs - o, startGap: prop.startGap && [prop.startGap[0] - o, prop.startGap[1] - o], endGap: prop.endGap && [prop.endGap[0] - o, prop.endGap[1] - o] }
+    const o = d.originMs, local: RangeProposal = { startMs: prop.startMs - o, endMs: prop.endMs - o, startGap: prop.startGap && [prop.startGap[0] - o, prop.startGap[1] - o], endGap: prop.endGap && [prop.endGap[0] - o, prop.endGap[1] - o], ...(prop.startLimitMs !== undefined ? { startLimitMs: prop.startLimitMs - o } : {}), ...(prop.endLimitMs !== undefined ? { endLimitMs: prop.endLimitMs - o } : {}) }
     if (local.startMs < 0 || local.endMs > d.buffer.duration * 1000 + 50) return { reason: 'no-audio' }
     const cut = cutPoints(d.pcm, local, d.buffer.duration)
     if (!cut) return { reason: 'no-pause' }

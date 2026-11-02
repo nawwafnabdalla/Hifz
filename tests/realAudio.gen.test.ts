@@ -42,7 +42,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
         const pcm = decode(mp3.subarray(win.start, win.end + 1)), rate = 44100
         const sh = (x: number) => x - win.startMs + o - o            // window clock: ayah-relative time minus the window start expressed on the ayah clock
         const off = win.startMs - o
-        const local: RangeProposal = { startMs: prop.startMs - off, endMs: prop.endMs - off, startGap: prop.startGap && [prop.startGap[0] - off, prop.startGap[1] - off], endGap: prop.endGap && [prop.endGap[0] - off, prop.endGap[1] - off] }
+        const local: RangeProposal = { startMs: prop.startMs - off, endMs: prop.endMs - off, startGap: prop.startGap && [prop.startGap[0] - off, prop.startGap[1] - off], endGap: prop.endGap && [prop.endGap[0] - off, prop.endGap[1] - off], ...(prop.startLimitMs !== undefined ? { startLimitMs: prop.startLimitMs - off } : {}), ...(prop.endLimitMs !== undefined ? { endLimitMs: prop.endLimitMs - off } : {}) }
         void sh
         const cut = cutPoints({ sampleRate: rate, samples: pcm }, local, pcm.length / rate)
         if (!cut) { tally.refused++; rows.push({ a, i, from: p.from, to: p.to, result: 'no-pause' }); continue }
