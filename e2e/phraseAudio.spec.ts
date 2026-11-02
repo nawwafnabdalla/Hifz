@@ -182,7 +182,7 @@ test.describe('phrase-only audio', () => {
     await prepare(page)
     await expect(page.getByTestId('phrase-chips')).toBeVisible()
     await page.evaluate(() => { history.pushState({}, '', '/settings'); window.dispatchEvent(new PopStateEvent('popstate')) })
-    await page.getByLabel('Reciter').selectOption('dossary')
+    await page.getByLabel('Reciter').selectOption('husary')
     await openLearn(page, AYAH)
     await expect(page.getByTestId('stage-sound')).toBeVisible()
     await expect(page.getByTestId('phrase-chips')).toHaveCount(0)
