@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Record, inside a timing file, which ayahs were verified on the real audio (status 'ok': every phrase cut cleanly, no acoustic warning).
-//   node scripts/apply-verification.mjs --timings src/data/timings/<file>.json --verification data/validation/<slug>.json
+//   node scripts/apply-verification.mjs --timings src/data/timings/<file>.json --verification data/validation/<slug>.json [--pauses <dir>/pauses.json]
+// --pauses stores the pauses MEASURED in the real audio at every word boundary (`pa`), which the app's phrase planner uses; they must be the same ones the verification run planned from.
 // The app then offers phrase audio, and plays the whole ayah from that recording, ONLY for these ayahs. A timing file without a `verified` list
 // (hand-made or test timings) is used as before. Re-run the verification after any change to the phrase engine or the model.
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -12,6 +13,8 @@ if (!v.okAyahs) { console.error('verification file has no okAyahs'); process.exi
 const ok = Object.fromEntries(Object.entries(v.okAyahs).map(([s, a]) => [s, a.slice().sort((x, y) => x - y)]))
 const n = Object.values(ok).reduce((s, a) => s + a.length, 0)
 t.verified = ok
+const pf = arg('pauses')
+if (pf) { const pa = JSON.parse(readFileSync(pf, 'utf8')); let n2 = 0; for (const [k, v] of Object.entries(pa)) if (t.ayahs[k]) { t.ayahs[k].pa = v; n2++ } console.log(`measured pauses stored for ${n2} ayahs`) }
 t.provenance.verification = { date: v.generated, method: v.method, ayahs: n, of: Object.keys(t.ayahs).length, thresholds: v.warnThresholds }
 writeFileSync(tf, JSON.stringify(t))
 console.log(`${tf}: ${n} of ${Object.keys(t.ayahs).length} ayahs marked verified`)

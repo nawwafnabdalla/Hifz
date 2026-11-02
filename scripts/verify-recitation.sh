@@ -15,4 +15,8 @@ xargs -P 6 -L 1 sh -c 'out='"$work/aud/$slug"'/$(printf %03d $0).mp3; [ -s "$out
 REAL_FAST=1 REAL_TIMINGS="$work/$slug.json" REAL_MP3_DIR="$work/aud/$slug" REAL_SURAH=all REAL_CLIP_EVERY=${CLIP_EVERY:-30} REAL_OUT="$work/real/$slug" \
   npx vitest run tests/realAudio.gen.test.ts
 node "$root/scripts/summarize-verification.mjs" --report "$work/real/$slug/report.json" --slug "$slug" --out "$root/data/validation/$slug.json"
+# Install the timings with the measured pauses and the verified-ayah list (only after the verification above reflects them).
+dst="$root/src/data/timings/$reciter--qua_$slug.json"
+cp "$work/$slug.json" "$dst"
+node "$root/scripts/apply-verification.mjs" --timings "$dst" --verification "$root/data/validation/$slug.json" --pauses "$work/real/$slug/pauses.json"
 rm -rf "$work/aud/$slug"

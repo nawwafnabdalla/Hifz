@@ -96,6 +96,7 @@ export async function checkPhraseAudio(id: string, sample = 4): Promise<{ state:
       const recording = rec.provenance.recording
       const keys = Object.keys(rec.ayahs).sort((a, b) => (a.startsWith('20:') ? 0 : 1) - (b.startsWith('20:') ? 0 : 1)).slice(0, sample)
       let boundaries = 0, clean = 0, wrong = 0, unreadable = 0
+      const ms: number[] = [], kb: number[] = []
       for (const k of keys) {
         const [s, a] = k.split(':').map(Number) as [number, number]
         const t = await ayahTiming(id, recording, s, a)
@@ -105,8 +106,10 @@ export async function checkPhraseAudio(id: string, sample = 4): Promise<{ state:
           if (!prop) continue
           boundaries++
           try {
+            const t0 = performance.now()
             const got = await ayahBytes(id, rec, s, a, t, prop)
             const buf = await new AC(1, 1, 44100).decodeAudioData(got.data.slice(0))
+            ms.push(performance.now() - t0); kb.push(got.data.byteLength / 1024)
             const ok = got.expectMs === undefined ? sameRecording(t, buf.duration) : Math.abs(buf.duration * 1000 - got.expectMs) <= SLICE_TOLERANCE_MS
             if (!ok) { wrong++; continue }
             const o = got.originMs
@@ -118,7 +121,10 @@ export async function checkPhraseAudio(id: string, sample = 4): Promise<{ state:
       const label = (rec.provenance.granularity ?? 'ayah') === 'surah' ? 'whole-surah recording' : 'per-ayah recording'
       if (boundaries && unreadable === boundaries) notes.push(`${label}: the host would not let the app read it (phrase audio falls back to the whole ayah)`)
       else if (wrong) notes.push(`${label}: ${wrong} of ${boundaries} samples differ from their timings, so phrase audio is switched off for them`)
-      else notes.push(`${label}: ${clean} of ${boundaries} sampled pauses are genuine and clean to cut at`)
+      else {
+        const med = (x: number[]) => [...x].sort((p, q) => p - q)[x.length >> 1] ?? 0
+        notes.push(`${label}: ${clean} of ${boundaries} sampled pauses are genuine and clean to cut at (fetch + decode, median ${Math.round(med(ms))} ms for ${Math.round(med(kb))} KB)`)
+      }
     }
     const ok = notes.every((n) => /genuine and clean/.test(n)) && !notes.some((n) => /: 0 of/.test(n))
     return { state: ok ? 'ok' : 'fail', detail: notes.join('. ') + '.' }
