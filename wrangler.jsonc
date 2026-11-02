@@ -7,5 +7,9 @@
     "directory": "./dist",
     // Serve index.html for unknown paths so deep links like /quran/20 work in the single-page app.
     "not_found_handling": "single-page-application"
-  }
+  },
+  // Worker Previews (`npx wrangler preview`, the command Workers Builds runs for non-production branches) require this block; it may be empty.
+  // Empty on purpose: a preview inherits the assets above and gets NO extra variables, secrets or bindings. This app has none, and the
+  // Supabase address/key are not Worker settings at all: they are baked in at build time, which vite.config.ts blanks for every branch but the live one.
+  "previews": {}
 }

@@ -1,10 +1,20 @@
 # A private test version of Hifz OS (phrase audio) that cannot touch the real app
 
-## What was wrong with Cloudflare previews (found from the GitHub checks, no log needed)
-* Every build of a **non-production branch fails**, including the unchanged `claude/hifz-os-rollback` branch (1c57bc6, 1 Nov 12:59:32 → failed 13:00:12). The same commit then **succeeded** when it reached the production branch (13:04:38 → 13:05:11). Builds run 30–70 s in both cases.
-* So the cause is Cloudflare project configuration for non-production builds (the "Non-production branch deploy command", i.e. the step after the build), **not our code, dependencies or assets**. Checked: a clean clone builds in 3 s and `wrangler deploy --dry-run` accepts the config and reads all 40 files.
-* The exact message is only in the build log (the GitHub check carries no text). To read it on an iPhone: Safari → dash.cloudflare.com → **Workers & Pages** → **hifz** → **Deployments** (or **Settings → Builds → Build history**) → tap a build marked failed → **Logs**. Or open GitHub → the commit → the check "Workers Builds: hifz" → **Details** (e.g. `https://dash.cloudflare.com/a233a6c5d3a72cf35dbd667b877fb138/workers/services/view/hifz/production/builds/04b25944-80f1-4d34-98b4-8b2a37743a56`). Paste the last 20 lines to me and I will name the setting. Likely suspects: the non-production deploy command is empty/invalid (default is `npx wrangler versions upload`), or Preview URLs are not enabled for the Worker.
-* I changed nothing in the production project. Optional tidy-up there: Settings → Builds → Branch control → turn off "Builds for non-production branches" (stops the failing noise).
+## Cloudflare previews: the cause and the fix (4 Nov 2026)
+* **Cause (from the build log you found):** the non-production build ran `npm run build` successfully, then `npx wrangler preview` failed with *"Your Wrangler configuration is missing a `previews` block"*. Wrangler's own check requires the block, which may be empty.
+* **Fix:** `wrangler.jsonc` (and `wrangler.test.jsonc`) now contain `"previews": {}`. An empty block means a preview inherits the assets and gets **no** extra variables, secrets or bindings. `wrangler deploy --dry-run` output for the live app is identical before and after.
+* The Cloudflare docs host is not reachable from my sandbox, so the syntax comes from the installed Wrangler itself (4.156.2): its JSON schema defines a top-level `previews` object and its error text says the block can be empty.
+
+## Why a preview cannot touch your real records or leak recordings
+| Risk | Safeguard |
+|---|---|
+| Preview build carrying the live Supabase address/key (Workers Builds gives every branch the same project variables) | `vite.config.ts` reads the branch (`WORKERS_CI_BRANCH`): every branch except the live one is built with the Supabase address and key **blanked**, so the bundle contains neither (CI proves this). The live branch is built exactly as before. |
+| Same, if the branch variable were ever missing or renamed | Second guard at run time: any `*.workers.dev` address other than `hifz.nawwaf-n-abdalla.workers.dev` never enables cloud sync (`isPreviewHost`). A preview's address is such a host. |
+| Phrase audio (flag) on in production | The flag is switched on **only** when the branch being built is `claude/hifz-os-phrase-audio`. The live branch is never flagged; a flag-off build bundles no phrase data (CI proves it). |
+| Anyone with the preview link streaming rights-uncleared recordings | In a build that has phrase audio, nothing loads (no timings, no phrase controls, no recording request) on a preview address until you enter the **private test code** once on that device (Settings → Test access). Only a hash of the code is in the app. This is a guard against casual use of an open link; for real privacy also turn on Cloudflare Access for preview URLs (Worker → Settings → Domains & Routes → Preview URLs). |
+| Confusing the apps | Preview title "Hifz OS (test)", home-screen name "Hifz test". |
+Remaining caveat: the preview still streams from `audio-cdn.tarteel.ai` into **your** browser once unlocked; rights for that are not cleared (`PHRASE_AUDIO_RIGHTS.md`), which is why the code gate exists.
+Also note: the branch name that sets all this is read from `WORKERS_CI_BRANCH`. I could not read Cloudflare's docs to confirm the variable name; the build prints one line `[hifz] building branch "…": …` so the next build log shows whether it was seen. If it is not seen, the run-time guard above still protects your data, and phrase audio would simply be off (safe).
 
 ## The working test version: a second, separate Worker
 It deploys the way production already deploys (which works), but to its own Worker, so it cannot replace the live app.

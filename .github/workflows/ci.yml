@@ -16,5 +16,14 @@ jobs:
       - run: npm run build
       - name: An ordinary build bundles no phrase-audio data
         run: test -z "$(ls dist/assets | grep -E -- '--qua_' || true)"
+      - name: A preview-branch build has no Supabase address or key, and the live branch build keeps them
+        run: |
+          export VITE_SUPABASE_URL=https://ci-example.supabase.co VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci_example
+          WORKERS_CI=1 WORKERS_CI_BRANCH=claude/hifz-os-phrase-audio npm run build
+          if grep -rq -e ci-example.supabase.co -e sb_publishable_ci_example dist; then echo "preview build contains Supabase settings"; exit 1; fi
+          ls dist/assets | grep -E -- '--qua_'
+          WORKERS_CI=1 WORKERS_CI_BRANCH=claude/hifz-os-feasibility-btrmfb npm run build
+          grep -rq ci-example.supabase.co dist/assets
+          if ls dist/assets | grep -E -- '--qua_'; then echo "live build contains phrase data"; exit 1; fi
       - name: The test build (phrase audio on) builds too
         run: VITE_PHRASE_AUDIO=1 npm run build && ls dist/assets | grep -E -- '--qua_'

@@ -8,6 +8,7 @@
 // Timings only PROPOSE where a phrase starts and ends. The decoded audio has the final say (see cutPoints in phraseAudio.ts):
 // the proposal is snapped to the quietest moment around it, and rejected when the recording has no real dip there.
 import { wordsOfAyah } from '@/lib/quran/data'
+import { phraseAudioAllowed } from './previewAccess'
 
 /** Quran Align / QUL shape: words [w0, w1) are spoken between t0 and t1 milliseconds. w1 is exclusive. */
 export interface WordSegment { w0: number; w1: number; t0: number; t1: number }
@@ -161,7 +162,9 @@ export async function recordingsFor(reciter: string): Promise<RecordingTimings[]
   const hit = loaded.get(reciter)
   if (hit) return hit
   const out: RecordingTimings[] = [...(injected.get(reciter) ?? [])]
-  for (const path of Object.keys(files)) {
+  // Bundled recordings' timings are used only where phrase audio is allowed (see previewAccess.ts): never on an open preview link without the owner's code.
+  const allowed = await phraseAudioAllowed()
+  for (const path of allowed ? Object.keys(files) : []) {
     const name = path.split('/').pop()!.replace(/\.json$/, '')
     if (name !== reciter && !name.startsWith(`${reciter}--`)) continue
     try { const d = (await files[path]!()).default; if (d.reciter === reciter && (d.provenance.riwayah ?? 'hafs') === 'hafs') out.push(d) } catch { /* unreadable file: ignored */ }

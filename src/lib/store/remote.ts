@@ -5,7 +5,12 @@ export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefi
 export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined
 /** The phrase-audio TEST build never talks to the cloud, even if variables are set: it must not be able to touch real records. */
 export const TEST_BUILD = import.meta.env.VITE_PHRASE_AUDIO === '1'
-export const cloudConfigured = !TEST_BUILD && Boolean(SUPABASE_URL && SUPABASE_KEY)
+/** The live app's address. Any OTHER *.workers.dev address (a Cloudflare preview of some branch) must never reach the real database. */
+export const PRODUCTION_HOST = 'hifz.nawwaf-n-abdalla.workers.dev'
+/** True on a preview address: a *.workers.dev host that is not the live app. A custom domain, localhost and the live app are not previews. */
+export const isPreviewHost = (host: string) => host.endsWith('.workers.dev') && host !== PRODUCTION_HOST
+const PREVIEW = typeof location !== 'undefined' && isPreviewHost(location.hostname)
+export const cloudConfigured = !TEST_BUILD && !PREVIEW && Boolean(SUPABASE_URL && SUPABASE_KEY)
 
 let client: SupabaseClient | null = null
 export function supabase(): SupabaseClient | null {

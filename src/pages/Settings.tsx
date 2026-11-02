@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApp } from '@/app/store'
 import { Header, Sheet } from '@/components/ui'
 import { Icon } from '@/components/Icon'
 import { AudioCredits, ReciterCheck } from '@/components/ReciterCheck'
+import { PHRASE_AUDIO_BUILD, isLocalHost, phraseAudioAllowed, unlockPhraseAudio, lockPhraseAudio } from '@/lib/audio/previewAccess'
 import { ManageDownloads } from '@/components/OfflineAudio'
 import { RECITERS, SOURCE_RIGHTS } from '@/lib/audio/sources'
 import { INTEGRITY } from '@/lib/quran/data'
@@ -90,6 +91,8 @@ export function SettingsPage() {
         <Row label="Reciter"><select className="h-10 max-w-[12rem] rounded-lg border border-line bg-bg px-2" value={s.reciter} onChange={(e) => void patchSettings({ reciter: e.target.value })} aria-label="Reciter">{RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></Row>
       </Section>
 
+      {PHRASE_AUDIO_BUILD && <TestAccess />}
+
       <Section title="Your data">
         <Row label="Export backup" hint="Everything you’ve recorded, as a JSON file"><button className="btn btn-quiet btn-sm" onClick={() => void download()} data-testid="export"><Icon name="download" size={15} />Export</button></Row>
         <Row label="Restore from backup" hint="Adds anything missing; never overwrites"><button className="btn btn-quiet btn-sm" onClick={() => file.current?.click()}><Icon name="upload" size={15} />Import</button></Row>
@@ -135,5 +138,30 @@ export function SettingsPage() {
         <div className="mt-4 grid grid-cols-2 gap-2"><button className="btn btn-quiet" onClick={() => setConfirm(null)}>Cancel</button><button className="btn btn-primary !bg-clay" onClick={async () => { if (confirm === 'all') { const e = await eraseRemoteAndLocal(); say(e ?? 'Everything erased') } else { await eraseLocal(); say('Erased from this device') } setConfirm(null) }} data-testid="confirm-erase">Erase</button></div>
       </Sheet>
     </div>
+  )
+}
+
+/** Test builds only: the private code that switches phrase audio on for this device (see lib/audio/previewAccess.ts). */
+function TestAccess() {
+  const [on, setOn] = useState<boolean | null>(null)
+  const [code, setCode] = useState('')
+  const [bad, setBad] = useState(false)
+  useEffect(() => { void phraseAudioAllowed().then(setOn) }, [])
+  if (on === null || isLocalHost(location.hostname)) return null
+  return (
+    <Section title="Test access">
+      {on ? (
+        <Row label="Phrase audio is on for this device" hint="Private test build"><button className="btn btn-quiet btn-sm" onClick={() => { lockPhraseAudio(); location.reload() }} data-testid="test-lock">Turn off</button></Row>
+      ) : (
+        <div className="p-4" data-testid="test-access">
+          <p className="text-sm text-ink-2">This is a private test build. Phrase audio stays off until you enter your test code.</p>
+          <div className="mt-2 flex gap-2">
+            <input className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3" value={code} onChange={(e) => { setCode(e.target.value); setBad(false) }} placeholder="Test code" autoCapitalize="off" autoCorrect="off" spellCheck={false} aria-label="Test code" data-testid="test-code" />
+            <button className="btn btn-primary btn-sm" onClick={async () => { if (await unlockPhraseAudio(code)) location.reload(); else setBad(true) }} data-testid="test-unlock">Unlock</button>
+          </div>
+          {bad && <p className="mt-1 text-xs text-clay">That code isn’t right.</p>}
+        </div>
+      )}
+    </Section>
   )
 }
