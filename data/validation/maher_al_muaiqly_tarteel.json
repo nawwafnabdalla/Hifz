@@ -5,18 +5,18 @@
  "method": "engine over the real recording, acoustic checks; transcription of a sample and of every acoustically warned phrase",
  "tally": {
   "ayahs": 6236,
-  "whole": 3980,
-  "phrased": 2256,
-  "phrases": 10746,
-  "cut": 7879,
-  "refused": 1919,
-  "noRange": 948,
+  "whole": 4164,
+  "phrased": 2072,
+  "phrases": 10295,
+  "cut": 7269,
+  "refused": 1597,
+  "noRange": 1429,
   "invalid": 0
  },
  "ayahStatus": {
-  "ok": 4508,
-  "partial": 830,
-  "whole-isolation-refused": 898
+  "ok": 4476,
+  "whole-isolation-refused": 1288,
+  "partial": 472
  },
  "warnThresholds": {
   "ratio": 0.6,
@@ -50,10 +50,10 @@
    15,
    16,
    18,
+   19,
    21,
    22,
    26,
-   30,
    32,
    34,
    36,
@@ -70,10 +70,8 @@
    53,
    55,
    56,
-   60,
    64,
    66,
-   67,
    69,
    70,
    72,
@@ -95,7 +93,6 @@
    107,
    108,
    111,
-   114,
    115,
    117,
    118,
@@ -103,7 +100,6 @@
    122,
    123,
    124,
-   128,
    130,
    131,
    134,
@@ -122,7 +118,6 @@
    163,
    166,
    167,
-   170,
    171,
    172,
    173,
@@ -132,7 +127,6 @@
    181,
    183,
    185,
-   186,
    187,
    190,
    191,
@@ -140,7 +134,6 @@
    193,
    194,
    195,
-   197,
    198,
    202,
    205,
@@ -255,7 +248,6 @@
    139,
    141,
    144,
-   146,
    148,
    149,
    150,
@@ -287,7 +279,6 @@
    4,
    9,
    16,
-   18,
    21,
    22,
    26,
@@ -306,7 +297,6 @@
    54,
    55,
    58,
-   63,
    67,
    68,
    70,
@@ -345,6 +335,7 @@
    134,
    138,
    139,
+   142,
    143,
    144,
    145,
@@ -372,12 +363,9 @@
    14,
    16,
    18,
-   20,
    21,
    22,
-   24,
    25,
-   26,
    29,
    30,
    35,
@@ -394,7 +382,6 @@
    63,
    71,
    74,
-   75,
    76,
    78,
    79,
@@ -432,7 +419,6 @@
    16,
    17,
    18,
-   19,
    20,
    21,
    24,
@@ -506,7 +492,6 @@
    153,
    155,
    157,
-   160,
    162,
    163,
    164
@@ -539,7 +524,6 @@
    44,
    48,
    49,
-   51,
    55,
    56,
    58,
@@ -565,6 +549,7 @@
    98,
    99,
    102,
+   103,
    104,
    106,
    107,
@@ -586,7 +571,6 @@
    124,
    125,
    130,
-   131,
    132,
    137,
    138,
@@ -600,7 +584,6 @@
    151,
    152,
    159,
-   161,
    165,
    166,
    168,
@@ -643,6 +626,7 @@
    15,
    17,
    18,
+   19,
    20,
    21,
    22,
@@ -655,7 +639,6 @@
    30,
    33,
    35,
-   38,
    39,
    40,
    45,
@@ -686,7 +669,6 @@
    22,
    26,
    27,
-   31,
    32,
    43,
    48,
@@ -728,6 +710,7 @@
   "10": [
    1,
    8,
+   9,
    11,
    12,
    13,
@@ -740,7 +723,6 @@
    23,
    25,
    26,
-   27,
    31,
    32,
    33,
@@ -761,7 +743,6 @@
    55,
    56,
    58,
-   59,
    60,
    62,
    63,
@@ -774,7 +755,6 @@
    72,
    73,
    75,
-   78,
    79,
    82,
    85,
@@ -791,7 +771,6 @@
    102,
    103,
    105,
-   106,
    107,
    108
   ],
@@ -884,7 +863,6 @@
    12,
    14,
    16,
-   19,
    20,
    22,
    23,
@@ -894,9 +872,9 @@
    33,
    34,
    35,
-   36,
    41,
    42,
+   43,
    44,
    45,
    46,
@@ -934,7 +912,6 @@
    97,
    98,
    101,
-   102,
    103,
    104,
    105,
@@ -981,7 +958,6 @@
    14,
    15,
    16,
-   18,
    19,
    20,
    22,
@@ -1127,7 +1103,6 @@
    26,
    28,
    30,
-   31,
    33,
    34,
    36,
@@ -1137,6 +1112,7 @@
    42,
    43,
    46,
+   47,
    50,
    52,
    53,
@@ -1144,7 +1120,6 @@
    56,
    57,
    59,
-   63,
    65,
    67,
    68,
@@ -1623,7 +1598,6 @@
    13,
    16,
    17,
-   19,
    20,
    21,
    24,
@@ -1768,7 +1742,6 @@
    7,
    10,
    14,
-   15,
    16,
    17,
    18,
@@ -1790,8 +1763,7 @@
    53,
    56,
    57,
-   59,
-   64
+   59
   ],
   "25": [
    1,
@@ -2120,7 +2092,6 @@
    57,
    58,
    59,
-   61,
    63,
    64,
    65,
@@ -2153,9 +2124,7 @@
    2,
    3,
    6,
-   7,
    8,
-   10,
    11,
    13,
    14,
@@ -2196,8 +2165,7 @@
    83,
    85,
    86,
-   87,
-   88
+   87
   ],
   "29": [
    1,
@@ -2207,9 +2175,7 @@
    5,
    6,
    7,
-   8,
    9,
-   10,
    11,
    12,
    13,
@@ -2271,12 +2237,10 @@
    21,
    22,
    23,
-   24,
    25,
    26,
    27,
    28,
-   29,
    31,
    32,
    34,
@@ -2319,12 +2283,16 @@
    6,
    7,
    8,
+   9,
    11,
+   12,
+   14,
    16,
    17,
    18,
    19,
    21,
+   23,
    24,
    25,
    28,
@@ -2339,7 +2307,6 @@
    8,
    11,
    12,
-   13,
    15,
    16,
    18,
@@ -2389,8 +2356,10 @@
    30,
    32,
    35,
+   36,
    38,
    40,
+   41,
    44,
    48,
    49,
@@ -2428,6 +2397,7 @@
    37,
    38,
    39,
+   41,
    43,
    44
   ],
@@ -2797,6 +2767,7 @@
    50,
    54,
    55,
+   56,
    57,
    58,
    59,
@@ -2805,6 +2776,7 @@
    63,
    64,
    66,
+   69,
    70,
    72,
    74
@@ -2827,7 +2799,6 @@
    22,
    23,
    24,
-   26,
    29,
    30,
    31,
@@ -2907,7 +2878,6 @@
    3,
    4,
    5,
-   9,
    10,
    12,
    13,
@@ -2984,7 +2954,6 @@
    55,
    56,
    57,
-   58,
    59,
    60,
    61,
@@ -3111,6 +3080,7 @@
    7,
    8,
    9,
+   10,
    11,
    13,
    17,
@@ -3128,6 +3098,7 @@
   ],
   "48": [
    1,
+   2,
    3,
    7,
    8,
@@ -3145,7 +3116,6 @@
    5,
    7,
    8,
-   12,
    13,
    14,
    15,
@@ -3634,13 +3604,15 @@
    4,
    12,
    13,
-   14,
    17,
    18,
    19,
    20,
    22,
    24
+  ],
+  "60": [
+   5
   ],
   "61": [
    1,
@@ -3657,8 +3629,7 @@
    5,
    7,
    9,
-   10,
-   11
+   10
   ],
   "63": [
    1,
@@ -3692,7 +3663,6 @@
   ],
   "66": [
    2,
-   3,
    7,
    9,
    11,
@@ -4764,148 +4734,146 @@
    "ok": 7
   },
   "2": {
-   "ok": 140,
-   "partial": 66,
-   "whole-isolation-refused": 80
+   "ok": 133,
+   "whole-isolation-refused": 111,
+   "partial": 42
   },
   "3": {
-   "ok": 105,
-   "whole-isolation-refused": 59,
-   "partial": 36
+   "ok": 104,
+   "whole-isolation-refused": 80,
+   "partial": 16
   },
   "4": {
-   "partial": 61,
-   "ok": 80,
-   "whole-isolation-refused": 35
+   "partial": 33,
+   "ok": 79,
+   "whole-isolation-refused": 64
   },
   "5": {
-   "ok": 50,
-   "partial": 27,
-   "whole-isolation-refused": 43
+   "ok": 46,
+   "whole-isolation-refused": 55,
+   "partial": 19
   },
   "6": {
-   "ok": 93,
-   "whole-isolation-refused": 41,
-   "partial": 31
+   "ok": 91,
+   "whole-isolation-refused": 57,
+   "partial": 17
   },
   "7": {
-   "ok": 116,
-   "whole-isolation-refused": 54,
-   "partial": 36
+   "ok": 114,
+   "whole-isolation-refused": 72,
+   "partial": 20
   },
   "8": {
    "ok": 43,
-   "partial": 21,
-   "whole-isolation-refused": 11
+   "partial": 14,
+   "whole-isolation-refused": 18
   },
   "9": {
-   "ok": 49,
-   "whole-isolation-refused": 39,
-   "partial": 41
+   "ok": 48,
+   "whole-isolation-refused": 62,
+   "partial": 19
   },
   "10": {
-   "ok": 68,
-   "whole-isolation-refused": 20,
-   "partial": 21
+   "ok": 65,
+   "whole-isolation-refused": 29,
+   "partial": 15
   },
   "11": {
    "ok": 76,
-   "partial": 19,
-   "whole-isolation-refused": 28
+   "partial": 12,
+   "whole-isolation-refused": 35
   },
   "12": {
-   "ok": 66,
-   "whole-isolation-refused": 21,
-   "partial": 24
+   "ok": 64,
+   "whole-isolation-refused": 32,
+   "partial": 15
   },
   "13": {
-   "partial": 8,
+   "partial": 3,
    "ok": 27,
-   "whole-isolation-refused": 8
+   "whole-isolation-refused": 13
   },
   "14": {
-   "partial": 9,
-   "ok": 34,
-   "whole-isolation-refused": 9
+   "whole-isolation-refused": 16,
+   "ok": 33,
+   "partial": 3
   },
   "15": {
    "ok": 96,
    "whole-isolation-refused": 3
   },
   "16": {
-   "ok": 76,
-   "whole-isolation-refused": 28,
-   "partial": 24
+   "ok": 75,
+   "whole-isolation-refused": 42,
+   "partial": 11
   },
   "17": {
-   "partial": 24,
-   "whole-isolation-refused": 13,
+   "partial": 11,
+   "whole-isolation-refused": 26,
    "ok": 74
   },
   "18": {
    "ok": 79,
-   "partial": 19,
-   "whole-isolation-refused": 12
+   "whole-isolation-refused": 25,
+   "partial": 6
   },
   "19": {
    "ok": 81,
-   "whole-isolation-refused": 12,
-   "partial": 5
+   "whole-isolation-refused": 16,
+   "partial": 1
   },
   "20": {
    "ok": 98,
-   "whole-isolation-refused": 26,
-   "partial": 11
+   "whole-isolation-refused": 34,
+   "partial": 3
   },
   "21": {
    "ok": 88,
-   "whole-isolation-refused": 13,
-   "partial": 11
+   "whole-isolation-refused": 20,
+   "partial": 4
   },
   "22": {
-   "ok": 45,
-   "whole-isolation-refused": 17,
-   "partial": 16
+   "ok": 44,
+   "whole-isolation-refused": 25,
+   "partial": 9
   },
   "23": {
    "ok": 100,
-   "whole-isolation-refused": 14,
-   "partial": 4
+   "whole-isolation-refused": 18
   },
   "24": {
-   "ok": 30,
-   "partial": 13,
-   "whole-isolation-refused": 21
+   "ok": 28,
+   "partial": 6,
+   "whole-isolation-refused": 30
   },
   "25": {
    "ok": 59,
-   "partial": 8,
-   "whole-isolation-refused": 10
+   "whole-isolation-refused": 16,
+   "partial": 2
   },
   "26": {
    "ok": 219,
-   "whole-isolation-refused": 7,
-   "partial": 1
+   "whole-isolation-refused": 8
   },
   "27": {
-   "ok": 71,
-   "whole-isolation-refused": 15,
-   "partial": 7
+   "ok": 70,
+   "whole-isolation-refused": 19,
+   "partial": 4
   },
   "28": {
-   "ok": 49,
-   "whole-isolation-refused": 19,
-   "partial": 20
+   "ok": 46,
+   "whole-isolation-refused": 33,
+   "partial": 9
   },
   "29": {
-   "ok": 51,
-   "whole-isolation-refused": 10,
-   "partial": 8
+   "ok": 49,
+   "partial": 4,
+   "whole-isolation-refused": 16
   },
   "30": {
-   "ok": 46,
-   "whole-isolation-refused": 12,
-   "partial": 2
+   "ok": 44,
+   "whole-isolation-refused": 13,
+   "partial": 3
   },
   "31": {
    "ok": 11,
@@ -4913,24 +4881,24 @@
    "partial": 19
   },
   "32": {
-   "ok": 16,
-   "whole-isolation-refused": 2,
-   "partial": 12
+   "ok": 20,
+   "whole-isolation-refused": 4,
+   "partial": 6
   },
   "33": {
-   "ok": 41,
-   "partial": 20,
-   "whole-isolation-refused": 12
+   "ok": 40,
+   "whole-isolation-refused": 24,
+   "partial": 9
   },
   "34": {
-   "partial": 25,
-   "whole-isolation-refused": 7,
-   "ok": 22
+   "partial": 20,
+   "whole-isolation-refused": 10,
+   "ok": 24
   },
   "35": {
-   "partial": 6,
-   "ok": 31,
-   "whole-isolation-refused": 8
+   "partial": 2,
+   "ok": 32,
+   "whole-isolation-refused": 11
   },
   "36": {
    "ok": 78,
@@ -4943,33 +4911,33 @@
   },
   "38": {
    "ok": 77,
-   "partial": 8,
-   "whole-isolation-refused": 3
+   "partial": 5,
+   "whole-isolation-refused": 6
   },
   "39": {
-   "ok": 34,
-   "partial": 32,
-   "whole-isolation-refused": 9
+   "ok": 36,
+   "partial": 27,
+   "whole-isolation-refused": 12
   },
   "40": {
-   "ok": 55,
-   "partial": 15,
-   "whole-isolation-refused": 15
+   "ok": 54,
+   "whole-isolation-refused": 23,
+   "partial": 8
   },
   "41": {
    "ok": 33,
-   "partial": 9,
-   "whole-isolation-refused": 12
+   "whole-isolation-refused": 18,
+   "partial": 3
   },
   "42": {
-   "ok": 37,
-   "whole-isolation-refused": 6,
-   "partial": 10
+   "ok": 36,
+   "whole-isolation-refused": 9,
+   "partial": 8
   },
   "43": {
-   "ok": 70,
-   "whole-isolation-refused": 15,
-   "partial": 4
+   "ok": 69,
+   "whole-isolation-refused": 18,
+   "partial": 2
   },
   "44": {
    "ok": 56,
@@ -4977,28 +4945,28 @@
   },
   "45": {
    "ok": 23,
-   "partial": 6,
-   "whole-isolation-refused": 8
+   "partial": 3,
+   "whole-isolation-refused": 11
   },
   "46": {
    "ok": 7,
-   "partial": 21,
-   "whole-isolation-refused": 7
+   "partial": 18,
+   "whole-isolation-refused": 10
   },
   "47": {
-   "ok": 20,
-   "partial": 11,
-   "whole-isolation-refused": 7
+   "ok": 21,
+   "partial": 7,
+   "whole-isolation-refused": 10
   },
   "48": {
-   "ok": 11,
-   "partial": 11,
-   "whole-isolation-refused": 7
+   "ok": 12,
+   "partial": 8,
+   "whole-isolation-refused": 9
   },
   "49": {
-   "whole-isolation-refused": 3,
-   "ok": 12,
-   "partial": 3
+   "whole-isolation-refused": 5,
+   "ok": 11,
+   "partial": 2
   },
   "50": {
    "ok": 40,
@@ -5029,22 +4997,23 @@
   },
   "57": {
    "ok": 13,
-   "partial": 4,
-   "whole-isolation-refused": 12
+   "whole-isolation-refused": 14,
+   "partial": 2
   },
   "58": {
    "ok": 13,
-   "partial": 6,
-   "whole-isolation-refused": 3
+   "partial": 4,
+   "whole-isolation-refused": 5
   },
   "59": {
-   "ok": 12,
-   "partial": 6,
-   "whole-isolation-refused": 6
+   "ok": 11,
+   "whole-isolation-refused": 11,
+   "partial": 2
   },
   "60": {
-   "whole-isolation-refused": 5,
-   "partial": 8
+   "whole-isolation-refused": 7,
+   "partial": 5,
+   "ok": 1
   },
   "61": {
    "ok": 6,
@@ -5052,14 +5021,13 @@
    "partial": 3
   },
   "62": {
-   "ok": 8,
-   "whole-isolation-refused": 2,
+   "ok": 7,
+   "whole-isolation-refused": 3,
    "partial": 1
   },
   "63": {
    "ok": 8,
-   "whole-isolation-refused": 2,
-   "partial": 1
+   "whole-isolation-refused": 3
   },
   "64": {
    "ok": 11,
@@ -5067,18 +5035,17 @@
   },
   "65": {
    "ok": 5,
-   "partial": 2,
-   "whole-isolation-refused": 5
+   "partial": 1,
+   "whole-isolation-refused": 6
   },
   "66": {
-   "whole-isolation-refused": 4,
-   "ok": 6,
-   "partial": 2
+   "whole-isolation-refused": 6,
+   "ok": 5,
+   "partial": 1
   },
   "67": {
    "ok": 26,
-   "whole-isolation-refused": 2,
-   "partial": 2
+   "whole-isolation-refused": 4
   },
   "68": {
    "ok": 50,
@@ -5098,8 +5065,7 @@
   },
   "72": {
    "ok": 24,
-   "whole-isolation-refused": 1,
-   "partial": 3
+   "whole-isolation-refused": 4
   },
   "73": {
    "ok": 18,
@@ -5114,8 +5080,7 @@
   },
   "76": {
    "ok": 27,
-   "whole-isolation-refused": 3,
-   "partial": 1
+   "whole-isolation-refused": 4
   },
   "77": {
    "ok": 49,
@@ -5145,7 +5110,7 @@
   },
   "85": {
    "ok": 21,
-   "partial": 1
+   "whole-isolation-refused": 1
   },
   "86": {
    "ok": 17
@@ -5237,11 +5202,11 @@
    "ok": 6
   }
  },
- "clearedWarnings": 229,
+ "clearedWarnings": 12,
  "transcriptionSample": {
-  "clips": 262,
-  "exactBest": 262,
+  "clips": 242,
+  "exactBest": 241,
   "clearDefects": 0,
-  "meanSimilarity": 0.977
+  "meanSimilarity": 0.975
  }
 }

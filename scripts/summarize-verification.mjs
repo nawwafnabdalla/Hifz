@@ -14,6 +14,10 @@ const rep = JSON.parse(readFileSync(arg('report'), 'utf8')), slug = arg('slug'),
 const WARN_RATIO = 0.6, WARN_MS = 250
 const cleared = new Set()      // warned phrases whose cut audio was transcribed and matched the exact phrase best (see --cleared)
 if (arg('cleared')) for (const x of JSON.parse(readFileSync(arg('cleared'), 'utf8'))) if (x.best === 'exact' && Math.max(...Object.values(x.scores)) - x.scores.exact < 0.08) cleared.add(`${x.s}:${x.a}:${x.i}`)
+const asrIn = arg('asr') ? JSON.parse(readFileSync(arg('asr'), 'utf8')) : null
+// A transcribed clip where a sub-phrase (e.g. the phrase without its first word) matched the audio clearly better than the exact phrase is a real defect:
+// the ayah is held back for review, whatever the acoustic metrics said.
+const asrDefects = new Set((asrIn ?? []).filter((x) => Math.max(...Object.values(x.scores)) - x.scores.exact >= 0.08).map((x) => `${x.s}:${x.a}`))
 const ayahs = {}, surahs = {}
 for (const r of rep.rows) {
   if (r.r === 'file-size-mismatch') { (surahs[r.s] ??= {}).identityMismatch = true; continue }
@@ -22,9 +26,9 @@ for (const r of rep.rows) {
   else if (r.r === 'no-pause') a.refused++
   else a.noRange++
 }
-const status = (a) => (a.warn ? 'review' : a.noRange ? 'whole-isolation-refused' : a.refused ? 'partial' : 'ok')
+const status = (a, k) => (a.warn || asrDefects.has(k) ? 'review' : a.noRange ? 'whole-isolation-refused' : a.refused ? 'partial' : 'ok')
 const tallyBy = {}
-for (const [k, a] of Object.entries(ayahs)) { const s = +k.split(':')[0]; const t = (surahs[s] ??= {}); const st = status(a); t[st] = (t[st] ?? 0) + 1; tallyBy[st] = (tallyBy[st] ?? 0) + 1; a.status = st }
+for (const [k, a] of Object.entries(ayahs)) { const s = +k.split(':')[0]; const t = (surahs[s] ??= {}); const st = status(a, k); t[st] = (t[st] ?? 0) + 1; tallyBy[st] = (tallyBy[st] ?? 0) + 1; a.status = st }
 const okAyahs = {}
 for (const [k, a] of Object.entries(ayahs)) if (a.status === 'ok') { const [s, n] = k.split(':').map(Number); (okAyahs[s] ??= []).push(n) }
 const flagged = Object.entries(ayahs).filter(([, a]) => a.status === 'review').map(([k]) => k)
