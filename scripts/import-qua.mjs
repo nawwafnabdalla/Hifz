@@ -122,6 +122,10 @@ if (releaseDir) {
   if (cat.riwayah !== 'hafs_an_asim') { console.error(`refused: ${slug} is ${cat.riwayah}; the app's text is Hafs 'an 'Asim and qira'at are never mixed`); process.exit(3) }
   const urls = cat.audio?.chapter_urls ?? {}
   if (Object.values(urls).some((u) => /youtube\.com|youtu\.be|drive\.google/.test(u))) { console.error(`refused: ${slug} is aligned to a YouTube/Drive source, which an app cannot stream and play.`); process.exit(3) }
+  // --audio-base <url>: the same recording hosted somewhere you are allowed to serve it from (e.g. your own storage): <base>/<SSS>.mp3.
+  // Its bytes must be identical to the files the timings were aligned to; pass --same-as <timing json imported from the original URLs> to prove it.
+  const base = arg('audio-base')
+  if (base) for (const k of Object.keys(urls)) urls[k] = `${base.replace(/\/$/, '')}/${pad3(+k)}.mp3`
   release = { slug, manifest, cat, mrec, urls, offsets: cat.audio?.chapter_offsets_ms ?? {} }
   recording = `qua:${slug}`
   source = `Quranic Universal Audio ${manifest.release_version} (${slug}, ${mrec.ts_version})`
@@ -242,6 +246,13 @@ for (const [surah, list] of [...bySurah].sort((x, y) => x[0] - y[0])) {
   }
 }
 
+const sameAs = arg('same-as')
+if (sameAs) {
+  const prev = JSON.parse(readFileSync(sameAs, 'utf8')).provenance.audio.files
+  const bad = Object.keys(files).filter((s) => JSON.stringify(files[s]) !== JSON.stringify(prev[s]))
+  if (bad.length) { console.error(`refused: ${bad.length} surah file(s) differ from the original recording (size, bitrate, header offset or duration): ${bad.slice(0, 8).join(', ')}`); process.exit(4) }
+  console.log(`audio facts identical to ${sameAs} for ${Object.keys(files).length} surahs`)
+}
 mkdirSync(dirname(out), { recursive: true })
 const data = {
   schema: 1, reciter,

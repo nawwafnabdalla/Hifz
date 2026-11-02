@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
 
 // Browser-test builds only (VITE_E2E=1; a normal build removes this): expose the hooks tests use to supply timings and listen to playback.
+if (import.meta.env.VITE_PHRASE_AUDIO === '1') document.title = 'Hifz OS (test)'
 if (import.meta.env.VITE_E2E === '1') {
   void import('./lib/audio/timings'); void import('./lib/audio/phraseAudio')
   // The phrases the app itself chooses for an ayah, so tests check audio against the real engine rather than a copy of its rules.

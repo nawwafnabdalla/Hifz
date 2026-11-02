@@ -1,0 +1,14 @@
+{
+  // The PRIVATE phrase-audio test Worker. A separate Worker from the live app ("hifz"), so deploying it can never replace production, and a
+  // separate origin, so it has its own empty on-device database (it cannot read or change the live app's records). It is built with
+  // VITE_PHRASE_AUDIO=1 and no Supabase variables (the test build also refuses to use the cloud). Protect its workers.dev address with
+  // Cloudflare Access (docs/PREVIEW.md) so only you can open it. Deploy command: npx wrangler deploy -c wrangler.test.jsonc
+  "name": "hifz-test",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

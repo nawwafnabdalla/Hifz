@@ -1,6 +1,6 @@
 # What must be true before phrase audio reaches production
 
-Production branch: `claude/hifz-os-feasibility-btrmfb` (live, Cloudflare Workers Builds on push). Phrase audio lives on `claude/hifz-os-phrase-audio` and is switched on only by `.env.production` (`VITE_PHRASE_AUDIO=1`). **Do not copy that file, the timing data or the phrase UI into production until every gate is ticked.**
+Production branch: `claude/hifz-os-feasibility-btrmfb` (live, Cloudflare Workers Builds on push). Phrase audio lives on `claude/hifz-os-phrase-audio` and is **off in every ordinary build**: it exists only in builds made with `VITE_PHRASE_AUDIO=1` (the private test Worker, the browser tests, one CI step). Correction to an earlier note: a local `.env.production` had been used for that and was never committed; it is gone, and CI now proves an ordinary build bundles no phrase data. **Do not merge the timing data, the phrase UI or that variable into production until every gate is ticked.**
 
 | # | Gate | State |
 |---|---|---|

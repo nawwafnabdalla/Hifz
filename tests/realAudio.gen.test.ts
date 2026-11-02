@@ -12,7 +12,7 @@ import { wordsOfAyah, ayahCount } from '@/lib/quran/data'
 import { buildPhrases } from '@/lib/engine/phrases'
 import { defaultBoundaries } from '@/lib/engine/breakdown'
 import { expand, proposeRange, validateAyahTiming, reciterPauses, type RecordingTimings, type RangeProposal } from '@/lib/audio/timings'
-import { cutPoints } from '@/lib/audio/phraseAudio'
+import { cutPoints, frameRms, speechLevel, quietRunNear } from '@/lib/audio/phraseAudio'
 import { byteWindow, WINDOW_PAD_MS } from '@/lib/audio/phraseSource'
 
 const T = process.env.REAL_TIMINGS, M = process.env.REAL_MP3 ?? process.env.REAL_MP3_DIR, OUT = process.env.REAL_OUT, SURAH_ENV = process.env.REAL_SURAH ?? '20', MP3_DIR = process.env.REAL_MP3_DIR
@@ -30,6 +30,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
     mkdirSync(join(OUT!, 'clips'), { recursive: true })
     const decode = (bytes: Buffer) => { const r = spawnSync('ffmpeg', ['-v', 'error', '-i', 'pipe:0', '-f', 'f32le', '-ac', '1', '-ar', '44100', 'pipe:1'], { input: bytes, maxBuffer: 1 << 28 }); const b = r.stdout; return new Float32Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.length)) }
     const surahs = MP3_DIR ? (SURAH_ENV === 'all' ? Object.keys(rec.provenance.audio!.files).map(Number) : SURAH_ENV.split(',').map(Number)) : [Number(SURAH_ENV)]
+    const measured: Record<string, number[]> = {}
     const rows: unknown[] = []; const bySurah: Record<number, { ayahs: number; phrases: number; cut: number; refused: number; noRange: number }> = {}
     const tally = { ayahs: 0, whole: 0, phrased: 0, phrases: 0, cut: 0, refused: 0, noRange: 0, invalid: 0 }
     let nCut = 0
@@ -49,13 +50,25 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
         const t = expand(raw, SURAH, a)
         if (validateAyahTiming(t)) { tally.invalid++; continue }
         tally.ayahs++; S.ayahs++
-        const w = wordsOfAyah(SURAH, a), ph = buildPhrases(w, defaultBoundaries(SURAH, a, w, reciterPauses(t)))
-        if (ph.length === 1) tally.whole++; else tally.phrased++
+        const w = wordsOfAyah(SURAH, a)
+        // FAST mode decodes the whole ayah once, MEASURES the reciter's real pause at every word boundary from that audio, and plans the phrases
+        // from those pauses (exactly what the app does at run time from the stored `pa`).
         let shared: { win: ReturnType<typeof byteWindow>; pcm: Float32Array } | null = null
-        if (FAST) {
-          const props = ph.map((p) => proposeRange(t, p.from, p.to)).filter((x): x is RangeProposal => !!x)
-          if (props.length) { const o = t.originMs ?? 0, win = byteWindow(file, o + Math.min(...props.map((x) => x.startMs)) - WINDOW_PAD_MS, Math.min(file.durationMs, o + Math.max(...props.map((x) => x.endMs)) + WINDOW_PAD_MS)); shared = { win, pcm: decode(mp3.subarray(win.start, win.end + 1)) } }
+        if (FAST && t.segments.length > 1) {
+          const o = t.originMs ?? 0, first = t.segments[0]!.t0, last = t.segments.at(-1)!.t1
+          const win = byteWindow(file, o + first - WINDOW_PAD_MS, Math.min(file.durationMs, o + last + WINDOW_PAD_MS)), pcm = decode(mp3.subarray(win.start, win.end + 1))
+          shared = { win, pcm }
+          const fr = frameRms({ sampleRate: 44100, samples: pcm }), ref = speechLevel(fr), off = (win.startMs - o) / 1000
+          t.pauses = t.segments.slice(0, -1).map((s, i) => {
+            if (t.seams?.includes(i + 1)) return 0
+            const n = t.segments[i + 1]!, lo = Math.min(s.t1, n.t0) / 1000 - off - 0.11, hi = Math.max(s.t1, n.t0) / 1000 - off + 0.11
+            const q = quietRunNear(fr, lo, hi, ref, (s.t1 + n.t0) / 2000 - off)
+            return q ? Math.round(q.ms) : 0
+          })
+          measured[`${SURAH}:${a}`] = t.pauses
         }
+        const ph = buildPhrases(w, defaultBoundaries(SURAH, a, w, reciterPauses(t)))
+        if (ph.length === 1) tally.whole++; else tally.phrased++
         for (let i = 0; i < ph.length; i++) {
           tally.phrases++; S.phrases++
           const p = ph[i]!, prop = proposeRange(t, p.from, p.to)
@@ -78,6 +91,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
       }
     }
     writeFileSync(join(OUT!, 'report.json'), JSON.stringify({ tally, bySurah, rows }))
+    writeFileSync(join(OUT!, 'pauses.json'), JSON.stringify(measured))
     console.log('REAL', JSON.stringify(tally))
   }, 14_400_000)
 })

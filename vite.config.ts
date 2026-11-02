@@ -14,8 +14,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Hifz OS',
-        short_name: 'Hifz',
+        // The phrase-audio test build is installable beside the real app and is named differently so the two cannot be confused on a home screen.
+        name: process.env.VITE_PHRASE_AUDIO === '1' ? 'Hifz OS (test)' : 'Hifz OS',
+        short_name: process.env.VITE_PHRASE_AUDIO === '1' ? 'Hifz test' : 'Hifz',
         description: 'An adaptive Qur’an memorisation companion.',
         theme_color: '#0f3d33',
         background_color: '#0f3d33',

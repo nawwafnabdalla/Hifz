@@ -23,6 +23,8 @@ export interface AyahTiming {
   seams?: number[]
   /** For each seam: [when the abandoned attempt's speech begins, when it ends], ms on this ayah's clock. A cut may not reach past these. */
   seamSpans?: [number, number][]
+  /** Pauses MEASURED in the decoded recording at each word boundary (ms of genuine quiet after word i). When present these, not the (often zero) gaps between timed words, say where the reciter really rests. */
+  pauses?: number[]
 }
 export interface TimingProvenance {
   /** Where the timings come from (dataset name and version). */
@@ -40,7 +42,7 @@ export interface TimingProvenance {
   /** For 'surah' recordings: where the audio comes from and how to cut a window out of it by bytes. */
   audio?: { /** `{SSS}` template, or an explicit URL per surah (catalogues list one per chapter) */ urlTemplate?: string; urls?: Record<string, string>; files: Record<string, { bytes: number; kbps: number; dataOffset: number; durationMs: number }> }
 }
-export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; /** surah -> ayahs verified on the real audio. When present, ONLY these ayahs offer phrase audio and whole-ayah audio from this recording. */ verified?: Record<string, number[]>; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** seams: see AyahTiming */ x?: number[]; /** seam spans: see AyahTiming */ xs?: [number, number][]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
+export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; /** surah -> ayahs verified on the real audio. When present, ONLY these ayahs offer phrase audio and whole-ayah audio from this recording. */ verified?: Record<string, number[]>; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** seams: see AyahTiming */ x?: number[]; /** seam spans: see AyahTiming */ xs?: [number, number][]; /** measured pauses: see AyahTiming */ pa?: number[]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
 
 /** Largest disagreement tolerated between the aligned file's length and the decoded file's length. */
 export const DURATION_TOLERANCE_MS = 60
@@ -74,7 +76,7 @@ export function validateAyahTiming(t: AyahTiming, wordCount = wordsOfAyah(t.sura
 export const isVerified = (rec: RecordingTimings, surah: number, ayah: number) => !rec.verified || !!rec.verified[String(surah)]?.includes(ayah)
 
 export function expand(raw: RecordingTimings['ayahs'][string], surah: number, ayah: number): AyahTiming {
-  return { surah, ayah, durationMs: raw.d, originMs: raw.o ?? 0, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })), ...(raw.x?.length ? { seams: raw.x, ...(raw.xs ? { seamSpans: raw.xs } : {}) } : {}) }
+  return { surah, ayah, durationMs: raw.d, originMs: raw.o ?? 0, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })), ...(raw.x?.length ? { seams: raw.x, ...(raw.xs ? { seamSpans: raw.xs } : {}) } : {}), ...(raw.pa ? { pauses: raw.pa } : {}) }
 }
 
 const segmentOf = (t: AyahTiming, word: number) => t.segments.findIndex((s) => word >= s.w0 && word < s.w1)
@@ -122,6 +124,8 @@ export function proposeRange(t: AyahTiming, from: number, to: number): RangeProp
 
 /** The pauses the reciter actually made inside an ayah: gaps between consecutive words, longest first. Used to suggest practice breaks. */
 export function reciterPauses(t: AyahTiming): { afterWord: number; ms: number }[] {
+  // Measured in the audio: authoritative (QUA times words edge to edge, so the gaps between timed words say nothing about breaths).
+  if (t.pauses) return t.pauses.map((ms, i) => ({ afterWord: i, ms })).sort((x, y) => y.ms - x.ms)
   const out: { afterWord: number; ms: number }[] = []
   for (let i = 0; i + 1 < t.segments.length; i++) {
     const s = t.segments[i]!, n = t.segments[i + 1]!
@@ -136,7 +140,7 @@ export function reciterPauses(t: AyahTiming): { afterWord: number; ms: number }[
 type Loader = () => Promise<{ default: RecordingTimings }>
 /**
  * Phrase audio is a build-time feature: without VITE_PHRASE_AUDIO=1 no timing file is bundled at all, so an ordinary build carries no phrase
- * data, no phrase controls (nothing to show them for) and behaves as before. The feature branch's .env.production turns it on for its builds.
+ * data, no phrase controls (nothing to show them for) and behaves as before. Only a build made with the variable set (the private test build, the browser tests) turns it on for its builds.
  */
 export const PHRASE_AUDIO = import.meta.env.VITE_PHRASE_AUDIO === '1'
 const files = (PHRASE_AUDIO ? import.meta.glob('/src/data/timings/*.json') : {}) as Record<string, Loader>

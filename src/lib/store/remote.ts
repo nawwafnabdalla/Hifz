@@ -3,7 +3,9 @@ import { RemoteError, type Remote } from './sync'
 
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
 export const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined
-export const cloudConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY)
+/** The phrase-audio TEST build never talks to the cloud, even if variables are set: it must not be able to touch real records. */
+export const TEST_BUILD = import.meta.env.VITE_PHRASE_AUDIO === '1'
+export const cloudConfigured = !TEST_BUILD && Boolean(SUPABASE_URL && SUPABASE_KEY)
 
 let client: SupabaseClient | null = null
 export function supabase(): SupabaseClient | null {

@@ -14,3 +14,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: An ordinary build bundles no phrase-audio data
+        run: test -z "$(ls dist/assets | grep -E -- '--qua_' || true)"
+      - name: The test build (phrase audio on) builds too
+        run: VITE_PHRASE_AUDIO=1 npm run build && ls dist/assets | grep -E -- '--qua_'

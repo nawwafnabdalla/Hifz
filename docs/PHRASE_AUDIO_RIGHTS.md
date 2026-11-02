@@ -1,5 +1,7 @@
 # Rights to use the recordings in Hifz OS: what is cleared, what is not, and exactly what to ask for
 
+> **Update 3 Nov 2026:** QUL's own documentation says to download the files and **self-host them, and not to hotlink `audio-cdn.tarteel.ai` in production**; the resource's Licence pane says it holds no copyright information. Evidence, contacts and a ready-to-send request are in [`PHRASE_AUDIO_PERMISSION_REQUEST.md`](PHRASE_AUDIO_PERMISSION_REQUEST.md). The importer now supports a self-hosted copy (`--audio-base`, proved byte-identical with `--same-as`). **No permission exists yet, so nothing is hosted or released.** Until it does, the app streams only in the private test build.
+
 **Nothing is rights-cleared today.** The timing data is under CC BY 4.0. The recordings are not licensed to us by anyone we have found. Phrase audio therefore must not go to production until the owner decides (below). This page is the decision paper.
 
 ## What is technically true (tested) vs what is permitted (not established)

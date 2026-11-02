@@ -110,6 +110,20 @@ describe('Quranic Universal Audio release folder (real v4.0.0 layout)', async ()
     expect(xs).toHaveLength(1); expect(xs[0]![0]).toBeLessThan(xs[0]![1]!)                  // when the abandoned attempt starts and ends is recorded too
     expect(segs[3]![2] - segs[2]![3]).toBeGreaterThan(1500)                                  // the seam is visible in the data: the abandoned take sits in it
   })
+  it('re-points the audio at a self-hosted copy of the same recording, and refuses a copy whose bytes differ', () => {
+    const d = release({ rows: [['20:22', abs[0]![1], abs.at(-1)![2], true, 50, abs]] })
+    const first = run(d)
+    const firstFile = join(d, 'first.json'); writeFileSync(firstFile, readFileSync(first.out))
+    const mine = run(d, ['--audio-base', 'https://audio.example/qua/rec_a/', '--same-as', firstFile])
+    expect(mine.r.status, mine.r.stderr).toBe(0)
+    const j = JSON.parse(readFileSync(mine.out, 'utf8'))
+    expect(j.provenance.audio.urls['20']).toBe('https://audio.example/qua/rec_a/020.mp3')
+    expect(mine.r.stdout).toContain('identical')
+    const other = JSON.parse(readFileSync(firstFile, 'utf8')); other.provenance.audio.files['20'].bytes += 1
+    writeFileSync(join(d, 'other.json'), JSON.stringify(other))
+    const bad = run(d, ['--audio-base', 'https://audio.example/x', '--same-as', join(d, 'other.json')])
+    expect(bad.r.status).toBe(4)
+  })
   it('refuses a zip whose checksum is not the release manifest\'s, a non-Hafs recitation, and a YouTube-aligned one', () => {
     expect(run(release({ rows: [], badSha: true })).r.status).toBe(3)
     expect(run(release({ rows: [], riwayah: 'warsh_an_nafi' })).r.status).toBe(3)
