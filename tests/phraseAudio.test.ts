@@ -165,3 +165,19 @@ describe('where a phrase ends when the silence next to it is not ordinary', () =
     expect(proposeRange(t, 0, 0)!.endGap).toEqual([500, 560])
   })
 })
+
+describe('whole-ayah audio from the same recording', () => {
+  it('encodes exactly the requested samples as a 16-bit mono WAV with faded edges', async () => {
+    const { encodeWav } = await import('@/lib/audio/recordingAudio')
+    const rate = 8000, samples = new Float32Array(rate).fill(0.5)
+    const blob = encodeWav({ sampleRate: rate, samples }, 0.25, 0.75)
+    const b = new DataView(await blob.arrayBuffer())
+    expect(String.fromCharCode(b.getUint8(0), b.getUint8(1), b.getUint8(2), b.getUint8(3))).toBe('RIFF')
+    expect(b.getUint32(24, true)).toBe(rate); expect(b.getUint16(22, true)).toBe(1); expect(b.getUint16(34, true)).toBe(16)
+    const n = (b.byteLength - 44) / 2
+    expect(n).toBe(rate / 2)
+    expect(b.getInt16(44, true)).toBe(0)                                  // fades in from silence
+    expect(b.getInt16(44 + (n - 1) * 2, true)).toBe(0)                    // and out to silence
+    expect(Math.abs(b.getInt16(44 + (n >> 1) * 2, true) - Math.round(0.5 * 32767))).toBeLessThan(2)
+  })
+})

@@ -31,11 +31,18 @@ export function ReciterCheck() {
   )
 }
 
+import { PHRASE_AUDIO } from '@/lib/audio/timings'
+
 export function AudioCredits() {
   const a = (href: string, label: string) => <a className="underline" href={href} target="_blank" rel="noopener noreferrer">{label}</a>
   return (
+    <>
     <p className="text-xs text-muted" data-testid="audio-credits">
       Recitations are streamed from {a('https://everyayah.com', 'EveryAyah.com')} (no licence is published; the recordings belong to the reciters, so please use them for personal study and credit them), {a('https://alquran.cloud', 'Islamic Network')} and {a('https://mp3quran.net', 'MP3Quran')}. Copies are saved to your device only from sources that allow it. This app never redistributes audio.
     </p>
+      {PHRASE_AUDIO && <p className="mt-2 text-xs text-muted" data-testid="timing-credits">
+        Where a reciter’s phrases can be heard on their own, the word timings come from {a('https://github.com/QUD-Technologies/quranic-universal-audio', 'Qur’anic Universal Audio')} (v4.0.0, {a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')}). We changed them: they are rebased to each ayah, a reciter’s abandoned attempts are dropped, and every cut is checked against the audio itself. The recordings belong to their reciters and hosts; they are played from the host and never copied or saved.
+      </p>}
+    </>
   )
 }

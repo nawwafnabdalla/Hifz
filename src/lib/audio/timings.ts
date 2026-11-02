@@ -131,7 +131,12 @@ export function reciterPauses(t: AyahTiming): { afterWord: number; ms: number }[
 // Timing files live in src/data/timings/<reciterId>--<recording>.json (produced by scripts/import-timings.mjs, with provenance).
 // One reciter may have several recordings; each file describes exactly one and is never applied to another. Lazy-loaded.
 type Loader = () => Promise<{ default: RecordingTimings }>
-const files = import.meta.glob('/src/data/timings/*.json') as Record<string, Loader>
+/**
+ * Phrase audio is a build-time feature: without VITE_PHRASE_AUDIO=1 no timing file is bundled at all, so an ordinary build carries no phrase
+ * data, no phrase controls (nothing to show them for) and behaves as before. The feature branch's .env.production turns it on for its builds.
+ */
+export const PHRASE_AUDIO = import.meta.env.VITE_PHRASE_AUDIO === '1'
+const files = (PHRASE_AUDIO ? import.meta.glob('/src/data/timings/*.json') : {}) as Record<string, Loader>
 const loaded = new Map<string, RecordingTimings[]>()
 const injected = new Map<string, RecordingTimings[]>()
 
@@ -168,6 +173,21 @@ export async function ayahTiming(reciter: string, recording: string, surah: numb
   const t = expand(raw, surah, ayah)
   return validateAyahTiming(t) === null ? t : null
 }
+/** Synchronous variants, valid once recordingsFor(reciter) has resolved (see primeTimings). They never load anything. */
+export function timingNow(reciter: string, surah: number, ayah: number): { timing: AyahTiming; rec: RecordingTimings } | null {
+  const recs = (loaded.get(reciter) ?? []).slice().sort((a, b) => ((a.provenance.granularity ?? 'ayah') === 'ayah' ? 0 : 1) - ((b.provenance.granularity ?? 'ayah') === 'ayah' ? 0 : 1))
+  for (const rec of recs) {
+    const raw = rec.ayahs[`${surah}:${ayah}`]
+    if (!raw) continue
+    const timing = expand(raw, surah, ayah)
+    if (validateAyahTiming(timing) === null) return { timing, rec }
+  }
+  return null
+}
+export const primeTimings = (reciter: string) => recordingsFor(reciter).then(() => undefined)
+/** Can the WHOLE ayah be taken from this recording (so the ayah and its phrases always come from the same file)? */
+export const wholeAyahPlayable = (timing: AyahTiming) => proposeRange(timing, 0, wordsOfAyah(timing.surah, timing.ayah).length - 1) !== null
+
 /** Is any timing available for this reciter's recording at all? (Cheap check for showing controls.) */
 export async function hasTimings(reciter: string, recording: string): Promise<boolean> {
   return (await recordingsFor(reciter)).some((x) => x.provenance.recording === recording)

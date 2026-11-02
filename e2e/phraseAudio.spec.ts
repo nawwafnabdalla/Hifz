@@ -292,6 +292,29 @@ test.describe('phrase audio from a whole-surah MP3 (byte-window decoding)', () =
     await expect(page.getByTestId('audio-status')).toContainText('Ayah 94', { timeout: 15000 })
   })
 
+  test('the whole-ayah play button uses the SAME recording as the phrases (a window of the surah file), never another recording of the reciter', async ({ page }) => {
+    const requests: { range: string | undefined; size: number }[] = []
+    const everyayah: string[] = []
+    page.on('request', (r) => { if (/everyayah\.com|cdn\.islamic\.network/.test(r.url())) everyayah.push(r.url()) })
+    await prepareSurah(page, surahTiming(), requests)
+    await expect(page.getByTestId('phrase-chips')).toBeVisible()
+    const before = requests.length
+    await page.getByTestId('audio-play').click()
+    await expect.poll(() => requests.length, { timeout: 20000 }).toBeGreaterThan(before)       // a Range window of the surah file was fetched
+    await expect(page.getByTestId('audio-status')).toContainText('Ayah 94', { timeout: 20000 })
+    expect(everyayah, 'no other recording of this reciter was requested').toEqual([])
+    for (const r of requests) expect(r.range).toMatch(/^bytes=\d+-\d+$/)
+  })
+
+  test('an ayah that cannot be taken whole from that recording shows no phrase audio and plays the ordinary source', async ({ page }) => {
+    const requests: { range: string | undefined; size: number }[] = []
+    const data = surahTiming() as { ayahs: Record<string, { x?: number[]; xs?: number[][] }> }
+    data.ayahs['20:94']!.x = [9]; data.ayahs['20:94']!.xs = [[3000, 4000]]                       // an abandoned take inside the ayah
+    await prepareSurah(page, data, requests)
+    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('phrase-chips')).toHaveCount(0)
+  })
+
   // A documented LIMIT, not a safeguard: the audio can prove a cut does not slice through a word, but it cannot know WHICH words it
   // contains. Timings that are consistently offset from the real file (right size, wrong ayah origin) cut at genuine pauses and play
   // whole, wrong words. The guard against that is import-time validation of each recording against its timings, and the size /

@@ -107,6 +107,8 @@ export interface LocalAudio {
   has(reciter: string, surah: number, ayah: number): boolean
   blob(reciter: string, surah: number, ayah: number): Promise<Blob | null>
   forget(reciter: string, surah: number, ayah: number): void
+  /** What to tell the listener about where this ayah's audio came from. Defaults to a copy saved on this device. */
+  source?(reciter: string, surah: number, ayah: number): { via: string; saved: boolean }
 }
 
 export interface OfflineOptions {

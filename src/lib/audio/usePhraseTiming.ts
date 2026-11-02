@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useApp } from '@/app/store'
-import { findTiming, type AyahTiming, type RecordingTimings } from './timings'
+import { findTiming, wholeAyahPlayable, type AyahTiming, type RecordingTimings } from './timings'
 
 export interface PhraseTimingState {
   /** 'loading' only while the (local, small) timing file is being read. */
@@ -19,7 +19,7 @@ export function usePhraseTiming(surah: number, ayah: number): PhraseTimingState 
   useEffect(() => {
     let live = true
     setSt({ status: 'loading', timing: null, recording: null, rec: null, reciter })
-    void findTiming(reciter, surah, ayah).then((f) => { if (live) setSt(f ? { status: 'ready', timing: f.timing, recording: f.rec.provenance.recording, rec: f.rec, reciter } : { status: 'none', timing: null, recording: null, rec: null, reciter }) })
+    void findTiming(reciter, surah, ayah).then((f) => { if (live) setSt(f && wholeAyahPlayable(f.timing) ? { status: 'ready', timing: f.timing, recording: f.rec.provenance.recording, rec: f.rec, reciter } : { status: 'none', timing: null, recording: null, rec: null, reciter }) })
     return () => { live = false }
   }, [reciter, surah, ayah])
   return st

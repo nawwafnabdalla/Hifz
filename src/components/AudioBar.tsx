@@ -8,12 +8,12 @@ import { useApp } from '@/app/store'
 import { Icon } from './Icon'
 import { Sheet } from './ui'
 import { OfflineAudioCard } from './OfflineAudio'
-import { offlineAudio } from '@/lib/audio/offline'
 import { phrasePlayer } from '@/lib/audio/phraseAudio'
+import { recordingAudio } from '@/lib/audio/recordingAudio'
 
 let player: AyahPlayer | null = null
 export function getPlayer(): AyahPlayer {
-  player ??= new AyahPlayer(new Audio() as never, offlineAudio)
+  player ??= new AyahPlayer(new Audio() as never, recordingAudio)
   return player
 }
 export function usePlayerState(): PlayerState {
@@ -53,6 +53,7 @@ export function AudioBar({ queue, autoKey, onListened, surahForFull }: { queue: 
   const p = getPlayer()
 
   const chosen = override ?? settings.reciter
+  useEffect(() => { recordingAudio.prime(chosen) }, [chosen])             // so the recording that the phrases come from can also supply the whole ayah
   const reciter = reciterById(chosen)
   const saved = reciterById(settings.reciter)
   const echo = settings.practiceMode === 'echo'

@@ -208,7 +208,8 @@ export class AyahPlayer {
     this.audio.src = this.objectUrl
     this.audio.playbackRate = this.opts.rate
     if ('preservesPitch' in this.audio) this.audio.preservesPitch = true
-    this.set({ via: 'Saved on this device', saved: true })
+    const src = this.local!.source?.(this.opts.reciterId, ref.surah, ref.ayah) ?? { via: 'Saved on this device', saved: true }
+    this.set({ via: src.via, saved: src.saved })
     this.timer = setTimeout(() => { if (myToken === this.token && this.state.status === 'loading') this.onError('Timed out reading saved audio.') }, LOAD_TIMEOUT_MS)
     this.audio.play().catch((e: unknown) => {
       if (e instanceof Error && e.name === 'NotAllowedError') { this.set({ status: 'paused', error: 'Tap play to start audio.' }); return }
