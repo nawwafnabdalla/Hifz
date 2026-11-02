@@ -96,14 +96,15 @@ export function proposeRange(t: AyahTiming, from: number, to: number): RangeProp
   const prev = t.segments[a - 1], next = t.segments[b + 1]
   // A neighbour with no gap (or a slightly overlapping one) is still a boundary that needs a real pause; only the file's edges do not.
   // Two cases make the neighbour's own edge the wrong place to look:
-  //  - a SEAM (an abandoned take was dropped between the two segments): the silence next to the neighbour is not next to this phrase, so the
-  //    phrase is treated like the edge of the file on that side and ends where its own last word dies away;
+  //  - a SEAM (an abandoned take was dropped between the two segments): the neighbour's silence is not next to this phrase, and the abandoned
+  //    attempt may start right after the phrase's last word with no pause at all (real recordings show this). The cut is therefore only allowed
+  //    at a genuine pause within NEAR_WORD_MS of the phrase's own word; if there is none the phrase is refused rather than cut through speech;
   //  - a WIDE gap (a long breath / waqf): the middle of the gap is a second or more of silence, so the cut is made close to the phrase's own word.
   const seamBefore = !!t.seams?.includes(a), seamAfter = !!t.seams?.includes(b + 1)
   const near = (lo: number, hi: number): [number, number] => [Math.min(lo, hi), Math.max(lo, hi)]
   const narrow = (g: [number, number], edge: 'start' | 'end'): [number, number] => (g[1] - g[0] > WIDE_GAP_MS ? (edge === 'end' ? [g[0], g[0] + NEAR_WORD_MS] : [g[1] - NEAR_WORD_MS, g[1]]) : g)
-  const startGap: [number, number] | null = prev && !seamBefore ? narrow(near(prev.t1, sa.t0), 'start') : null
-  const endGap: [number, number] | null = next && !seamAfter ? narrow(near(sb.t1, next.t0), 'end') : null
+  const startGap: [number, number] | null = seamBefore ? [sa.t0 - NEAR_WORD_MS, sa.t0] : prev ? narrow(near(prev.t1, sa.t0), 'start') : null
+  const endGap: [number, number] | null = seamAfter ? [sb.t1, sb.t1 + NEAR_WORD_MS] : next ? narrow(near(sb.t1, next.t0), 'end') : null
   const startMs = prev && !seamBefore ? Math.max((prev.t1 + sa.t0) / 2, sa.t0 - MAX_GAP_PAD_MS) : Math.max(0, sa.t0 - MAX_GAP_PAD_MS)
   const endMs = next && !seamAfter ? Math.min((sb.t1 + next.t0) / 2, sb.t1 + TAIL_MS) : Math.min(t.durationMs, sb.t1 + TAIL_MS)
   if (!(endMs > startMs)) return null
