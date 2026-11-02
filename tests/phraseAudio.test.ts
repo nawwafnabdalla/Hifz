@@ -181,3 +181,20 @@ describe('whole-ayah audio from the same recording', () => {
     expect(Math.abs(b.getInt16(44 + (n >> 1) * 2, true) - Math.round(0.5 * 32767))).toBeLessThan(2)
   })
 })
+
+describe('only ayahs verified on the real audio are offered', () => {
+  const rec = (verified?: Record<string, number[]>): RecordingTimings => ({
+    schema: 1, reciter: 'vrec', ...(verified ? { verified } : {}),
+    provenance: { source: 't', licence: 't', url: 't', recording: 'qua:t', method: 't', retrieved: '2026-11-02', granularity: 'surah', riwayah: 'hafs' },
+    ayahs: { '112:1': { d: 4000, o: 0, s: [[0, 1, 0, 500], [1, 2, 500, 1000], [2, 3, 1000, 1500], [3, 4, 1500, 2000]] } },
+  })
+  it('a file with a verified list offers exactly those ayahs; a file without one offers all it has', async () => {
+    clearTimings(); registerTimings(rec({ '112': [] }))
+    expect(await ayahTiming('vrec', 'qua:t', 112, 1)).toBeNull()
+    clearTimings(); registerTimings(rec({ '112': [1] }))
+    expect(await ayahTiming('vrec', 'qua:t', 112, 1)).not.toBeNull()
+    clearTimings(); registerTimings(rec())
+    expect(await ayahTiming('vrec', 'qua:t', 112, 1)).not.toBeNull()
+    clearTimings()
+  })
+})

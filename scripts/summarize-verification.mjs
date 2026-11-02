@@ -22,9 +22,11 @@ for (const r of rep.rows) {
 const status = (a) => (a.warn ? 'review' : a.noRange ? 'whole-isolation-refused' : a.refused ? 'partial' : 'ok')
 const tallyBy = {}
 for (const [k, a] of Object.entries(ayahs)) { const s = +k.split(':')[0]; const t = (surahs[s] ??= {}); const st = status(a); t[st] = (t[st] ?? 0) + 1; tallyBy[st] = (tallyBy[st] ?? 0) + 1; a.status = st }
+const okAyahs = {}
+for (const [k, a] of Object.entries(ayahs)) if (a.status === 'ok') { const [s, n] = k.split(':').map(Number); (okAyahs[s] ??= []).push(n) }
 const flagged = Object.entries(ayahs).filter(([, a]) => a.status === 'review').map(([k]) => k)
 const asr = arg('asr') ? JSON.parse(readFileSync(arg('asr'), 'utf8')) : null
 const asrSummary = asr && { clips: asr.length, exactBest: asr.filter((x) => x.best === 'exact').length, clearDefects: asr.filter((x) => Math.max(...Object.values(x.scores)) - x.scores.exact >= 0.08).length, meanSimilarity: +(asr.reduce((s, x) => s + x.scores.exact, 0) / asr.length).toFixed(3) }
 mkdirSync(dirname(out), { recursive: true })
-writeFileSync(out, JSON.stringify({ schema: 1, slug, generated: new Date().toISOString().slice(0, 10), method: 'engine over the real recording, acoustic checks; transcription on a sample', tally: rep.tally, ayahStatus: tallyBy, warnThresholds: { ratio: WARN_RATIO, ms: WARN_MS }, reviewAyahs: flagged, surahs, ...(asrSummary ? { transcriptionSample: asrSummary } : {}) }, null, 1))
+writeFileSync(out, JSON.stringify({ schema: 1, slug, generated: new Date().toISOString().slice(0, 10), method: 'engine over the real recording, acoustic checks; transcription on a sample', tally: rep.tally, ayahStatus: tallyBy, warnThresholds: { ratio: WARN_RATIO, ms: WARN_MS }, reviewAyahs: flagged, okAyahs, surahs, ...(asrSummary ? { transcriptionSample: asrSummary } : {}) }, null, 1))
 console.log(slug, JSON.stringify(tallyBy), `review ayahs: ${flagged.length}`, asrSummary ? JSON.stringify(asrSummary) : '')

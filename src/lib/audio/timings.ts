@@ -40,7 +40,7 @@ export interface TimingProvenance {
   /** For 'surah' recordings: where the audio comes from and how to cut a window out of it by bytes. */
   audio?: { /** `{SSS}` template, or an explicit URL per surah (catalogues list one per chapter) */ urlTemplate?: string; urls?: Record<string, string>; files: Record<string, { bytes: number; kbps: number; dataOffset: number; durationMs: number }> }
 }
-export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** seams: see AyahTiming */ x?: number[]; /** seam spans: see AyahTiming */ xs?: [number, number][]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
+export interface RecordingTimings { schema: 1; reciter: string; provenance: TimingProvenance; /** surah -> ayahs verified on the real audio. When present, ONLY these ayahs offer phrase audio and whole-ayah audio from this recording. */ verified?: Record<string, number[]>; ayahs: Record<string, { d: number; s: [number, number, number, number][]; /** seams: see AyahTiming */ x?: number[]; /** seam spans: see AyahTiming */ xs?: [number, number][]; /** start of the ayah in its file (surah recordings) */ o?: number }> }
 
 /** Largest disagreement tolerated between the aligned file's length and the decoded file's length. */
 export const DURATION_TOLERANCE_MS = 60
@@ -69,6 +69,9 @@ export function validateAyahTiming(t: AyahTiming, wordCount = wordsOfAyah(t.sura
   }
   return covered / wordCount < 0.85 ? 'sparse' : null
 }
+
+/** A file that lists verified ayahs offers only those; a file without the list (test or hand-made timings) offers all it has. */
+export const isVerified = (rec: RecordingTimings, surah: number, ayah: number) => !rec.verified || !!rec.verified[String(surah)]?.includes(ayah)
 
 export function expand(raw: RecordingTimings['ayahs'][string], surah: number, ayah: number): AyahTiming {
   return { surah, ayah, durationMs: raw.d, originMs: raw.o ?? 0, segments: raw.s.map(([w0, w1, t0, t1]) => ({ w0, w1, t0, t1 })), ...(raw.x?.length ? { seams: raw.x, ...(raw.xs ? { seamSpans: raw.xs } : {}) } : {}) }
@@ -169,7 +172,7 @@ export async function timingsFor(reciter: string): Promise<RecordingTimings | nu
 export async function ayahTiming(reciter: string, recording: string, surah: number, ayah: number): Promise<AyahTiming | null> {
   const f = (await recordingsFor(reciter)).find((x) => x.provenance.recording === recording)
   const raw = f?.ayahs[`${surah}:${ayah}`]
-  if (!f || !raw) return null
+  if (!f || !raw || !isVerified(f, surah, ayah)) return null
   const t = expand(raw, surah, ayah)
   return validateAyahTiming(t) === null ? t : null
 }
@@ -178,7 +181,7 @@ export function timingNow(reciter: string, surah: number, ayah: number): { timin
   const recs = (loaded.get(reciter) ?? []).slice().sort((a, b) => ((a.provenance.granularity ?? 'ayah') === 'ayah' ? 0 : 1) - ((b.provenance.granularity ?? 'ayah') === 'ayah' ? 0 : 1))
   for (const rec of recs) {
     const raw = rec.ayahs[`${surah}:${ayah}`]
-    if (!raw) continue
+    if (!raw || !isVerified(rec, surah, ayah)) continue
     const timing = expand(raw, surah, ayah)
     if (validateAyahTiming(timing) === null) return { timing, rec }
   }
