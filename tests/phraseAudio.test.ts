@@ -139,3 +139,23 @@ describe('a repeated passage inside the recitation', () => {
     expect(proposeRange(t, 3, 5)).not.toBeNull()
   })
 })
+
+describe('where a phrase ends when the silence next to it is not ordinary', () => {
+  const seg = (w: number, t0: number, t1: number) => ({ w0: w, w1: w + 1, t0, t1 })
+  const base = { surah: 20, ayah: 5, durationMs: 30000 }
+  it('a seam after the phrase makes it end at its own last word, like the edge of a file (the abandoned take beyond is never reached for)', () => {
+    const t: AyahTiming = { ...base, seams: [3], segments: [seg(0, 0, 500), seg(1, 500, 1000), seg(2, 1000, 1500), seg(3, 5000, 5500)] }
+    const p = proposeRange(t, 0, 2)!
+    expect(p.endGap).toBeNull()
+    expect(p.endMs).toBeLessThanOrEqual(1500 + 160)
+  })
+  it('a long breath after the phrase is searched near the phrase, not in the middle of the silence', () => {
+    const t: AyahTiming = { ...base, segments: [seg(0, 0, 500), seg(1, 500, 1000), seg(2, 4000, 4500)] }
+    expect(proposeRange(t, 0, 1)!.endGap).toEqual([1000, 1400])
+    expect(proposeRange(t, 2, 2)!.startGap).toEqual([3600, 4000])
+  })
+  it('an ordinary short gap is left exactly as the timings give it', () => {
+    const t: AyahTiming = { ...base, segments: [seg(0, 0, 500), seg(1, 560, 1000)] }
+    expect(proposeRange(t, 0, 0)!.endGap).toEqual([500, 560])
+  })
+})

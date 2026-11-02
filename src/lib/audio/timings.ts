@@ -44,6 +44,9 @@ export interface RecordingTimings { schema: 1; reciter: string; provenance: Timi
 export const DURATION_TOLERANCE_MS = 60
 const MAX_GAP_PAD_MS = 150
 const TAIL_MS = 160
+/** A gap wider than this is a breath or waqf: the cut is made within NEAR_WORD_MS of the word that borders it, not in the middle of the silence. */
+const WIDE_GAP_MS = 500
+const NEAR_WORD_MS = 400
 /** Safety net only: real pauses between words (breath, waqf) reach ~2 s; anything much longer inside one phrase is not a pause. Known seams are recorded explicitly (AyahTiming.seams). */
 export const MAX_INNER_GAP_MS = 4000
 
@@ -92,10 +95,17 @@ export function proposeRange(t: AyahTiming, from: number, to: number): RangeProp
   for (let i = a + 1; i <= b; i++) if (t.segments[i]!.t0 - t.segments[i - 1]!.t1 > MAX_INNER_GAP_MS || t.seams?.includes(i)) return null
   const prev = t.segments[a - 1], next = t.segments[b + 1]
   // A neighbour with no gap (or a slightly overlapping one) is still a boundary that needs a real pause; only the file's edges do not.
-  const startGap: [number, number] | null = prev ? [Math.min(prev.t1, sa.t0), Math.max(prev.t1, sa.t0)] : null
-  const endGap: [number, number] | null = next ? [Math.min(sb.t1, next.t0), Math.max(sb.t1, next.t0)] : null
-  const startMs = prev ? Math.max((prev.t1 + sa.t0) / 2, sa.t0 - MAX_GAP_PAD_MS) : Math.max(0, sa.t0 - MAX_GAP_PAD_MS)
-  const endMs = next ? Math.min((sb.t1 + next.t0) / 2, sb.t1 + TAIL_MS) : Math.min(t.durationMs, sb.t1 + TAIL_MS)
+  // Two cases make the neighbour's own edge the wrong place to look:
+  //  - a SEAM (an abandoned take was dropped between the two segments): the silence next to the neighbour is not next to this phrase, so the
+  //    phrase is treated like the edge of the file on that side and ends where its own last word dies away;
+  //  - a WIDE gap (a long breath / waqf): the middle of the gap is a second or more of silence, so the cut is made close to the phrase's own word.
+  const seamBefore = !!t.seams?.includes(a), seamAfter = !!t.seams?.includes(b + 1)
+  const near = (lo: number, hi: number): [number, number] => [Math.min(lo, hi), Math.max(lo, hi)]
+  const narrow = (g: [number, number], edge: 'start' | 'end'): [number, number] => (g[1] - g[0] > WIDE_GAP_MS ? (edge === 'end' ? [g[0], g[0] + NEAR_WORD_MS] : [g[1] - NEAR_WORD_MS, g[1]]) : g)
+  const startGap: [number, number] | null = prev && !seamBefore ? narrow(near(prev.t1, sa.t0), 'start') : null
+  const endGap: [number, number] | null = next && !seamAfter ? narrow(near(sb.t1, next.t0), 'end') : null
+  const startMs = prev && !seamBefore ? Math.max((prev.t1 + sa.t0) / 2, sa.t0 - MAX_GAP_PAD_MS) : Math.max(0, sa.t0 - MAX_GAP_PAD_MS)
+  const endMs = next && !seamAfter ? Math.min((sb.t1 + next.t0) / 2, sb.t1 + TAIL_MS) : Math.min(t.durationMs, sb.t1 + TAIL_MS)
   if (!(endMs > startMs)) return null
   return { startMs, endMs, startGap, endGap }
 }

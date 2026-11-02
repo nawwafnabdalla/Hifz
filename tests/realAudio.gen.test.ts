@@ -48,7 +48,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
         if (!cut) { tally.refused++; rows.push({ a, i, from: p.from, to: p.to, result: 'no-pause' }); continue }
         tally.cut++
         writeFileSync(join(OUT!, 'clips', `${SURAH}-${a}-${i}.wav`), wav(pcm.subarray(Math.floor(cut.startSec * rate), Math.ceil(cut.endSec * rate)), rate))
-        rows.push({ a, i, from: p.from, to: p.to, words: p.words.join(' '), result: 'cut', startSec: +cut.startSec.toFixed(3), endSec: +cut.endSec.toFixed(3), dip: +cut.dip.toFixed(2), proposedMs: [Math.round(prop.startMs), Math.round(prop.endMs)], absStartMs: Math.round(o + prop.startMs), absEndMs: Math.round(o + prop.endMs) })
+        rows.push({ a, i, from: p.from, to: p.to, words: p.words.join(' '), result: 'cut', startSec: +cut.startSec.toFixed(3), endSec: +cut.endSec.toFixed(3), dip: +cut.dip.toFixed(2), proposedMs: [Math.round(prop.startMs), Math.round(prop.endMs)], absStartMs: Math.round(o + prop.startMs), absEndMs: Math.round(o + prop.endMs), cutAbsStartMs: Math.round(win.startMs + cut.startSec * 1000), cutAbsEndMs: Math.round(win.startMs + cut.endSec * 1000), firstWordStartMs: Math.round(o + t.segments.find((s) => s.w0 === p.from)!.t0), lastWordEndMs: Math.round(o + t.segments.find((s) => s.w1 - 1 === p.to)!.t1), nextWordStartMs: (() => { const s = t.segments.find((x) => x.w0 === p.to + 1); return s ? Math.round(o + s.t0) : null })(), prevWordEndMs: (() => { const s = t.segments.find((x) => x.w1 - 1 === p.from - 1); return s ? Math.round(o + s.t1) : null })() })
       }
     }
     writeFileSync(join(OUT!, 'report.json'), JSON.stringify({ tally, rows }, null, 1))
