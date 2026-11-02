@@ -132,3 +132,19 @@ Why: transcription of the previous run's output found two phrases whose first wo
 | Sudais (Tarteel) | yes, 113 surahs | yes, 4,963 ayahs | sample + warned set | **no** | **no** |
 
 Transcription is a recogniser (Whisper turbo), not a judge of tajwīd; it can miss a partial-syllable leak. Nothing here replaces review by a qualified reciter, which has not happened.
+
+### 8.1 Browser run against the real host with the final data (Chromium, desktop, datacentre network — **not an iPhone**)
+`e2e/realAudio.spec.ts` with the shipped timing files; audio fetched from audio-cdn.tarteel.ai by HTTP Range, decoded by the browser, captured at the speakers and transcribed.
+
+| Case | Result |
+|---|---|
+| Yasser 20:94 (3 chips), 20:40 (5 chips, long) | every chip's exact phrase was the best transcription match (0.93–1.0); phrase repeated 3×; joined chips transcribe to the ayah (0.94–0.98) |
+| Maher 20:71 (5 chips, longest verified Ta-Ha ayah) | every chip exact-best (0.98–1.0); repeat ×3 correct; join 1.0 |
+| Maher 20:94 (contains the reciter's restart; not verified) | no phrase controls, no whole-ayah-from-this-recording: falls back to the ordinary source, as designed |
+| Maher 20:4 (6 words, short) | stays whole: no phrase chips by design |
+| Whole ayah cut from the same recording | passes (Yasser, Maher) |
+| First-sound latency | 0.5–0.6 s for the first phrase (includes fetching + decoding the byte window), 0.15–0.35 s for later phrases |
+| JS heap growth over a full session on the page | 44–75 MB |
+Playwright flag-off suite: 44 passed. Flag-on suite: 61 passed, 2 skipped (the real-host specs, which need env). Unit tests: 270 passed, 2 skipped.
+A stale part of the real-host spec (it planned phrases from the timed gaps, which are 0 ms, rather than from the measured pauses the app uses) produced a 2-phrase layout against the app's 3 chips; this looked like a truncated phrase and was in fact the spec; fixed to use the measured pauses.
+Latency and memory on a real iPhone are not known.

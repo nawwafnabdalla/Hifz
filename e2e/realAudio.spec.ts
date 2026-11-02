@@ -52,7 +52,8 @@ test('real recording: every phrase of the ayah, repeated, and joined', async ({ 
   const data = JSON.parse(readFileSync(T!, 'utf8'))
   data.reciter = RECITER
   const raw = data.ayahs[`${SURAH}:${AYAH}`]
-  const pauses = raw.s.slice(0, -1).map((s: number[], i: number) => ({ afterWord: s[1] - 1, ms: Math.max(0, raw.s[i + 1][2] - s[3]) }))
+  // The app plans from pauses MEASURED in the audio (`pa`) when the timing file has them (QUA times words edge to edge, so timed gaps are ~0); the spec must plan the same way.
+  const pauses = raw.pa ? raw.pa.map((ms: number, i: number) => ({ afterWord: i, ms })) : raw.s.slice(0, -1).map((s: number[], i: number) => ({ afterWord: s[1] - 1, ms: Math.max(0, raw.s[i + 1][2] - s[3]) }))
   const net: { url: string; status: number; range: string | undefined; contentRange: string | null; acao: string | null; bytes: number }[] = []
   const fails: string[] = []
   page.on('response', async (r) => { if (/audio-cdn\.tarteel\.ai/.test(r.url())) { const h = await r.allHeaders().catch(() => ({} as Record<string, string>)); net.push({ url: r.url(), status: r.status(), range: r.request().headers()['range'], contentRange: h['content-range'] ?? null, acao: h['access-control-allow-origin'] ?? null, bytes: Number(h['content-length'] ?? 0) }) } })
