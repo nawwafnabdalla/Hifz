@@ -92,7 +92,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const [part, setPart] = useState<number | null>(saved.current?.part ?? null)
   const [sub, setSub] = useState<'part' | 'span'>(saved.current?.sub ?? 'part')
   // Only a saved part-by-part position (a number) skips the entry step; a position saved before the part was chosen is not one.
-  const entered = useRef<string | null>(saved.current && typeof saved.current.part === 'number' ? `${range.start + saved.current.idx}` : null)
+  const entered = useRef<string | null>(null)
   const [tr, setTr] = useState<string[] | null>(null)
   const ayah = range.start + idx
   // Word timings for the chosen reciter's recording of this ayah, if verified ones exist. They only ever add: nothing below depends on them.
@@ -148,12 +148,15 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
     if (!armReady || pt.status === 'loading' || entered.current === `${ayah}`) return
     entered.current = `${ayah}`
     if (!partsAyah || !prog) { setPart(null); return }
+    // A saved position is honoured only if it is still the part the evidence says is next (evidence may have moved on since it was saved).
+    const sv = saved.current
+    if (sv && sv.idx === idx && typeof sv.part === 'number' && sv.part === prog.next) return
     if (prog.allSecured) { setPart(null); setStage('recall'); return }
     setPart(prog.next)
     setSub('part')
     setStage(prog.refreshDue ? 'refresh' : 'sound')
     setRungIdx(0)
-  }, [armReady, pt.status, ayah, partsAyah, prog])
+  }, [armReady, pt.status, ayah, idx, partsAyah, prog])
 
   // Build the ladder once when an ayah's flow starts: the normal chain, or a short repair ladder for joints that keep going wrong.
   const ladderKey = `${ayah}:${phrases.length}:${methodA}`

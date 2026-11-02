@@ -222,7 +222,9 @@ test.describe('phrase-only audio', () => {
     await page.goto('/learn/20/40/40')
     await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')
     await page.getByTestId('learn-phrases').click()
-    await expect(page.getByTestId('stage-flow')).not.toContainText('Whole ayah')
+    // Ta-Ha 40 is a long ayah (34 words), so "in phrases" means learning it part by part, from the first part.
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    await expect(page.getByTestId('stage-flow')).toHaveCount(0)
   })
 
   test('short ayahs are never broken and show no breakdown controls at all', async ({ page }) => {
