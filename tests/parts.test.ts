@@ -271,6 +271,18 @@ describe('storage: additive, backward compatible', () => {
     await recordPart(db, A('independent', NOW))
     expect((await loadAll(db)).parts).toHaveLength(1)
   })
+  it('rollback: code that only knows the previous schema still opens an upgraded database and reads its events (fake-indexeddb; confirm in a browser before relying on it)', async () => {
+    const name = `parts-rollback-${Date.now()}`
+    const db = new HifzDB(name)
+    await recordReview(db, { ...review([112, 1, 1], 'independent', NOW), id: uid() })
+    await recordPart(db, A('independent', NOW))
+    db.close()
+    const older = new Dexie(name)
+    older.version(1).stores({ reviews: 'id, occurredAt, synced', flows: 'id, occurredAt, synced', declarations: 'id, occurredAt, synced', sessions: 'id, startedAt, synced', targets: 'id, synced', markers: 'id, synced', experiments: 'id, synced', kv: 'key' })
+    await older.open()
+    expect(await older.table('reviews').count()).toBe(1)
+    older.close()
+  })
   it('backups round-trip parts; a backup made before parts existed still imports', async () => {
     const a = fresh(), b = fresh()
     await recordReview(a, { ...review([112, 1, 1], 'independent', NOW), id: uid() })
