@@ -57,7 +57,7 @@ test('real recording: every phrase of the ayah, repeated, and joined', async ({ 
   const fails: string[] = []
   page.on('response', async (r) => { if (/audio-cdn\.tarteel\.ai/.test(r.url())) { const h = await r.allHeaders().catch(() => ({} as Record<string, string>)); net.push({ url: r.url(), status: r.status(), range: r.request().headers()['range'], contentRange: h['content-range'] ?? null, acao: h['access-control-allow-origin'] ?? null, bytes: Number(h['content-length'] ?? 0) }) } })
   page.on('requestfailed', (r) => { if (/audio-cdn/.test(r.url())) fails.push(`${r.url()} ${r.failure()?.errorText}`) })
-  await mockAudio(page); await freshStart(page)
+  await mockAudio(page); await page.route(/audio-cdn\.tarteel\.ai/, (r) => r.continue()); await freshStart(page)       // this spec is the one that reaches the real host
   await page.goto('/settings'); await page.getByLabel('Reciter').selectOption(RECITER)
   if (!process.env.REAL_BUILTIN) await page.evaluate((d) => (window as W).__hifzRegisterTimings(d), data)           // REAL_BUILTIN=1: use the timing file shipped in src/data/timings
   await page.evaluate((a) => { history.pushState({}, '', `/learn/20/${a}/${a}`); window.dispatchEvent(new PopStateEvent('popstate')) }, AYAH)
@@ -100,4 +100,17 @@ test('real recording: every phrase of the ayah, repeated, and joined', async ({ 
   expect(fails, 'audio requests must not fail').toEqual([])
   expect(net.length).toBeGreaterThan(0)
   expect(net.every((n) => n.status === 206)).toBe(true)
+})
+
+test('real recording: the whole ayah is cut from the SAME recording as its phrases', async ({ page }) => {
+  mkdirSync(OUT, { recursive: true })
+  await mockAudio(page); await page.route(/audio-cdn\.tarteel\.ai/, (r) => r.continue()); await freshStart(page)       // this spec is the one that reaches the real host
+  await page.goto('/settings'); await page.getByLabel('Reciter').selectOption(RECITER)
+  const out: Record<string, unknown> = {}
+  for (const a of (process.env.REAL_WHOLE ?? String(AYAH)).split(',').map(Number)) {
+    const b64 = await page.evaluate(([r, s, a]) => (window as unknown as { __hifzWholeAyah: (r: string, s: number, a: number) => Promise<string | null> }).__hifzWholeAyah(r as string, s as number, a as number), [RECITER, SURAH, a] as const)
+    out[String(a)] = b64 ? { file: `whole-${a}.wav`, bytes: Buffer.from(b64, 'base64').length } : null
+    if (b64) writeFileSync(join(OUT, `whole-${a}.wav`), Buffer.from(b64, 'base64'))
+  }
+  writeFileSync(join(OUT, 'whole.json'), JSON.stringify(out, null, 1))
 })

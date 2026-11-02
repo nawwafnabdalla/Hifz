@@ -13,6 +13,9 @@ import { primeTimings, timingNow, wholeAyahPlayable } from './timings'
 import { wordsOfAyah } from '@/lib/quran/data'
 
 const FADE_SEC = 0.006
+/** A host that does not answer must not hold the play button hostage: after this long the ordinary source is used (and named). */
+const FETCH_TIMEOUT_MS = 8000
+const withTimeout = <T>(p: Promise<T>, ms: number) => new Promise<T>((res, rej) => { const id = setTimeout(() => rej(new Error('timed out')), ms); p.then((v) => { clearTimeout(id); res(v) }, (e) => { clearTimeout(id); rej(e) }) })
 
 /** 16-bit mono WAV of samples [startSec, endSec) with short fades so the edges never click. */
 export function encodeWav(p: Pcm, startSec: number, endSec: number): Blob {
@@ -54,10 +57,10 @@ class RecordingAudio implements LocalAudio {
       try {
         const n = wordsOfAyah(surah, ayah).length
         const ctx = new OfflineAudioContext(1, 1, 44100)
-        const plan = await phrasePlayer.plan({
+        const plan = await withTimeout(phrasePlayer.plan({
           key: `${reciter}|${f.rec.provenance.recording}|${surah}:${ayah}|whole`, timing: f.timing, fromWord: 0, toWord: n - 1, repeat: 1, gapSec: () => 0,
           bytes: (prop) => ayahBytes(reciter, f.rec, surah, ayah, f.timing, prop),
-        }, ctx)
+        }, ctx), FETCH_TIMEOUT_MS)
         if (!('reason' in plan)) {
           const blob = encodeWav(plan.decoded.pcm, plan.cut.startSec, plan.cut.endSec)
           this.cache.set(k, blob); while (this.cache.size > 8) this.cache.delete(this.cache.keys().next().value!)

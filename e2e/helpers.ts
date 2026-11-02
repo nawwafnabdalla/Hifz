@@ -14,6 +14,8 @@ export function silentWav(): Buffer {
 
 export async function mockAudio(page: Page, opts: { failEveryAyah?: boolean } = {}) {
   const wav = silentWav()
+  // Tests never reach a real audio host: the recordings that phrase audio streams are refused here (the app then uses the ordinary source). Specs that need them route their own.
+  await page.route(/audio-cdn\.tarteel\.ai/, (r: Route) => r.abort('failed'))
   await page.route(/everyayah\.com\/.*\.mp3/, (r: Route) => (opts.failEveryAyah ? r.abort('failed') : r.fulfill({ status: 200, contentType: 'audio/wav', body: wav, headers: { 'access-control-allow-origin': '*' } })))
   await page.route(/cdn\.islamic\.network\/.*\.mp3/, (r: Route) => r.fulfill({ status: 200, contentType: 'audio/wav', body: wav, headers: { 'access-control-allow-origin': '*' } }))
 }

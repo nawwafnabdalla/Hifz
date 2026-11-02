@@ -104,6 +104,7 @@ test.describe('audio: your three reciters, echo, honesty', () => {
   test('Maher and Dossary try only their own recordings; failure never plays another reciter', async ({ page }) => {
     await freshStart(page)
     const played: string[] = []
+    await page.route(/audio-cdn\.tarteel\.ai/, (r) => r.abort('failed'))           // Maher also has a verified recording; with every source down nothing may play
     await page.route(/everyayah\.com|cdn\.islamic\.network/, (r) => { played.push(r.request().url()); return r.abort('failed') })
     await page.goto('/learn/112/1/1')
     await page.getByTestId('reciter-chip').click()
