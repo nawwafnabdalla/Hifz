@@ -48,6 +48,7 @@ async function captured(page: Page) {
 }
 
 test('real recording: every phrase of the ayah, repeated, and joined', async ({ page }) => {
+  test.skip(!!process.env.REAL_PARTS, 'REAL_PARTS: the long-ayah (part-by-part) variant runs instead')
   mkdirSync(OUT, { recursive: true })
   const data = JSON.parse(readFileSync(T!, 'utf8'))
   data.reciter = RECITER
@@ -114,4 +115,54 @@ test('real recording: the whole ayah is cut from the SAME recording as its phras
     if (b64) writeFileSync(join(OUT, `whole-${a}.wav`), Buffer.from(b64, 'base64'))
   }
   writeFileSync(join(OUT, 'whole.json'), JSON.stringify(out, null, 1))
+})
+
+// Long ayahs are learned part by part: each part is heard on its own in the Sound step, A → B is heard joined in the Flow step of B.
+// Same outputs (meta.json + wav files) as the test above, so the same transcription step applies. REAL_PARTS=1 REAL_AYAH=<ayah of Ta-Ha with > 20 words>.
+test('real recording: a long ayah, heard part by part', async ({ page }) => {
+  test.skip(!process.env.REAL_PARTS, 'needs REAL_PARTS=1')
+  test.setTimeout(480_000)
+  mkdirSync(OUT, { recursive: true })
+  const data = JSON.parse(readFileSync(T!, 'utf8'))
+  data.reciter = RECITER
+  const raw = data.ayahs[`${SURAH}:${AYAH}`]
+  const pauses = raw.pa ? raw.pa.map((ms: number, i: number) => ({ afterWord: i, ms })) : raw.s.slice(0, -1).map((s: number[], i: number) => ({ afterWord: s[1] - 1, ms: Math.max(0, raw.s[i + 1][2] - s[3]) }))
+  const fails: string[] = []
+  page.on('requestfailed', (r) => { if (/audio-cdn/.test(r.url())) fails.push(`${r.url()} ${r.failure()?.errorText}`) })
+  await mockAudio(page); await page.route(/audio-cdn\.tarteel\.ai/, (r) => r.continue()); await freshStart(page)
+  await page.goto('/settings'); await page.getByLabel('Reciter').selectOption(RECITER)
+  if (!process.env.REAL_BUILTIN) await page.evaluate((d) => (window as W).__hifzRegisterTimings(d), data)
+  await page.evaluate((a) => { history.pushState({}, '', `/learn/20/${a}/${a}`); window.dispatchEvent(new PopStateEvent('popstate')) }, AYAH)
+  const phrases = await page.evaluate(([a, p]) => (window as W).__hifzPhrases(20, a as number, p), [AYAH, pauses] as const)
+  await expect(page.getByTestId('part-dots')).toBeVisible()
+  const meta: Record<string, unknown> = { reciter: RECITER, surah: SURAH, ayah: AYAH, phrases, chips: [] as unknown[] }
+  const limit = Math.min(phrases.length, Number(process.env.REAL_MAX_PARTS ?? phrases.length))
+  await page.getByTestId('repeat-1').click()
+  for (let c = 0; c < limit; c++) {
+    await expect(page.getByTestId('part-caption')).toContainText(`Part ${String.fromCharCode(65 + c)}`)
+    await startCapture(page)
+    await page.getByTestId('hear-part-play').click()
+    const ttfs = await untilPlayed(page)
+    if (ttfs < 0) { ;(meta.chips as unknown[]).push({ chip: c, words: phrases[c], refused: true, message: await page.getByTestId('hear-part-fallback').innerText().catch(() => '') }); }
+    else { const { x, rate } = await captured(page); writeFileSync(join(OUT, `chip${c}.wav`), wav(x, rate)); ;(meta.chips as unknown[]).push({ chip: c, words: phrases[c], file: `chip${c}.wav`, seconds: +(x.length / rate).toFixed(2), ttfsMs: ttfs }) }
+    if (c === 0) {                                                                    // repetition, on the first part
+      await page.getByTestId('repeat-3').click()
+      await startCapture(page); await page.getByTestId('hear-part-play').click(); await untilPlayed(page)
+      const { x, rate } = await captured(page); writeFileSync(join(OUT, 'repeat3.wav'), wav(x, rate)); meta.repeat3 = { file: 'repeat3.wav', words: phrases[0], seconds: +(x.length / rate).toFixed(2) }
+      await page.getByTestId('repeat-1').click()
+    }
+    await page.getByTestId('to-flow').click()
+    if (c === 1) {                                                                    // joining, in B's flow: B alone, then A → B
+      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
+      await expect(page.getByTestId('stage-flow')).toContainText('A → B')
+      await startCapture(page); await page.getByTestId('hear-part-play').click(); await untilPlayed(page)
+      const { x, rate } = await captured(page); writeFileSync(join(OUT, 'join01.wav'), wav(x, rate)); meta.join = { file: 'join01.wav', words: [phrases[0]![0], phrases[1]![1]], seconds: +(x.length / rate).toFixed(2) }
+    }
+    await page.getByRole('button', { name: 'Skip to recall' }).click()
+    await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click()
+    if (c >= 1 && c < phrases.length - 1) { await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click() }
+    if (c < limit - 1) { await expect(page.getByTestId('stage-partdone')).toBeVisible(); await page.getByTestId('next-part').click() }
+  }
+  writeFileSync(join(OUT, 'meta.json'), JSON.stringify(meta, null, 1))
+  expect(fails, 'audio requests must not fail').toEqual([])
 })
