@@ -8,7 +8,8 @@
 // an open preview link. It is not a substitute for Cloudflare Access, which the docs also recommend.
 export const PHRASE_AUDIO_BUILD = import.meta.env.VITE_PHRASE_AUDIO === '1'
 /** SHA-256 of the private test code (the code itself is given only to the owner). */
-export const TEST_CODE_SHA256 = '36647f572eed520dc53d6595fc8c4dc0d20cb0ff5eeffd313a157bf5fc8469fc'
+/** A build may carry its own hash (VITE_TEST_CODE_SHA256, e.g. set as a Cloudflare build variable to change the code without changing the code of the app, or by the browser tests). */
+export const TEST_CODE_SHA256: string = (import.meta.env.VITE_TEST_CODE_SHA256 as string | undefined)?.trim().toLowerCase() || '36647f572eed520dc53d6595fc8c4dc0d20cb0ff5eeffd313a157bf5fc8469fc'
 const KEY = 'hifz.testCode'
 
 export const isLocalHost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
@@ -16,7 +17,8 @@ export async function sha256Hex(s: string): Promise<string> {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')
 }
-const normalise = (s: string) => s.trim().toLowerCase()
+/** What is typed is compared forgivingly: letters in any case, spaces ignored, and the dashes a phone keyboard or a paste may substitute for a hyphen. */
+export const normalise = (s: string) => s.replace(/[\u2010-\u2015\u2212\uFE63\uFF0D]/g, '-').replace(/\s+/g, '').toLowerCase()
 let expected = TEST_CODE_SHA256
 export async function codeMatches(code: string): Promise<boolean> { return (await sha256Hex(normalise(code))) === expected }
 /** Tests only: check against a hash of their own, so the real code never needs to appear in the repository. */

@@ -102,6 +102,7 @@ export function SettingsPage() {
       </Section>
 
       <Section title="About">
+        <Row label="Build" hint={typeof __HIFZ_BUILD__ === 'string' ? __HIFZ_BUILD__ : 'local build'}><span className="text-xs text-muted" data-testid="build-id">{PHRASE_AUDIO_BUILD ? 'test' : ''}</span></Row>
         <Row label="Qur’an text & sources" hint="Verified against two independent sources"><button className="btn btn-quiet btn-sm" onClick={() => setAbout(true)}>Details</button></Row>
         <Row label="Audio sources & checks" hint="Credits, terms and a device check"><button className="btn btn-quiet btn-sm" onClick={() => setSources(true)} data-testid="open-audio-sources">Open</button></Row>
         <div className="p-4 text-xs text-muted">

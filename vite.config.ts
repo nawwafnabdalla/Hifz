@@ -58,7 +58,11 @@ export default defineConfig({
       },
     }),
   ],
+  // Shown in Settings → About so a deployed preview can be matched to the commit it was built from.
+  define: { __HIFZ_BUILD__: JSON.stringify(branch ? `${branch} @ ${(process.env.WORKERS_CI_COMMIT_SHA ?? process.env.CF_PAGES_COMMIT_SHA ?? '').slice(0, 7) || 'unknown commit'}` : 'local build') },
   build: { target: 'es2022', sourcemap: false },
+  // Local `vite preview` (used by the browser tests) also answers to *.workers.dev names, so a Cloudflare-style address can be rehearsed on this computer.
+  preview: { allowedHosts: ['.workers.dev'] },
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
