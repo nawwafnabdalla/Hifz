@@ -2,7 +2,7 @@
 // with synced=0, and is pushed to the server later. Event tables are append-only
 // by convention: there is no update path for them in this codebase.
 import Dexie, { type Table } from 'dexie'
-import type { Declaration, Experiment, FlowEvent, LearningTarget, PhraseMarker, ReviewEvent, Settings, StudySession } from '@/lib/engine/types'
+import type { Declaration, Experiment, FlowEvent, LearningTarget, PartEvent, PhraseMarker, ReviewEvent, Settings, StudySession } from '@/lib/engine/types'
 
 export type Stored<T> = T & { synced: 0 | 1 }
 export interface KV { key: string; value: unknown }
@@ -11,6 +11,7 @@ export class HifzDB extends Dexie {
   reviews!: Table<Stored<ReviewEvent>, string>
   flows!: Table<Stored<FlowEvent>, string>
   declarations!: Table<Stored<Declaration>, string>
+  parts!: Table<Stored<PartEvent>, string>
   sessions!: Table<Stored<StudySession>, string>
   targets!: Table<Stored<LearningTarget>, string>
   markers!: Table<Stored<PhraseMarker>, string>
@@ -29,6 +30,8 @@ export class HifzDB extends Dexie {
       experiments: 'id, synced',
       kv: 'key',
     })
+    // Additive: a table for part-of-ayah recalls. Existing tables and rows are untouched.
+    this.version(2).stores({ parts: 'id, occurredAt, synced' })
   }
 }
 

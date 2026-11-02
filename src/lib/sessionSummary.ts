@@ -3,7 +3,8 @@
 import { dueAt } from '@/lib/engine/memory'
 import { junctionNeedsRepair, type Derived } from '@/lib/engine/derive'
 import type { PlanItem } from '@/lib/engine/planner'
-import { ayahKey, DAY, type FlowEvent, type ReviewEvent } from '@/lib/engine/types'
+import { ayahKey, DAY, type FlowEvent, type PartEvent, type ReviewEvent } from '@/lib/engine/types'
+import { isGood } from '@/lib/engine/parts'
 
 export type Result = 'smooth' | 'mixed' | 'difficult' | 'learned' | 'practised' | 'skipped'
 export interface ItemOutcome {
@@ -36,15 +37,24 @@ export function dueLabel(at: number, now: number): string {
 
 export function summariseSession(opts: {
   sessionId: string; queue: PlanItem[]; completed: string[]; skipped: string[]; startedAt: number
-  reviews: ReviewEvent[]; flows: FlowEvent[]; derived: Derived; now: number
+  reviews: ReviewEvent[]; flows: FlowEvent[]; parts?: PartEvent[]; derived: Derived; now: number
 }): SessionSummary {
   const { sessionId, queue, completed, skipped, reviews, flows, derived, now } = opts
+  const myParts = (opts.parts ?? []).filter((p) => p.sessionId === sessionId)
   const mine = reviews.filter((r) => r.sessionId === sessionId)
   const myFlows = flows.filter((f) => f.sessionId === sessionId)
   const items: ItemOutcome[] = []
   const needsAttention: { text: string }[] = []
 
   for (const q of queue) {
+    // Learning part of a long ayah is real progress, whether or not the learner went on to the whole ayah.
+    const partsHere = myParts.filter((p) => overlaps(q.range, { surah: p.surah, start: p.ayah, end: p.ayah }))
+    const wholeHere = mine.some((r) => overlaps(q.range, r.range) && r.kind === 'recall')
+    if (partsHere.length && !wholeHere && !q.drill) {
+      const good = partsHere.filter(isGood).length
+      items.push({ id: q.id, kind: q.kind, range: q.range, result: 'practised', note: good ? `Learned part of a long ayah (${good} accurate part recall${good > 1 ? 's' : ''}). It is saved: next time continues from there.` : 'Practised part of a long ayah. It is saved: next time continues from there.', nextReviewAt: null })
+      continue
+    }
     if (skipped.includes(q.id) || !completed.includes(q.id)) {
       items.push({ id: q.id, kind: q.kind, range: q.range, drill: q.drill, result: 'skipped', note: 'Skipped. It stays in your queue.', nextReviewAt: null })
       continue

@@ -35,15 +35,17 @@ export async function freshStart(page: Page) {
 /** Drive the Learn flow to completion, choosing ratings/grades. */
 export async function completeLearning(page: Page, opts: { grade?: 'independent' | 'hesitant' | 'prompted' | 'failed' } = {}) {
   const grade = opts.grade ?? 'independent'
-  for (let guard = 0; guard < 60; guard++) {
+  for (let guard = 0; guard < 120; guard++) {
     const stage = await page.locator('[data-testid="learn-flow"]').getAttribute('data-stage')
     if (stage === 'done') return
     if (stage === 'sound') await page.getByTestId('to-flow').click()
     else if (stage === 'flow') { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() }
+    else if (stage === 'refresh') { await page.getByTestId('span-reveal').click(); await page.getByTestId(`span-grade-${grade}`).click() }
+    else if (stage === 'partdone') await page.getByTestId('next-part').click()
     else if (stage === 'recall' || stage === 'connect') {
-      if (await page.getByTestId('stage-repair').count()) { await page.getByText('Move on for now').click(); continue }
-      await page.getByTestId('reveal').click()
-      await page.getByTestId(`grade-${grade}`).click()
+      if (await page.getByTestId('stage-repair').count()) { const k = await page.getByTestId('stage-repair').getAttribute('data-repair-kind'); await (k === 'part' ? page.getByTestId('back-to-flow') : page.getByText('Move on for now')).click(); continue }
+      if (await page.getByTestId('span-recall').count()) { await page.getByTestId('span-reveal').click(); await page.getByTestId(`span-grade-${grade}`).click() }
+      else { await page.getByTestId('reveal').click(); await page.getByTestId(`grade-${grade}`).click() }
     }
     await page.waitForTimeout(60)
   }
@@ -52,7 +54,7 @@ export async function completeLearning(page: Page, opts: { grade?: 'independent'
 
 
 /** Insert rows straight into the app's IndexedDB (as unsynced local data), then reload so the app rebuilds its state. */
-export async function seed(page: Page, table: 'reviews' | 'flows' | 'declarations', rows: Record<string, unknown>[]) {
+export async function seed(page: Page, table: 'reviews' | 'flows' | 'declarations' | 'parts', rows: Record<string, unknown>[]) {
   await page.evaluate(async ({ table, rows }) => {
     const db: IDBDatabase = await new Promise((res, rej) => { const r = indexedDB.open('hifz-os'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
     await new Promise<void>((res, rej) => { const tx = db.transaction(table, 'readwrite'); const st = tx.objectStore(table); rows.forEach((x) => st.put({ ...x, synced: 0 })); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error) })

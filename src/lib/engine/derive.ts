@@ -2,7 +2,7 @@
 // persisted: delete the derived state and it is rebuilt identically from events.
 import { applyClaim, applyEvidence, applyRetract, newMemory, retrievability, PARAMS, type AyahMemory } from './memory'
 import { attribute } from './attribution'
-import { ayahKey, DAY, type Corpus, type Declaration, type FlowEvent, type FlowRating, type Grade, type ReviewEvent } from './types'
+import { ayahKey, DAY, type Corpus, type Declaration, type FlowEvent, type FlowRating, type Grade, type PartEvent, type ReviewEvent } from './types'
 
 export interface JunctionState {
   surah: number
@@ -30,12 +30,15 @@ export interface Derived {
   memory: Map<string, AyahMemory>
   junctions: Map<string, JunctionState>
   flow: Map<string, FlowState>
+  /** Part-of-ayah recalls per ayah, oldest first. Evidence of where a learner is in a long ayah; it never feeds `memory`. */
+  parts: Map<string, PartEvent[]>
   lastActivityAt: number | null
   recallEventCount: number
 }
 export interface EventLog {
   reviews: ReviewEvent[]
   flows: FlowEvent[]
+  parts?: PartEvent[]
   declarations: Declaration[]
 }
 
@@ -91,7 +94,13 @@ export function deriveState(log: EventLog): Derived {
     flow.set(k, { surah: f.surah, ayah: f.ayah, rating, lastAt: f.occurredAt, events: (cur?.events ?? 0) + 1, totalMs: (cur?.totalMs ?? 0) + f.durationMs })
     lastActivityAt = Math.max(lastActivityAt ?? 0, f.occurredAt)
   }
-  return { memory, junctions, flow, lastActivityAt, recallEventCount }
+  const parts = new Map<string, PartEvent[]>()
+  for (const p of [...(log.parts ?? [])].sort((x, y) => x.occurredAt - y.occurredAt || (x.id < y.id ? -1 : 1))) {
+    const k = ayahKey(p.surah, p.ayah)
+    parts.set(k, [...(parts.get(k) ?? []), p])
+    lastActivityAt = Math.max(lastActivityAt ?? 0, p.occurredAt)
+  }
+  return { memory, junctions, flow, parts, lastActivityAt, recallEventCount }
 }
 
 const ORDER: FlowRating[] = ['tangled', 'improving', 'natural']

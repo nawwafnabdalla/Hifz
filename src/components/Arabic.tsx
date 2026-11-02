@@ -32,8 +32,10 @@ export function visibleAt(cue: Cue, i: number): boolean {
   return false
 }
 
-export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, onWord, marked }: {
+export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, onWord, marked, only }: {
   surah: number; ayah: number; cue?: Cue
+  /** Draw only the words in [from, to] (a part of the ayah). Indices elsewhere keep their meaning. */
+  only?: [number, number]
   /** When set, exactly the first N words are visible (progressive hints) and `cue` is ignored. */
   revealCount?: number
   /** Makes each word tappable (used to mark where a recitation slipped). */
@@ -50,6 +52,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
   return (
     <>
       {words.map((w, i) => {
+        if (only && (i < only[0] || i > only[1])) return null
         const shown = revealCount !== undefined ? i < revealCount : visibleAt(cue, i)
         const dim = dimOutside && (i < dimOutside[0] || i > dimOutside[1])
         const drawn = drawnWord(surah, ayah, i, w, mushaf)
@@ -66,7 +69,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
             ) : (
               <span className="mask" style={{ width: `${Math.max(0.9, w.replace(/[ً-ٰٟۖ-ۭ]/g, '').length * 0.42)}em` } as CSSProperties} aria-hidden="true" />
             )}
-            {i < words.length - 1 && (gapSet.has(i) ? <span className="phrase-gap"> </span> : ' ')}
+            {i < (only ? only[1] : words.length - 1) && (gapSet.has(i) ? <span className="phrase-gap"> </span> : ' ')}
           </span>
         )
       })}

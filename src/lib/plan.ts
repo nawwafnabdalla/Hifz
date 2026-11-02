@@ -4,7 +4,10 @@ import { learningSamples, learningSecPerWord } from '@/lib/engine/analytics'
 import type { Derived } from '@/lib/engine/derive'
 import { DAY, type Settings } from '@/lib/engine/types'
 import type { Snapshot } from '@/lib/store/repo'
-import { corpus, surahInfo } from '@/lib/quran/data'
+import { corpus, surahInfo, wordsOfAyah } from '@/lib/quran/data'
+import { defaultBoundaries } from '@/lib/engine/breakdown'
+import { buildPhrases } from '@/lib/engine/phrases'
+import { isPartsLayout } from '@/lib/engine/parts'
 
 export const startOfLocalDay = (t: number) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime() }
 
@@ -18,6 +21,14 @@ export function computePlan(snap: Snapshot, derived: Derived, now: number, setti
   return buildPlan({
     now, derived, corpus, targets: snap.targets, minutes: settings.minutes, planNew: settings.planNew, newPerDayCap: settings.newPerDayCap,
     learnedToday, learningSecPerWord: learningSecPerWord(samples), lastSessionAt: lastAny, surahName: (s) => surahInfo(s).tr,
+    // The practice phrases an ayah is learned in (the same default the Learn page uses, or the learner's own marker). No reciter pauses are
+    // known here, so a long ayah's layout is the grammar and stop-sign one; the page uses the reciter's pauses when it has them.
+    partsLayout: (surah, ayah) => {
+      const w = wordsOfAyah(surah, ayah)
+      const m = snap.markers.find((x) => x.id === `${surah}:${ayah}`)
+      const spans = buildPhrases(w, m ? m.boundaries : defaultBoundaries(surah, ayah, w)).map((p) => ({ from: p.from, to: p.to }))
+      return isPartsLayout(spans) ? spans : null
+    },
   })
 }
 export { DAY }
