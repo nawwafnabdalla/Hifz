@@ -5705,5 +5705,11 @@
   "114": {
    "ok": 6
   }
+ },
+ "transcriptionSample": {
+  "clips": 283,
+  "exactBest": 281,
+  "clearDefects": 0,
+  "meanSimilarity": 0.982
  }
 }

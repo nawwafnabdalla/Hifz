@@ -16,6 +16,7 @@ import { cutPoints } from '@/lib/audio/phraseAudio'
 import { byteWindow, WINDOW_PAD_MS } from '@/lib/audio/phraseSource'
 
 const T = process.env.REAL_TIMINGS, M = process.env.REAL_MP3 ?? process.env.REAL_MP3_DIR, OUT = process.env.REAL_OUT, SURAH_ENV = process.env.REAL_SURAH ?? '20', MP3_DIR = process.env.REAL_MP3_DIR
+const ONLY = process.env.REAL_ONLY_PHRASES ? new Set<string>(JSON.parse(readFileSync(process.env.REAL_ONLY_PHRASES, 'utf8'))) : null           // "s:a:i" keys: only those ayahs are processed and only those phrases written as clips
 const CLIP_EVERY = Number(process.env.REAL_CLIP_EVERY ?? 1), FAST = process.env.REAL_FAST === '1'   // FAST: decode one window per ayah instead of one per phrase (same audio, far fewer decoder runs)
 const wav = (x: Float32Array, rate: number) => {
   const b = Buffer.alloc(44 + x.length * 2); b.write('RIFF', 0); b.writeUInt32LE(36 + x.length * 2, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22)
@@ -44,6 +45,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
       const S = (bySurah[SURAH] = { ayahs: 0, phrases: 0, cut: 0, refused: 0, noRange: 0 })
       for (let a = 1; a <= ayahCount(SURAH); a++) {
         const raw = rec.ayahs[`${SURAH}:${a}`]; if (!raw) continue
+        if (ONLY && ![...ONLY].some((k) => k.startsWith(`${SURAH}:${a}:`))) continue
         const t = expand(raw, SURAH, a)
         if (validateAyahTiming(t)) { tally.invalid++; continue }
         tally.ayahs++; S.ayahs++
@@ -71,7 +73,7 @@ describe.skipIf(!T || !M || !OUT)('real recording', () => {
           const fr = frameDb(pcm, rate, cut.startSec, cut.endSec), lvl = [...fr].sort((x, y) => x - y)[Math.floor(fr.length * 0.9)] || 1
           const tailFr = frameDb(pcm, rate, (lastT1 - win.startMs) / 1000 + 0.03, cut.endSec), leadFr = frameDb(pcm, rate, cut.startSec, (firstT0 - win.startMs) / 1000 - 0.03)
           rows.push({ s: SURAH, a, i, from: p.from, to: p.to, r: 'cut', len: +(cut.endSec - cut.startSec).toFixed(2), dip: +cut.dip.toFixed(2), tail: Math.round(cutEndAbs - lastT1), lead: Math.round(firstT0 - cutStartAbs), tr: +(Math.max(0, ...tailFr) / lvl).toFixed(2), lr: +(Math.max(0, ...leadFr) / lvl).toFixed(2) })
-          if (nCut % CLIP_EVERY === 0) writeFileSync(join(OUT!, 'clips', `${SURAH}-${a}-${i}.wav`), wav(pcm.subarray(Math.floor(cut.startSec * rate), Math.ceil(cut.endSec * rate)), rate))
+          if (ONLY ? ONLY.has(`${SURAH}:${a}:${i}`) : nCut % CLIP_EVERY === 0) writeFileSync(join(OUT!, 'clips', `${SURAH}-${a}-${i}.wav`), wav(pcm.subarray(Math.floor(cut.startSec * rate), Math.ceil(cut.endSec * rate)), rate))
         }
       }
     }

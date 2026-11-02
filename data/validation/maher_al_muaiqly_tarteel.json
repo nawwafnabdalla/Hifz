@@ -5332,5 +5332,11 @@
    "ok": 4,
    "review": 2
   }
+ },
+ "transcriptionSample": {
+  "clips": 262,
+  "exactBest": 262,
+  "clearDefects": 0,
+  "meanSimilarity": 0.977
  }
 }
