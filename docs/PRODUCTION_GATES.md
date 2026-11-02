@@ -1,6 +1,6 @@
 # What must be true before phrase audio reaches production
 
-Production branch: `claude/hifz-os-feasibility-btrmfb` (live, Cloudflare Workers Builds on push). Phrase audio lives on `claude/hifz-os-phrase-audio` and is **off in every ordinary build**: it exists only in builds made with `VITE_PHRASE_AUDIO=1` (the private test Worker, the browser tests, one CI step). Correction to an earlier note: a local `.env.production` had been used for that and was never committed; it is gone, and CI now proves an ordinary build bundles no phrase data. **Do not merge the timing data, the phrase UI or that variable into production until every gate is ticked.**
+Production branch: `claude/hifz-os-feasibility-btrmfb` (live, Cloudflare Workers Builds on push). **Two separate things now live on `claude/hifz-os-phrase-audio`.** (a) *Phrase audio* is **off in every ordinary build**: it exists only in builds made with `VITE_PHRASE_AUDIO=1` (the private test Worker, the browser tests, one CI step). Correction to an earlier note: a local `.env.production` had been used for that and was never committed; it is gone, and CI now proves an ordinary build bundles no phrase data. (b) *Part-by-part memorisation of long ayahs* (`PART_BY_PART.md`) is **not behind that flag**: it works without any audio, so a flag-off build of this branch is **not** identical to production. It must be released deliberately (gates 10–11). **Do not merge the timing data, the phrase UI, part-by-part learning or that variable into production until the gates for each are ticked.**
 
 | # | Gate | State |
 |---|---|---|
@@ -12,7 +12,8 @@ Production branch: `claude/hifz-os-feasibility-btrmfb` (live, Cloudflare Workers
 | 6 | Real iPhone Safari and installed-PWA check (`IPHONE_CHECKLIST.md`): decode of a mid-stream MP3 window, background/lock behaviour, Range/CORS | **Open** (no device) |
 | 7 | A qualified reader reviews the phrase gallery and the flagged ayahs; rejections go in `phrase-review.json` | **Open** |
 | 8 | Data size plan: per-surah chunks, not precached (done: excluded from precache), full-Qur'an files are ≈1.6 MB raw / 0.5 MB gzip per recitation | Partly |
-| 9 | Full unit, browser and CI runs green with the flag on, and a flag-off build identical in behaviour to production | Feature branch: 269 unit + 61 browser tests pass with the flag on; a flag-off build bundles no phrase data (verified). A full flag-off browser run is not done |
-| 10 | No database migration and no change to stored data shapes | True today (IndexedDB schema and Supabase untouched) |
+| 9 | Full unit, browser and CI runs green (flag on and flag off) | Unit 298 passed / 2 skipped. Browser: flag-off and flag-on suites re-run after the last change (see the engineering report for counts). Real-host (Chromium) runs: Yasser 20:94, 20:40; Maher 20:71 — every part exact-best in transcription |
+| 10 | Part-by-part learning: a stored-data change is approved | **Open — needs your approval.** Local-only: new IndexedDB table `parts` (Dexie v2, additive, upgrade and old-backup import tested). Cross-device sync of part progress needs a new Supabase table (`part_events`, RLS as `review_events`); **no migration has been written into `supabase/migrations` or applied**. Until then part progress is on-device and in backups only |
+| 11 | Part-by-part learning: used and judged on a real device by the owner, ideally with a teacher's view of the part boundaries | **Open** (not tested on an iPhone) |
 
-Rollback: production is untouched; if this is ever merged, revert the merge commit (the app's stored data is unaffected, as nothing in the learning data model changed).
+Rollback: production is untouched. If part-by-part learning is ever merged, reverting the merge hides it; the `parts` rows stay in the learner's IndexedDB (unused, harmless, still exported in backups); the Dexie v2 upgrade does not remove anything on revert to v1 code (older code simply ignores the extra table).
