@@ -13,7 +13,7 @@ export default defineConfig({
     launchOptions: { executablePath: process.env.PW_CHROMIUM ?? '/opt/pw-browsers/chromium', args: ['--no-sandbox'] },
   },
   projects: [
-    { name: 'mobile', testIgnore: process.env.E2E_FLAG_OFF ? /cloud\.spec|phraseAudio|realAudio/ : /cloud\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 } },
+    { name: 'mobile', testIgnore: process.env.E2E_FLAG_OFF ? /cloud\.spec|phraseAudio|partsAudio|realAudio/ : /cloud\.spec/, use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 } },
     { name: 'cloud', testMatch: /cloud\.spec/, use: { ...devices['Pixel 7'], baseURL: 'http://localhost:4174', viewport: { width: 390, height: 844 } } },
   ],
   webServer: [

@@ -13,7 +13,7 @@ async function learnPart(page: Page, grade: 'independent' | 'hesitant' = 'indepe
     const s = await stage(page)
     if (s === 'partdone') return
     if (s === 'sound') await page.getByTestId('to-flow').click()
-    else if (s === 'flow') { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() }
+    else if (s === 'flow') { const said = page.getByTestId('said-it'); if (await said.isVisible()) { await said.click(); await page.getByTestId('rate-natural').click() } }
     else if (s === 'recall') {
       if (await page.locator('[data-recall-kind="whole"]').count()) return          // the last part ends in the ordinary whole-ayah recall
       await page.getByTestId('span-reveal').click(); await page.getByTestId(`span-grade-${grade}`).click()
@@ -129,8 +129,13 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await learnPart(page)
     await page.getByTestId('next-part').click()                  // now part B
     await page.getByTestId('to-flow').click()
-    for (let g = 0; g < 10 && (await stage(page)) === 'flow'; g++) { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() }
-    await page.getByTestId('span-reveal').click()
+    const saidIt = page.getByTestId('said-it'), reveal = page.getByTestId('span-reveal')
+    for (let g = 0; g < 10; g++) {                                   // walk the rungs of this part until its recall appears
+      await expect(saidIt.or(reveal)).toBeVisible()
+      if (await reveal.isVisible()) break
+      await saidIt.click(); await page.getByTestId('rate-natural').click()
+    }
+    await reveal.click()
     await page.getByTestId('span-grade-failed').click()
     await expect(page.getByTestId('stage-repair')).toHaveAttribute('data-repair-kind', 'part')
     await page.getByTestId('back-to-flow').click()

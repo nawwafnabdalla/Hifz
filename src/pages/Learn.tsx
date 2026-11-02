@@ -91,7 +91,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   // Part-by-part learning of a long ayah: the part in hand, and whether the recall in progress is of that part alone or of everything so far.
   const [part, setPart] = useState<number | null>(saved.current?.part ?? null)
   const [sub, setSub] = useState<'part' | 'span'>(saved.current?.sub ?? 'part')
-  const entered = useRef<string | null>(saved.current && saved.current.part !== undefined ? `${range.start + saved.current.idx}` : null)
+  // Only a saved part-by-part position (a number) skips the entry step; a position saved before the part was chosen is not one.
+  const entered = useRef<string | null>(saved.current && typeof saved.current.part === 'number' ? `${range.start + saved.current.idx}` : null)
   const [tr, setTr] = useState<string[] | null>(null)
   const ayah = range.start + idx
   // Word timings for the chosen reciter's recording of this ayah, if verified ones exist. They only ever add: nothing below depends on them.
