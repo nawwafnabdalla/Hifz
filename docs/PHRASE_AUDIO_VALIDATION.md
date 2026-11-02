@@ -84,3 +84,17 @@ Low-coverage surahs are real, not misalignment: for Surah 9 (Yasser, 58% of phra
 **What the app now does with it:** `verified` ayah lists are stored inside each timing file (`scripts/apply-verification.mjs`); phrase audio and whole-ayah-from-this-recording are offered **only** for those ayahs. For the others the ordinary source plays and nothing phrase-related appears. Checked in a real browser against the real host: whole-ayah audio cut by the app from the same recording transcribes to the full ayah (Yasser 20:94 0.957, 20:2 0.957; Maher 20:2, 20:5 1.0, 20:71 0.996) and is *not* offered for ayahs that are not verified (Yasser 20:71, Maher 20:94).
 
 **Not done / limits:** transcription is a sample plus the warned set, not all ≈21,000 phrases; the recogniser can miss a partial-syllable leak; no human review of any boundary; no iPhone. Cut-by-cut transcription of every phrase was done only for Ta-Ha (all phrases) and for the warned set; elsewhere it is the sample, plus direct timing checks on Surahs 9 and 60.
+
+## 7. Why the remaining ayahs do not verify (3 Nov 2026)
+Planner change: phrases are now planned from pauses **measured in the decoded audio** at every word boundary (QUA times words edge to edge, so the timed gaps say nothing about breaths). Measured pauses are stored in the timing file (`pa`) and used by the app at run time. Results, whole Qur'an:
+
+| | Yasser | Maher |
+|---|---|---|
+| Phrases cut, old planner → measured-pause planner | 8,498 → 8,479 | 7,879 → 7,404 |
+| Phrases refused (no genuine pause), old → new | 1,525 → **1,081** | 1,919 → **1,507** |
+| Ayahs verified or warned-only, old → new (before transcription clearing) | 4,891 → 4,933 | 4,508 → 4,515 |
+| Ayahs where some phrase is refused ("partial"), old → new | 709 → **362** | 830 → **449** |
+
+Every remaining refusal (1,081 and 1,507) is a phrase whose boundary has **no measured pause at all** (<30 ms of quiet): the recording runs through that point and the planner had no better choice. None is a refusal despite a measured pause. Nothing was forced.
+The other blocker is the recording itself: **1,102 Yasser ayahs and 1,497 Maher ayahs contain an abandoned take** (the reciter restarted a passage), so the whole ayah cannot be isolated from that file. They fall back to the ordinary source, as designed.
+So the gap to 100% is: recordings with abandoned takes (18% / 24% of ayahs) + stretches recited without pauses (about 6% / 7%). Neither is an alignment defect; neither should be "fixed" by cutting through speech. Coverage can still grow by adding other recordings of the same reciters (e.g. Maher's QuranicAudio recording, whose abandoned-take count is lower in the catalogue survey: 326 ayahs), which needs that host allowed.
