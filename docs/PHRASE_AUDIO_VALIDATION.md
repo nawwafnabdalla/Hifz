@@ -63,6 +63,8 @@ REAL_BUILTIN=1 REAL_TIMINGS=… REAL_RECITER=dossary REAL_OUT=… npx playwright
 The transcription step is a short Python script using `sherpa-onnx` and the Whisper turbo model from the k2-fsa GitHub release; it is not part of the app.
 
 ## 6. Whole Qur'an (2 Nov 2026): Maher and Yasser, Tarteel recordings
+> **Superseded by §8.** These are the numbers from the first whole-Qur'an run (110 ms cut tolerance). Real-audio transcription showed that tolerance could start a cut inside a short first word, so it was reduced to 40 ms and everything was re-run. Kept for the record; use §8.
+
 Imported by remote probe in ~30 s each (114 surahs, 6,236 ayahs, nothing skipped). All 114 audio files downloaded (1.2–1.4 GB each) and the app's engine run over **every ayah**: every phrase the app would offer was cut from the real file, the file size was checked against the recorded size (identity), and cuts were measured acoustically (padding, energy outside the timed words).
 
 | | Yasser | Maher |
@@ -98,3 +100,35 @@ Planner change: phrases are now planned from pauses **measured in the decoded au
 Every remaining refusal (1,081 and 1,507) is a phrase whose boundary has **no measured pause at all** (<30 ms of quiet): the recording runs through that point and the planner had no better choice. None is a refusal despite a measured pause. Nothing was forced.
 The other blocker is the recording itself: **1,102 Yasser ayahs and 1,497 Maher ayahs contain an abandoned take** (the reciter restarted a passage), so the whole ayah cannot be isolated from that file. They fall back to the ordinary source, as designed.
 So the gap to 100% is: recordings with abandoned takes (18% / 24% of ayahs) + stretches recited without pauses (about 6% / 7%). Neither is an alignment defect; neither should be "fixed" by cutting through speech. Coverage can still grow by adding other recordings of the same reciters (e.g. Maher's QuranicAudio recording, whose abandoned-take count is lower in the catalogue survey: 326 ayahs), which needs that host allowed.
+
+## 8. Final numbers: re-run with the 40 ms cut tolerance (2 Nov 2026)
+Why: transcription of the previous run's output found two phrases whose first word was clipped (Surah 7:57 and 34:2; lead −51/−52 ms). The tolerance within which a cut may be moved to reach a quiet run was reduced from 110 ms to 40 ms (`cutTuning.snapMs`). On four surahs this removed every cut that began inside a word and cost about 3% more refusals — the safe direction. Then the whole pipeline was repeated for **three** recordings: engine over every ayah of the real audio, pauses measured at every word boundary, acoustic checks, **all** acoustically warned phrases re-cut and transcribed, and a transcription sample (every 30th cut).
+
+| | Yasser (Tarteel) | Maher (Tarteel) | Sudais (Tarteel) |
+|---|---|---|---|
+| Ayahs imported | 6,236 | 6,236 | 6,116 (Surah 5 refused: file is 160 kbps, catalogue says 128) |
+| Phrases offered by the engine | 10,478 | 10,295 | 9,960 |
+| Cut cleanly | 8,229 (78.5%) | 7,269 (70.6%) | 7,625 (76.6%) |
+| Refused: no genuine pause at the boundary | 1,225 | 1,597 | 1,817 |
+| Not isolatable (ayah contains an abandoned take) | 1,024 | 1,429 | 518 |
+| Ayahs containing an abandoned take | 1,102 | 1,497 | 611 |
+| **Ayahs verified** | **4,875 (78.2%)** | **4,476 (71.8%)** | **4,963 (81.1%)** |
+| Surahs fully verified / ≥90% / <50% | 39 / 57 / 4 | 36 / 55 / 16 | 50 / 68 / 3 |
+| Acoustically warned phrases, re-cut and transcribed | 25 / 25 exact-best | 12 / 12 | 30 / 30 |
+| Transcription sample | 274 clips, 271 exact-best, **1 clear defect**, mean similarity 0.979 | 242 clips, 241 exact-best, 0 defects, 0.975 | 254 clips, 253 exact-best, 0 defects, 0.978 |
+
+* The coverage barely moved (78.4 → 78.2, 72.3 → 71.8) while the unsafe cuts disappeared. That is the intended trade: **no cut is forced to raise the percentage.**
+* The one clear defect (Yasser 38:57, "هذا فليذوقوه حميم وغساق": the transcription matched the phrase *without* its first word best) is now **held back**: any transcription-confirmed defect removes its ayah from the verified list (`summarize-verification.mjs`). 4,876 → 4,875.
+* Warned phrases dropped from 394 to 67 because far fewer cuts now sit loosely against a pause; all 67 transcribe to the exact phrase.
+* **The remaining gap to 100% is not alignment:** abandoned takes in the recording (Yasser 17.7%, Maher 24.0%, Sudais 10.0% of ayahs) plus stretches recited without a pause at the proposed boundary (ayahs with a refused phrase: Yasser 420 = 6.7%, Maher 472 = 7.6%, Sudais 672 = 11.0%). A boundary with no measured pause is refused, and the whole ayah falls back to the ordinary source.
+* Sudais was produced with `scripts/verify-recitation.sh` (probe → import → download → engine → warned re-cut → transcription → apply) with no hand steps: the pipeline is reusable for the other Tarteel recordings.
+
+**Validation level per recording** (the five levels are never merged):
+
+| Recording | Imported | Acoustically validated | Independently checked (transcription) | Human-reviewed | Rights-cleared |
+|---|---|---|---|---|---|
+| Yasser (Tarteel) | yes, all 114 surahs | yes, 4,875 ayahs | sample + warned set | **no** | **no** |
+| Maher (Tarteel) | yes | yes, 4,476 ayahs | sample + warned set | **no** | **no** |
+| Sudais (Tarteel) | yes, 113 surahs | yes, 4,963 ayahs | sample + warned set | **no** | **no** |
+
+Transcription is a recogniser (Whisper turbo), not a judge of tajwīd; it can miss a partial-syllable leak. Nothing here replaces review by a qualified reciter, which has not happened.
