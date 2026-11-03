@@ -1,0 +1,19 @@
+{
+  "mode": "orth",
+  "positions": 71191,
+  "signPositions": 2619,
+  "baseRate": 0.0368,
+  "cvAuc": 0.8896,
+  "tau": 0.2,
+  "precisionAtTau": 0.2956,
+  "recallAtTau": 0.3448,
+  "top1AgreementAnyAyahWithSign": 0.5121,
+  "top1AgreementAyahsWithOneSign": 0.4778,
+  "ayahsWithOneSignTested": 1306,
+  "skippedAyahs": 0,
+  "features": 232,
+  "source": {
+    "dataset": "canonical text only (no third-party linguistic data)",
+    "note": "spelling features and short function-word lists written for this project; trained on the mushaf's own stop signs"
+  }
+}

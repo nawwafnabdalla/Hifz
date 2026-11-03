@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "note": "Decisions about automatic practice phrases made by a qualified reviewer, or provisionally by the engineers pending review. 'rejected' breaks are never used. 'approved' breaks may be used on grammar alone. Keys are surah:ayah, break positions are 0-based word indexes AFTER which the break falls. Status 'provisional' = engineering judgement, not yet reviewed by a qualified reader. Status 'owner-specified' = the learner who asked for the app gave these practice units for their own use; still not reviewed by a qualified reader.",
+  "ayahs": {
+    "20:86": {
+      "status": "provisional",
+      "rejected": [
+        12
+      ],
+      "note": "separates the subject غَضَبٞ from its modifier مِّن رَّبِّكُمۡ (the break the grammar model rated lowest among those it used)"
+    },
+    "20:10": {
+      "status": "owner-specified",
+      "approved": [
+        2,
+        5,
+        8,
+        12
+      ],
+      "note": "Ta-Ha 20:10 in five units, as the owner divided it: when he saw a fire | said to his family 'Stay here' | indeed, I have perceived a fire | perhaps I can bring you a torch from it | or find guidance at the fire"
+    }
+  }
+}

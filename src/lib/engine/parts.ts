@@ -125,3 +125,7 @@ export function wordsToGo(phrases: Span[], p: PartProgress): number {
   for (let i = p.next; i < phrases.length; i++) n += phrases[i]!.to - phrases[i]!.from + 1
   return n
 }
+
+/** How part-by-part learning is available for an ayah's practice phrases: the default way of learning it, a visible button ("Learn it part by part"), or not at all (short or two-piece ayahs keep the ordinary ladder). */
+export type PartsAvailability = 'default' | 'offered' | 'none'
+export const partsAvailability = (phrases: Span[], ownBreaks = false): PartsAvailability => (isPartsLayout(phrases, ownBreaks) ? 'default' : isPartsLayout(phrases, true) ? 'offered' : 'none')

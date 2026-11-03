@@ -1,0 +1,9 @@
+{
+ "strongEnglishBoundaries": 6966,
+ "ofWhichArabicAlsoSupports": 3624,
+ "ofWhichNoArabicSupportAndNoBreakMade": 3084,
+ "breaksChosen": 6759,
+ "chosenWithTranslationSupport": 3940,
+ "chosenOnArabicAlone": 2819,
+ "chosenWithWeakArabicRescuedByTranslation": 306
+}

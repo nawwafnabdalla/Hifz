@@ -3,12 +3,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
 import { completeLearning, freshStart, idbRows, mockAudio, seed } from './helpers'
-import { readFileSync } from 'node:fs'
-import { buildPhrases, suggestBoundaries } from '../src/lib/engine/phrases'
 
 const AK = '/learn/2/255/255'
-/** The phrases the page will use for an ayah: the printed stop signs (the same function the page calls), as [firstWord, lastWord] pairs. */
-const layout = (s: number, a: number): [number, number][] => { const w = (JSON.parse(readFileSync(new URL('../src/data/generated/quran.json', import.meta.url), 'utf8')) as { text: string[][] }).text[s - 1]![a - 1]!.split(' ').filter(Boolean); return buildPhrases(w, suggestBoundaries(w).boundaries).map((p) => [p.from, p.to]) }
 const stage = (page: Page) => page.getByTestId('learn-flow').getAttribute('data-stage')
 const dots = async (page: Page) => page.getByTestId('part-dots').locator('[data-secured]').evaluateAll((els) => els.map((e) => ({ secured: e.getAttribute('data-secured') === '1', current: e.getAttribute('data-current') === '1' })))
 /** Learn the part in hand: sound → flow (every rung) → recall of that part → (join) → "part done". */
@@ -38,6 +34,7 @@ async function toRecitation(page: Page) {
     await saidIt.click(); await page.getByTestId('rate-natural').click()
   }
 }
+const layoutOf = (page: Page, surah: number, ayah: number) => page.evaluate(([s, a]) => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(s as number, a as number, []), [surah, ayah] as const)
 /** The word indices visible in the recitation panel (hidden words are bars without an index). */
 /** Part events in the order they were recorded (the store returns them by id). */
 const partsInOrder = async (page: Page) => (await idbRows(page, 'parts')).sort((a, b) => a.occurredAt - b.occurredAt)
@@ -96,7 +93,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('B2: with a recall that covers the first phrase, the plan says "continue", and a failed check sends you back to that part only', async ({ page }) => {
     await page.goto(AK)
-    const w = layout(2, 255)
+    const w = await page.evaluate(() => (window as unknown as { __hifzPhrases?: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases?.(2, 255, []))
     expect(w && w.length).toBeGreaterThanOrEqual(3)
     const [a0, a1] = w![0]!
     const [, b1] = w![1]!
@@ -145,7 +142,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('hints: the first word is allowed (it is the opening of the part being added), and "on my own" is then unavailable', async ({ page }) => {
     await page.goto(AK)
-    const lay = layout(2, 255)
+    const lay = await layoutOf(page, 2, 255)
     await page.getByTestId('know-this-part').click()
     expect(await shown(page)).toEqual([])                                   // nothing visible before the hint
     await page.getByTestId('span-hint').click()
@@ -159,7 +156,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('1. learn A, then B, then join A + B: B is introduced with its meaning and its opening hint, and is tested only as part of the continuous recitation', async ({ page }) => {
     await page.goto(AK)
-    const lay = layout(2, 255)
+    const lay = await layoutOf(page, 2, 255)
     expect(lay.length).toBeGreaterThanOrEqual(3)
     await toRecitation(page)                                                // A: Sound -> Flow -> recitation
     await expect(page.getByTestId('span-recall')).toContainText('Part A from memory')
@@ -169,6 +166,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await expect(page.getByTestId('stage-partdone')).toContainText('Part A is in')
     await page.getByTestId('next-part').click()
     await expect(page.getByTestId('part-caption')).toContainText('Part B')
+    await expect(page.getByTestId('part-meaning')).toContainText('Neither drowsiness overtakes Him nor sleep')   // B arrives with its meaning
     await toRecitation(page)                                                // B: practised, then A + B from the beginning
     await expect(page.getByTestId('recite-intro')).toContainText('A → B from the beginning')
     await expect(page.getByTestId('span-recall')).toContainText('A → B, from the beginning')
@@ -186,7 +184,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('2. learn C and recite A + B + C continuously; the first-word hint of EVERY part is that part\'s own first word; the last step is the whole ayah', async ({ page }) => {
     await page.goto(AK)
-    const lay = layout(2, 255), k = lay.length
+    const lay = await layoutOf(page, 2, 255), k = lay.length
     for (let p = 0; p < k - 1; p++) {
       await toRecitation(page)
       if (p > 0) await expect(page.getByTestId('recite-intro')).toContainText(`A → ${String.fromCharCode(65 + p)} from the beginning`)
@@ -212,7 +210,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('3. a slip while reciting A + B: only the joint is practised, then straight back to reciting from the start (nothing already learned is repeated)', async ({ page }) => {
     await page.goto(AK)
-    const lay = layout(2, 255)
+    const lay = await layoutOf(page, 2, 255)
     await toRecitation(page); await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click()
     await page.getByTestId('next-part').click()
     await toRecitation(page)
@@ -259,7 +257,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('5. progress saved by the previous version of the app (isolated part recalls, joins) still counts, and the next part is the first one not yet learned', async ({ page }) => {
     await page.goto(AK)
-    const lay = layout(2, 255), t = Date.now()
+    const lay = await layoutOf(page, 2, 255), t = Date.now()
     await seed(page, 'parts', [
       part({ fromWord: lay[0]![0], toWord: lay[0]![1], occurredAt: t - 3 * 3600e3 }),                               // A alone
       part({ fromWord: lay[1]![0], toWord: lay[1]![1], occurredAt: t - 2.9 * 3600e3 }),                             // B alone (the old flow asked for this)
@@ -269,6 +267,22 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await expect(page.getByTestId('part-caption')).toContainText('Part C')
     const d = await dots(page)
     expect(d[0]!.secured && d[1]!.secured).toBe(true)
+  })
+
+  test('Ta-Ha 10: part by part, B\'s hint is the first word of B (not the first word of the ayah), and the meaning of each part matches its Arabic', async ({ page }) => {
+    await page.goto('/learn/20/10/10')
+    await page.getByTestId('learn-by-parts').click()
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    const lay = await layoutOf(page, 20, 10)
+    expect(lay.length).toBe(5)                                                // the owner's five units for 20:10
+    await expect(page.getByTestId('part-meaning')).toContainText('When he saw a fire')
+    await toRecitation(page); await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click()
+    await page.getByTestId('next-part').click()
+    await expect(page.getByTestId('part-meaning')).toContainText('said to his family')
+    await toRecitation(page)
+    await page.getByTestId('span-hint').click()
+    expect(await shown(page)).toEqual([lay[1]![0]])
+    expect(lay[1]![0]).toBeGreaterThan(0)
   })
 
   test('G: a short ayah is straightforward — no parts, no part dots', async ({ page }) => {
@@ -285,6 +299,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await expect(page.getByTestId('part-audio-note')).toContainText('whole ayah plays')
     await expect(page.getByTestId('audio-play')).toBeVisible()
   })
+
 
   test('I: leaving in the middle of a part keeps the position after a reload, and a half-finished recall is never graded for you', async ({ page }) => {
     await page.goto(AK)
@@ -348,7 +363,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await page.getByTestId('know-up-to').click()
     await page.getByTestId('know-to-2').click()
     await page.getByTestId('span-reveal').click()
-    const w = layout(2, 255)
+    const w = await page.evaluate(() => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(2, 255, []))
     await page.locator(`[data-word="${w[1]![0]}"]`).click()                           // slipped at the start of B
     await page.getByTestId('span-grade-prompted').click()
     await expect(page.getByTestId('part-caption')).toContainText('Part B')
@@ -366,25 +381,50 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await expect(page.getByTestId('stage-recall')).toHaveAttribute('data-recall-kind', 'whole')
   })
 
-  test('an ayah the app leaves whole (Ta-Ha 10, 18 words, no printed stop signs) is learned part by part once the learner sets their own breaks', async ({ page }) => {
+  test('the meaning of the part in hand is shown (verbatim from the translation) in Sound and Flow, and never during recall', async ({ page }) => {
+    await page.goto(AK)
+    await expect(page.getByTestId('part-meaning')).toContainText('Allah - there is no deity except Him')
+    await page.getByTestId('to-flow').click()
+    await expect(page.getByTestId('flow-meaning')).toContainText('Allah - there is no deity except Him')
+    await page.getByRole('button', { name: 'Skip to recall' }).click()
+    await expect(page.getByTestId('span-recall')).toBeVisible()
+    await expect(page.getByText('there is no deity except Him')).toHaveCount(0)                              // not on screen while recalling: it is never the prompt
+  })
+
+  test('one tap hides the meaning, and it stays hidden (it is the one translation setting)', async ({ page }) => {
+    await page.goto(AK)
+    await page.getByTestId('hide-meaning').click()
+    await expect(page.getByTestId('part-meaning')).toHaveCount(0)
+    await page.reload()
+    await expect(page.getByTestId('part-caption')).toBeVisible()
+    await expect(page.getByTestId('part-meaning')).toHaveCount(0)
+  })
+
+  test('the meaning is not shown while recalling, and it fades for a part that has held over a break', async ({ page }) => {
+    await page.goto('/')
+    await page.goto(AK)
+    const w = await page.evaluate(() => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(2, 255, []))
+    const t = Date.now()
+    await seed(page, 'parts', [
+      part({ fromWord: w[0]![0], toWord: w[0]![1], occurredAt: t - 30 * 3600e3 }),
+      part({ fromWord: w[0]![0], toWord: w[0]![1], occurredAt: t - 10 * 3600e3 }),                          // accurate again 20 hours later: it held
+      part({ fromWord: w[0]![0], toWord: w[0]![1], grade: 'failed', occurredAt: t - 3600e3 }),              // then went wrong, so part A is in hand again
+    ])
+    await page.goto(AK)
+    await expect(page.getByTestId('part-caption')).toContainText('Part A')
+    await expect(page.getByTestId('part-meaning')).toHaveCount(0)                                            // faded: it must not become the prompt
+  })
+
+  test('Ta-Ha 10 (18 words) keeps the ordinary ladder, with its meaningful pieces, and one tap makes it part-by-part with the meaning of each part', async ({ page }) => {
     await page.goto('/learn/20/10/10')
-    await expect(page.getByTestId('learn-flow')).toBeVisible()
-    await expect(page.getByTestId('part-dots')).toHaveCount(0)                       // as shipped: one piece, the ordinary flow
-    await seed(page, 'markers', [{ id: '20:10', surah: 20, ayah: 10, boundaries: [2, 5, 8, 12], source: 'user', updatedAt: Date.now() }])
-    await page.goto('/learn/20/10/10')
+    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('part-dots')).toHaveCount(0)
+    await page.getByTestId('learn-by-parts').click()
     await expect(page.getByTestId('part-dots')).toBeVisible()
-    expect((await dots(page)).length).toBe(5)
+    expect((await dots(page)).length).toBeGreaterThanOrEqual(4)
+    await expect(page.getByTestId('part-meaning')).toContainText('When he saw a fire')
     await learnPart(page)
-    await page.getByTestId('finish-today').click()
-    const parts = await idbRows(page, 'parts')
-    expect(parts).toHaveLength(1)
-    expect(parts[0]).toMatchObject({ surah: 20, ayah: 10, fromWord: 0, toWord: 2 })
-    expect(await idbRows(page, 'reviews')).toHaveLength(0)
-    await page.goto('/learn/20/10/10')
-    await expect(page.getByTestId('part-caption')).toContainText('Part B')           // saved, and it continues
-    // the first-word hint of part B is B's own first word (word 3, فَقَالَ), not the first word of the ayah
-    await toRecitation(page)
-    await page.getByTestId('span-hint').click()
-    expect(await shown(page)).toEqual([3])
+    await page.getByTestId('next-part').click()
+    await expect(page.getByTestId('part-meaning')).toContainText('said to his family')
   })
 })

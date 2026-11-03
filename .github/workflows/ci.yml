@@ -13,3 +13,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Part-by-part learning is in the build, and nothing that must stay out of production is
+        run: node scripts/check-release-contract.mjs
+      - name: Every page chunk is available offline (precached)
+        run: node scripts/check-precache.mjs

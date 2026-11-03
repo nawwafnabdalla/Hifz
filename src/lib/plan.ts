@@ -5,7 +5,8 @@ import type { Derived } from '@/lib/engine/derive'
 import { DAY, type Settings } from '@/lib/engine/types'
 import type { Snapshot } from '@/lib/store/repo'
 import { corpus, surahInfo, wordsOfAyah } from '@/lib/quran/data'
-import { buildPhrases, suggestBoundaries } from '@/lib/engine/phrases'
+import { buildPhrases } from '@/lib/engine/phrases'
+import { meaningBreakdown } from '@/lib/engine/breakdown'
 import { isPartsLayout } from '@/lib/engine/parts'
 
 export const startOfLocalDay = (t: number) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime() }
@@ -24,7 +25,7 @@ export function computePlan(snap: Snapshot, derived: Derived, now: number, setti
     partsLayout: (surah, ayah) => {
       const w = wordsOfAyah(surah, ayah)
       const m = snap.markers.find((x) => x.id === `${surah}:${ayah}`)
-      const spans = buildPhrases(w, m ? m.boundaries : suggestBoundaries(w).boundaries).map((p) => ({ from: p.from, to: p.to }))
+      const spans = buildPhrases(w, m ? m.boundaries : meaningBreakdown(surah, ayah, w).boundaries).map((p) => ({ from: p.from, to: p.to }))
       return isPartsLayout(spans, !!m && m.boundaries.length > 0) ? spans : null
     },
   })

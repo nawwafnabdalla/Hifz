@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Sheet } from './ui'
 import { wordsOfAyah } from '@/lib/quran/data'
 import { suggestBoundaries } from '@/lib/engine/phrases'
+import { meaningBreakdown } from '@/lib/engine/breakdown'
 import { wordFontClass } from './Arabic'
 import { drawnWord, useMushaf } from '@/lib/quran/script'
 
@@ -17,7 +18,7 @@ export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }:
   const toggle = (i: number) => setB((x) => (x.includes(i) ? x.filter((y) => y !== i) : [...x, i].sort((p, q) => p - q)))
   return (
     <Sheet open={open} onClose={onClose} title="Practice phrases">
-      <p className="mb-3 text-sm text-ink-2">Tap between words to split or join phrases. These breaks are only for practice. They are not rulings on where to stop when reciting.</p>
+      <p className="mb-3 text-sm text-ink-2">Hifz OS prepares phrases for you automatically. Only change them if one is clearly wrong. Tap between words to split or join. These breaks are only for practice. They are not rulings on where to stop when reciting.</p>
       <div className="card-flat p-3">
         <p className="arabic" lang="ar" dir="rtl" style={{ fontSize: 'calc(1.5rem * var(--arabic-scale, 1))', lineHeight: 2.6 }}>
           {words.map((w, i) => (
@@ -32,6 +33,7 @@ export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }:
         </p>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
+        <button className="chip" onClick={() => setB(meaningBreakdown(surah, ayah, words).boundaries)} data-testid="use-automatic">Use the automatic phrases</button>
         <button className="chip" onClick={() => setB(suggestBoundaries(words).boundaries)}>Use stop-sign suggestions</button>
         <button className="chip" onClick={() => setB(suggestBoundaries(words, { includeWeak: true }).boundaries)}>Include weaker signs</button>
         <button className="chip" onClick={() => setB([])}>No splits</button>

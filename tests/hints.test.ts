@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { hintWordFor, isWordShown, visibleAt } from '@/lib/engine/hints'
-import { buildPhrases, suggestBoundaries } from '@/lib/engine/phrases'
+import { baseLetters, meaningBreakdown } from '@/lib/engine/breakdown'
+import { buildPhrases } from '@/lib/engine/phrases'
 import { wordsOfAyah } from '@/lib/quran/data'
-
-const letters = (w: string) => w.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '').replace(/[أإآٱ]/g, 'ا')     // the letters of a word, without vowel and stop signs
 
 // The bug: the first-word hint revealed "word 0 of the ayah" for every part, so a part that does not start the ayah showed nothing at all.
 const shownIn = (from: number, to: number, o: Parameters<typeof isWordShown>[1]) => Array.from({ length: to - from + 1 }, (_, k) => from + k).filter((i) => isWordShown(i, o))
@@ -28,15 +27,18 @@ describe('first-word hint', () => {
     expect(visibleAt(4, 0)).toBe(false); expect(visibleAt(0, 5)).toBe(true)
     expect(isWordShown(2, { revealCount: 3 })).toBe(true); expect(isWordShown(3, { revealCount: 3 })).toBe(false)
   })
-  it('Ta-Ha 20:10 with the learner\'s own breaks (after words 2, 5, 8 and 12): every part has its own first word, none blank, and they are not all word 0', () => {
-    const w = wordsOfAyah(20, 10)
-    expect(suggestBoundaries(w).boundaries).toEqual([])                          // no printed stop sign: the app alone would keep it whole
+  it('Ta-Ha 20:10: every part of the meaning-aware layout has its own first word, none of them blank, and they are not all word 0', () => {
+    const w = wordsOfAyah(20, 10), ph = buildPhrases(w, meaningBreakdown(20, 10, w).boundaries)
+    expect(ph.length).toBeGreaterThanOrEqual(4)
+    const hints = ph.map((p) => hintWordFor(p.from, p.to))
+    expect(hints).toEqual(ph.map((p) => p.from))
+    hints.forEach((h, i) => { expect(shownIn(ph[i]!.from, ph[i]!.to, { cue: 3, base: ph[i]!.from })).toEqual([h]); expect(w[h]).toBe(ph[i]!.words[0]) })
+    expect(new Set(hints).size).toBe(hints.length)
+    expect(hints[1]).toBeGreaterThan(0)                                       // a part whose first word is not the first word of the ayah
+    // the same for the learner's own breaks, however they were made (here: after words 2, 5, 8 and 12)
     const own = buildPhrases(w, [2, 5, 8, 12])
-    const hints = own.map((p) => hintWordFor(p.from, p.to))
-    expect(hints).toEqual([0, 3, 6, 9, 13])
-    hints.forEach((h, i) => { expect(shownIn(own[i]!.from, own[i]!.to, { cue: 3, base: own[i]!.from })).toEqual([h]); expect(w[h]).toBe(own[i]!.words[0]) })
-    expect(letters(w[own[1]!.from]!)).toBe('فقال'); expect(letters(w[own[2]!.from]!)).toBe('اني'); expect(letters(w[own[3]!.from]!)).toBe('لعلي')
-    expect(hints[1]).toBeGreaterThan(0)                                          // a part whose first word is not the first word of the ayah
+    expect(own.map((p) => hintWordFor(p.from, p.to))).toEqual([0, 3, 6, 9, 13])
+    expect(baseLetters(w[own[1]!.from]!)).toBe('فقال'); expect(baseLetters(w[own[2]!.from]!)).toBe('اني'); expect(baseLetters(w[own[3]!.from]!)).toBe('لعلي')
   })
   it('a hint recomputed after the boundaries change points at the new first word, never a stale or blank one', () => {
     const w = wordsOfAyah(20, 10)

@@ -10,3 +10,4 @@ playwright-report
 .wrangler
 dist-cloud
 test-results
+scripts/meaning/.cache/
