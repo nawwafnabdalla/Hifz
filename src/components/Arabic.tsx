@@ -4,8 +4,9 @@ import { useMemo, type CSSProperties, type ReactNode } from 'react'
 import { arabicIndic, wordsOfAyah } from '@/lib/quran/data'
 import { drawnWord, useMushaf } from '@/lib/quran/script'
 import type { Stage } from '@/lib/engine/derive'
+import { isWordShown, type Cue } from '@/lib/engine/hints'
 
-export type Cue = 0 | 1 | 2 | 3 | 4
+export type { Cue } from '@/lib/engine/hints'
 
 /** Characters the main Qur'an font lacks. Words containing one are drawn in Amiri (same family) so no glyph is ever missing. */
 export const ALT_FONT_CHARS = /[\u065E]/
@@ -23,19 +24,14 @@ export function PlainWords({ surah, ayah, from, to }: { surah: number; ayah: num
   return <>{out}</>
 }
 
-/** Which word indices stay visible at a given cue level (4 = none, 3 = first word, 2 = every third, 1 = two of three, 0 = all). */
-export function visibleAt(cue: Cue, i: number): boolean {
-  if (cue === 0) return true
-  if (cue === 1) return i % 3 !== 2
-  if (cue === 2) return i % 3 === 0
-  if (cue === 3) return i === 0
-  return false
-}
+export { visibleAt } from '@/lib/engine/hints'
 
-export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, onWord, marked, only, highlight }: {
+export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount, revealWords, onWord, marked, only, highlight }: {
   surah: number; ayah: number; cue?: Cue
-  /** Draw only the words in [from, to] (a part of the ayah). Indices elsewhere keep their meaning. */
+  /** Draw only the words in [from, to] (a part of the ayah). Indices elsewhere keep their meaning; the cue pattern is counted from `from`. */
   only?: [number, number]
+  /** Exactly these word indices (absolute, in the ayah) are visible: a hint that points at one word. */
+  revealWords?: number[]
   /** Words in [from, to] get a soft highlight (the part being learned). */
   highlight?: [number, number]
   /** When set, exactly the first N words are visible (progressive hints) and `cue` is ignored. */
@@ -55,7 +51,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
     <>
       {words.map((w, i) => {
         if (only && (i < only[0] || i > only[1])) return null
-        const shown = revealCount !== undefined ? i < revealCount : visibleAt(cue, i)
+        const shown = isWordShown(i, { cue, base: only ? only[0] : 0, revealCount, revealWords })
         const dim = dimOutside && (i < dimOutside[0] || i > dimOutside[1])
         const drawn = drawnWord(surah, ayah, i, w, mushaf)
         const alt = mushaf ? '' : wordFontClass(w)
@@ -66,7 +62,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
                 <span className={`w wordtap${marked === i ? ' marked' : ''}${alt}`} role="button" tabIndex={0} aria-label={`Word ${i + 1}`} aria-pressed={marked === i} data-word={i}
                   onClick={() => onWord(i)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onWord(i))}>{drawn}</span>
               ) : (
-                <span className={`w${dim ? ' dim' : ''}${highlight && i >= highlight[0] && i <= highlight[1] ? ' hl' : ''}${alt}`}>{drawn}</span>
+                <span className={`w${dim ? ' dim' : ''}${highlight && i >= highlight[0] && i <= highlight[1] ? ' hl' : ''}${alt}`} data-w={i}>{drawn}</span>
               )
             ) : (
               <span className="mask" style={{ width: `${Math.max(0.9, w.replace(/[ً-ٰٟۖ-ۭ]/g, '').length * 0.42)}em` } as CSSProperties} aria-hidden="true" />

@@ -32,3 +32,8 @@ Part boundaries come from the **mushaf's own printed stop signs** (`suggestBound
 
 ## Rollback
 `backup/prod-before-part-by-part` is a branch at `1c57bc6`. To roll back: push that commit to the production branch (`git push origin backup/prod-before-part-by-part:claude/hifz-os-feasibility-btrmfb --force-with-lease`), or revert the release merge. Learners' records stay intact either way (the `parts` rows remain, unused).
+
+## Update (5 Nov 2026): continuous recitation and the first-word hint
+* **Learning progression changed after phone testing:** each new part is introduced, practised, and then tested by reciting the growing sequence from the beginning (A → B, then A → B → C …); an isolated part is no longer asked for in first-time learning. A slip is repaired briefly at the joint and the learner returns to the recitation; nothing already learned is repeated. Progress saved by the previous version still counts. Parts are not places to stop (the screen says so). See `PART_BY_PART.md`.
+* **Bug fixed:** the first-word hint showed nothing for any part that does not start the ayah (it always pointed at word 0 of the ayah). It now reveals the first word of the part being added, or the ayah's first word in a whole-ayah recall.
+* Still held back from production: the translation-aware boundaries and meaning lines (unreviewed; preview only), phrase audio, the preview and test-access infrastructure.
