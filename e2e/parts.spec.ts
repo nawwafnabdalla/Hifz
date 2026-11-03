@@ -201,4 +201,53 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await page.evaluate(() => null)
     await expect(page.getByTestId('plan-item').first()).toContainText('part B')
   })
+
+  test('"I already know further": tap the last part you are sure of and you are tested from the start up to it; pass and you carry on after it', async ({ page }) => {
+    await page.goto(AK)
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    const k = (await dots(page)).length
+    await expect(page.getByTestId('part-caption')).toContainText('Part A')
+    await expect(page.locator('.arabic .hl').first()).toBeVisible()                 // the part in hand is highlighted
+    await page.getByTestId('know-up-to').click()
+    await page.getByTestId('know-to-2').click()                                       // up to C
+    await expect(page.getByTestId('refresh-intro')).toContainText('up to part C')
+    await page.getByTestId('span-reveal').click()
+    await page.getByTestId('span-grade-independent').click()
+    await expect(page.getByTestId('part-caption')).toContainText('Part D')           // straight on to D
+    const d = await dots(page)
+    expect(d.slice(0, 3).every((x) => x.secured)).toBe(true)
+    expect(d[3]!.current).toBe(true)
+    const parts = await idbRows(page, 'parts')
+    expect(parts).toHaveLength(1)
+    expect(parts[0]).toMatchObject({ fromWord: 0, grade: 'independent' })
+    expect(await idbRows(page, 'reviews')).toHaveLength(0)                            // a claim tested in parts is still not "memorised"
+    expect(k).toBeGreaterThan(4)
+  })
+
+  test('"I already know further": a slip in the test sends you to that part only, and "never mind" returns to where you were', async ({ page }) => {
+    await page.goto(AK)
+    await page.getByTestId('know-up-to').click()
+    await page.getByTestId('know-to-3').click()
+    await page.getByTestId('claim-cancel').click()
+    await expect(page.getByTestId('part-caption')).toContainText('Part A')
+    await page.getByTestId('know-up-to').click()
+    await page.getByTestId('know-to-2').click()
+    await page.getByTestId('span-reveal').click()
+    const w = await page.evaluate(() => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(2, 255, []))
+    await page.locator(`[data-word="${w[1]![0]}"]`).click()                           // slipped at the start of B
+    await page.getByTestId('span-grade-prompted').click()
+    await expect(page.getByTestId('part-caption')).toContainText('Part B')
+    const d = await dots(page)
+    expect(d[0]!.secured).toBe(true)
+    expect(d[1]!.secured).toBe(false)
+  })
+
+  test('"I already know further" up to the last part goes straight to reciting the whole ayah', async ({ page }) => {
+    await page.goto(AK)
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    const k = (await dots(page)).length
+    await page.getByTestId('know-up-to').click()
+    await page.getByTestId(`know-to-${k - 1}`).click()
+    await expect(page.getByTestId('stage-recall')).toHaveAttribute('data-recall-kind', 'whole')
+  })
 })

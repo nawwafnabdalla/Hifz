@@ -91,6 +91,9 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   // Part-by-part learning of a long ayah: the part in hand, and whether the recall in progress is of that part alone or of everything so far.
   const [part, setPart] = useState<number | null>(saved.current?.part ?? null)
   const [sub, setSub] = useState<'part' | 'span'>(saved.current?.sub ?? 'part')
+  // "I know up to here": the last part the learner says they already have, to be tested from the start up to it.
+  const [testTo, setTestTo] = useState<number | null>(null)
+  const [picking, setPicking] = useState(false)
   // Only a saved part-by-part position (a number) skips the entry step; a position saved before the part was chosen is not one.
   const entered = useRef<string | null>(null)
   const [tr, setTr] = useState<string[] | null>(null)
@@ -207,18 +210,19 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
     if (sub === 'part' && P >= 1) { setSub('span'); return }
     setStage('partdone')
   }
+  /** The check of what the learner already has (after a break, or after they said "I know up to here"). The evidence decides where to go next. */
   async function afterRefresh(e: import('@/lib/engine/types').PartEvent) {
-    if (!isGood(e)) {
-      if (e.slipWord !== undefined) {
-        const r = slipRung(e.slipWord, phrases)
-        await logFlow({ surah: range.surah, ayah, fromPhrase: r.from, toPhrase: r.to, phraseCount: phrases.length, rating: 'tangled', reps: 0, durationMs: 0 })
-      }
-      const after = partProgress(spans, [...(partEvents ?? []), e], Date.now())
-      const np = after.next ?? 0
-      setPart(np)
-      say(`Let’s firm up part ${L(np)} first`)
+    const claimed = testTo !== null
+    if (!isGood(e) && e.slipWord !== undefined) {
+      const r = slipRung(e.slipWord, phrases)
+      await logFlow({ surah: range.surah, ayah, fromPhrase: r.from, toPhrase: r.to, phraseCount: phrases.length, rating: 'tangled', reps: 0, durationMs: 0 })
     }
-    setSub('part'); setRungIdx(0); setStage('sound')
+    const after = partProgress(spans, [...(partEvents ?? []), e], Date.now())
+    setTestTo(null); setPicking(false); setSub('part'); setRungIdx(0)
+    if (!isGood(e)) { const np = after.next ?? 0; setPart(np); say(`Let’s firm up part ${L(np)} first`); setStage('sound'); return }
+    if (claimed) say('Good. Everything up to there is counted.')
+    if (after.next === null) { setPart(null); setStage('recall'); return }          // every part is in: the whole ayah is what is left
+    setPart(after.next); setStage('sound')
   }
 
   if (!armReady || pt.status === 'loading') return <div className="grid min-h-[60dvh] place-items-center text-muted">Preparing…</div>
@@ -248,7 +252,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           <div className="card px-4 py-6 text-center" style={words.length <= 10 ? ({ '--arabic-scale': snap.settings.arabicScale * 1.2 } as React.CSSProperties) : undefined}>
             {partsActive ? (
               <>
-                <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} only={[0, phrases[P]!.to]} dimOutside={spanWords(P, P)} gaps={boundaries} /></p>
+                <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} only={[0, phrases[P]!.to]} dimOutside={spanWords(P, P)} highlight={spanWords(P, P)} gaps={boundaries} /></p>
                 <p className="mt-2 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words{P > 0 ? ' · earlier parts dimmed' : ''}</p>
               </>
             ) : (
@@ -272,6 +276,21 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             : <Coach id="sound-listen" className="mt-3 text-center text-sm text-ink-2" full="Listen first, with the text in front of you. Notice the sounds and where the voice rests." short="Listen with the text." />}
           <button className="btn btn-primary btn-lg mt-4 w-full" onClick={() => setStage('flow')} data-testid="to-flow">{listened ? 'Continue to flow' : 'Continue'} <Icon name="right" size={16} /></button>
           {partsActive && <button className="btn btn-ghost mt-2 w-full" onClick={() => { setSub('part'); setStage('recall') }} data-testid="know-this-part">I know this part already: test me</button>}
+          {partsActive && P < lastPart && (
+            <div className="mt-1 text-center">
+              <button className="text-sm text-muted underline" onClick={() => setPicking((v) => !v)} data-testid="know-up-to" aria-expanded={picking}>I already know further than this</button>
+              {picking && (
+                <div className="mt-2" data-testid="know-up-to-picker">
+                  <p className="mb-1 text-xs text-muted">Tap the last part you are sure of. I’ll test you from the start up to it.</p>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {spans.map((_, i) => i > P && (
+                      <button key={i} className="chip" onClick={() => { setPicking(false); if (i === lastPart) { setPart(null); setSub('part'); setStage('recall') } else { setTestTo(i); setStage('refresh') } }} data-testid={`know-to-${i}`}>{i === lastPart ? 'all of it' : `up to ${L(i)}`}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 
@@ -302,9 +321,21 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'refresh' && partsActive && prog && (
         <section className="enter" data-testid="stage-refresh">
-          <p className="mb-3 px-6 text-center text-sm text-ink-2">Welcome back. Before adding part {L(P)}, say what you already have{prog.reach > 1 ? ` (${L(0)}–${L(prog.reach - 1)})` : ''}.</p>
-          <SpanRecall key={`refresh-${ayah}`} surah={range.surah} ayah={ayah} from={spanWords(0, prog.reach - 1)[0]} to={spanWords(0, prog.reach - 1)[1]} label={prog.reach > 1 ? `Parts ${L(0)}–${L(prog.reach - 1)} from memory` : `Part ${L(0)} from memory`} onDone={(e) => void afterRefresh(e)} />
-          <div className="mt-3 text-center"><button className="btn btn-ghost btn-sm" onClick={finishToday} data-testid="finish-today">Not now: save and finish</button></div>
+          {(() => {
+            const last = testTo ?? prog.reach - 1
+            const label = last > 0 ? `${L(0)} → ${L(last)} from memory` : `Part ${L(0)} from memory`
+            return (
+              <>
+                <p className="mb-3 px-6 text-center text-sm text-ink-2" data-testid="refresh-intro">{testTo !== null ? `You said you know up to part ${L(testTo)}. Say it from the start, from memory.` : `Welcome back. Before adding part ${L(P)}, say what you already have${prog.reach > 1 ? ` (${L(0)}–${L(prog.reach - 1)})` : ''}.`}</p>
+                <SpanRecall key={`refresh-${ayah}-${testTo}`} surah={range.surah} ayah={ayah} from={spanWords(0, last)[0]} to={spanWords(0, last)[1]} label={label} onDone={(e) => void afterRefresh(e)} />
+                <div className="mt-3 text-center">
+                  {testTo !== null
+                    ? <button className="btn btn-ghost btn-sm" onClick={() => { setTestTo(null); setStage('sound') }} data-testid="claim-cancel">Never mind</button>
+                    : <button className="btn btn-ghost btn-sm" onClick={finishToday} data-testid="finish-today">Not now: save and finish</button>}
+                </div>
+              </>
+            )
+          })()}
         </section>
       )}
 

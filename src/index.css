@@ -144,6 +144,7 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .arabic .w { transition: color 200ms ease, opacity 200ms ease; }
 .arabic .waqf { color: var(--brass); }
 .arabic .dim { opacity: 0.28; }
+.arabic .hl { background: var(--brass-soft); border-radius: 0.4em; box-shadow: 0 0 0 0.12em var(--brass-soft); }
 .arabic .mask {
   display: inline-block; height: 0.5em; vertical-align: middle; margin-inline: 0.2em;
   border-radius: 999px; background: color-mix(in oklab, var(--ink) 12%, transparent);
