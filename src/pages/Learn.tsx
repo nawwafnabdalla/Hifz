@@ -236,7 +236,12 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   // One quiet way to learn an automatically phrased ayah whole (and back). The phrases themselves are never something the learner has to set.
   // A medium ayah (13-20 words) with three or more meaningful pieces keeps the ordinary ladder, but the learner can choose to learn it part by part with one tap.
   const offerParts = !methodA && !alreadyRecalled && !marker && !partsAyah && auto.boundaries.length >= 2 && words.length > 12 && isPartsLayout(buildPhrases(words, auto.boundaries).map((p) => ({ from: p.from, to: p.to })), true)
-  const byPartsLink = offerParts ? <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-by-parts">Learn it part by part</button></div> : null
+  const byPartsLink = offerParts ? <button className="btn btn-quiet mt-3 w-full" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-by-parts"><Icon name="scissors" size={15} />Learn it part by part · {auto.boundaries.length + 1} parts</button> : null
+  // Practice parts are scaffolding, never rulings on where to stop. Say where this ayah's breaks come from: the mushaf's own printed signs or a reviewed list, the learner's own breaks, or an automatic preparation that no qualified reader has reviewed yet.
+  // A marker that equals the automatic breaks (saved by tapping "Learn it part by part") is not the learner's own: only a different one is.
+  const ownBreaks = !!marker && marker.boundaries.join(',') !== auto.boundaries.join(',')
+  const validated = !ownBreaks && auto.boundaries.length > 0 && auto.boundaries.every((b) => ['stop sign', 'stop sign and the translation', 'reviewed'].includes(auto.basis[b] ?? ''))
+  const basisNote = ownBreaks ? 'Your own breaks' : validated ? 'Follows the mushaf’s printed signs or a reviewed list' : 'Prepared automatically, not yet reviewed'
   const wholeToggle = !methodA && auto.boundaries.length > 0 ? (
     boundaries.length > 0
       ? <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
@@ -263,6 +268,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
               <>
                 <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} only={[0, phrases[P]!.to]} dimOutside={spanWords(P, P)} highlight={spanWords(P, P)} gaps={boundaries} /></p>
                 <p className="mt-2 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words{P > 0 ? ' · earlier parts dimmed' : ''}</p>
+                <p className="mt-0.5 text-[0.7rem] text-muted" data-testid="part-basis">{basisNote} · for learning, not places to stop</p>
                 {/* The meaning helps the sound stick; it fades once the part has been recalled again after a break, so it never becomes the prompt. */}
                 {meanings[P] && !prog?.phrases[P]?.heldOverBreak && (
                   <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2" data-testid="part-meaning"><span className="text-xs text-muted">Meaning: </span>{meanings[P]}{' '}
@@ -328,6 +334,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           {hear && <div className="mt-2"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`f-${ayah}`} onListened={() => setListened(true)} /></div>}
           <Coach id="flow-note" className="mt-3 text-center text-xs text-muted" full="Flow is about the mouth, memory is separate: this rating never changes your retention estimate." />
           {wholeToggle}
+          {byPartsLink}
           {!methodA && (
             <details className="mt-2 text-center" data-testid="advanced"><summary className="cursor-pointer select-none text-xs text-muted" data-testid="advanced-toggle">Advanced</summary>
               <button className="btn btn-ghost btn-sm mt-1" onClick={() => setEdit(true)} data-testid="edit-phrases"><Icon name="scissors" size={15} />Adjust phrases</button></details>
