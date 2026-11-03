@@ -12,7 +12,8 @@ import { usePhraseTiming } from '@/lib/audio/usePhraseTiming'
 import { reciterPauses } from '@/lib/audio/timings'
 import { slipRung } from '@/lib/engine/repair'
 import type { FlowRating, Grade, PracticeContext, Range, ReviewEvent, StumbleKind } from '@/lib/engine/types'
-import { loadTranslation, wordsOfAyah } from '@/lib/quran/data'
+import { loadTranslation, surahInfo, wordsOfAyah } from '@/lib/quran/data'
+import { leadInFor, type LeadIn } from '@/lib/engine/leadin'
 
 const KINDS: StumbleKind[] = ['hesitated', 'prompted', 'wrong', 'blank']
 const KIND_LABEL: Record<StumbleKind, string> = { hesitated: 'hesitated', prompted: 'needed a prompt', wrong: 'words wrong', blank: 'blank' }
@@ -26,6 +27,27 @@ const GRADES: { g: Grade; title: string; sub: string; cls: string }[] = [
 ]
 
 export interface RecallResult { event: ReviewEvent }
+
+/** The run-up before a passage that is revised from memory: readable, never tested, never recorded. */
+function LeadInBlock({ lead }: { lead: LeadIn }) {
+  if (lead.kind === 'surah-start') {
+    const s = surahInfo(lead.surah)
+    return (
+      <div className="mb-3 rounded-2xl bg-surface-2/60 px-4 py-3 text-center" data-testid="lead-in" data-lead-kind="surah-start">
+        <div className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted">Run-up</div>
+        <p className="mt-1 text-ink-2">Surah {s.tr} <span lang="ar" dir="rtl" className="font-[family-name:var(--font-arabic)]">{s.ar}</span> begins here{lead.basmala ? ', after the Basmala' : ''}.</p>
+      </div>
+    )
+  }
+  return (
+    <div className="mb-3 rounded-2xl bg-surface-2/60 px-4 py-3 text-center" data-testid="lead-in" data-lead-kind="ayah" data-lead-ayah={lead.ayah}>
+      <div className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted">Run-up · ayah {lead.ayah}</div>
+      <p className="arabic center mt-1 opacity-90" lang="ar" dir="rtl" data-testid="lead-in-text">{lead.truncated ? '… ' : ''}<AyahWords surah={lead.surah} ayah={lead.ayah} only={[lead.from, lead.to]} /> <Medallion n={lead.ayah} /></p>
+      <Coach id="lead-in" className="mt-1 text-xs text-muted" full={`Read it to get into the rhythm, then continue from memory. It isn’t tested${lead.truncated ? ' (just its last words)' : ''}.`} short="Not tested: just the run-up." />
+    </div>
+  )
+}
+
 
 /** Evidence level for a recall that used hints: how much of the ayah was shown before reciting. */
 export function cueForHints(revealed: number, total: number, meaning: boolean): Cue {
@@ -55,6 +77,9 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   const n = range.end - range.start + 1
   const single = n === 1
   const total = single ? wordsOfAyah(range.surah, range.start).length : 0
+  // Revision begins with a run-up: the ayah before the passage, shown, so the learner continues reciting instead of starting cold at an arbitrary number.
+  // (First-time learning has its own flow, and a fixed-cue drill is a different exercise.)
+  const lead = context !== 'new' && !fixedCue ? leadInFor(range.surah, range.start, (s, a) => wordsOfAyah(s, a).length) : null
 
   const [revealed, setRevealed] = useState(false)
   const [hintWords, setHintWords] = useState(0)
@@ -137,7 +162,8 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
         {!revealed && <Coach id="recall-intro" className="mt-1 text-sm text-ink-2" full={`Recite aloud, then show the text to check.${n > 1 ? ` ${n} ayahs, in order.` : ''}`} short={n > 1 ? `${n} ayahs, in order.` : ''} />}
       </div>
 
-      <div className="card px-4 py-5">
+      {lead && <LeadInBlock lead={lead} />}
+      <div className="card px-4 py-5" data-testid="recall-text">
         {single ? (
           <p className="arabic" lang="ar" dir="rtl">
             <AyahWords surah={range.surah} ayah={range.start} cue={revealed ? 0 : 4} revealCount={revealed ? undefined : hintWords}
