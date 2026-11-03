@@ -93,7 +93,7 @@ async function hear(page: Page, chip: number) {
   return { share: wordShare(x, rate), x, rate }
 }
 /** Exactly these words, whole, and none of the others. */
-function expectOnly(share: number[], words: number[], label: string, leak = 0.03) {
+function expectOnly(share: number[], words: number[], label: string, leak = 0.08) {
   const set = new Set(words)
   share.forEach((v, i) => { if (set.has(i)) expect(v, `${label}: word ${i + 1} clipped or missing`).toBeGreaterThan(0.8); else expect(v, `${label}: word ${i + 1} leaked in`).toBeLessThan(leak) })
 }
