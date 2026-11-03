@@ -45,3 +45,16 @@ Datasets of single words recorded by one reader exist (for example the community
 
 ## Meaning-aware parts (audio branch only, experimental)
 On the audio branch the practice phrases come from the meaning-aware splitter (`MEANING_BREAKDOWN.md`) and the Sound/Flow screens show a line of **Meaning** for the part in hand (verbatim from the translation, fading once the part has held over a break, never during recall, one tap to hide). Ayahs of 13–20 words with three or more pieces keep the ordinary ladder but offer a quiet **Learn it part by part** link; tapping it saves those pieces as the learner's own breaks, which switches the ayah to part-by-part learning. None of this is in the production release.
+
+## Continuous recitation, not isolated parts (5 Nov 2026)
+Parts are how Hifz OS **teaches** an ayah; the whole ayah is what it **tests**. After the owner's testing on a phone the progression became:
+* **A:** Sound → Flow → recite A from memory.
+* **B:** introduced with its words and (on the preview) its meaning; practised with the text (B alone, then A → B); then **A → B is recited from the beginning**. B is never asked for on its own. If a hint is wanted it is the first word of the part being added (B), because that is where a join slips.
+* **C:** the same, then **A → B → C** from the beginning; and so on. The last step is the whole ayah, tested like any whole-ayah recall.
+* **A slip while reciting the growing sequence:** tap the word (optional). Only the joint around it is practised briefly (a short rung), then the learner is back at reciting from the start. Sound and Flow for the parts already learned are not repeated. Without a marked slip the newest joint is practised, and the parts that were already secured stay secured (`partProgress`: an unlocated failure reopens only the newest part when everything before it was secured).
+* **Evidence stays separate:** help (Flow), a successful join (a `PartEvent` spanning from word 0), reciting the whole ayah (a `ReviewEvent`), and retention on later days (further `ReviewEvent`s). Joins never reach the memory model. A hinted whole-ayah recall is weaker evidence (cue 3, never "on my own"), schedules an early check and makes the ayah "reviewing", not "strong".
+* **Parts are not places to stop:** the Sound screen says so ("These parts are only a way to learn… keep the ayah joined").
+* Independent retrieval of an isolated part (what the earlier version asked for) is **not** part of first-time learning. Events saved by that version still count.
+
+## The first-word hint (bug fixed)
+The hint revealed "word 0 of the ayah" for every part (`visibleAt(cue 3, i)` counted from the ayah's first word), so any part that does not start the ayah showed **nothing**. Now (`src/lib/engine/hints.ts`): the pipeline is current part → its word range → the word to reveal → display; the cue patterns are counted from the start of the range being recalled; the hint in a joined recitation points at the first word of the part being added; in whole-ayah recall it is the ayah's first word. Hints are never stored, so changed boundaries cannot leave a stale or blank hint. Regression tests: `tests/hints.test.ts` (Ta-Ha 20:10, automatic and manual breaks) and `e2e/parts.spec.ts` (every part).

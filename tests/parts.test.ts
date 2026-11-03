@@ -96,13 +96,18 @@ describe('part progress: what a learner has actually shown, part by part', () =>
     expect(p.phrases[0]!.secured).toBe(true)
   })
 
-  it('a failed recall with no slip marked cannot say where, so every part it covered is open again', () => {
+  it('a failed recitation of A → B with no slip marked reopens only the newly added part: what was already learned is kept', () => {
     const t = NOW - 2 * H
     const p = partProgress(SPANS, [A('independent', t), B('independent', t + 1), AB('failed', t + 2)], NOW)
-    expect(p.reach).toBe(0)
-    expect(p.weak).toEqual([0, 1])
+    expect(p.weak).toEqual([1])
+    expect(p.phrases[0]!.secured).toBe(true)
+    expect(p.reach).toBe(1); expect(p.next).toBe(1)
   })
-
+  it('…but when the earlier parts were not yet secured, an unlocated failure cannot say where, so every part it covered is open', () => {
+    const t = NOW - 2 * H
+    const p = partProgress(SPANS, [AB('failed', t)], NOW)
+    expect(p.reach).toBe(0); expect(p.weak).toEqual([0, 1])
+  })
   it('a later accurate recall repairs a part; it does not need relearning from scratch', () => {
     const t = NOW - 2 * H
     const bad = [A('independent', t), B('independent', t + 1), AB('prompted', t + 2, { slipWord: 10 })]
@@ -142,6 +147,27 @@ describe('part progress: what a learner has actually shown, part by part', () =>
     expect(stepRungs(0).map((r) => r.label)).toEqual(['A'])
     expect(stepRungs(1).map((r) => r.label)).toEqual(['B', 'A → B'])
     expect(stepRungs(3).map((r) => r.label)).toEqual(['D', 'C → D', 'A → B → C → D'])
+  })
+})
+
+describe('guided practice is not durable memorisation', () => {
+  it('cumulative joins plus a hinted whole-ayah recall make the ayah "reviewing" with an early check, never "strong"', () => {
+    const t = NOW - 3 * H
+    const joins = [A('hesitant', t, { cueLevel: 3 }), AB('hesitant', t + 1, { cueLevel: 3 }), ABC('hesitant', t + 2, { cueLevel: 3 })]
+    const whole = review([2, 282, 282], 'hesitant', t + 3, { cueLevel: 3 })
+    const d = deriveState({ reviews: [whole], flows: [], parts: joins, declarations: [] })
+    const m = d.memory.get(ayahKey(2, 282))!
+    const st = ayahStatus(m, undefined, NOW)
+    expect(st.demonstrated).toBe(true)
+    expect(st.stage).toBe('reviewing')                         // not 'strong': that needs repeated independent recalls on later days
+    expect(m.independents).toBe(0)                             // a hinted recall is not an unaided one
+    expect(m.singleIndependents).toBe(0)
+    expect(joins.length).toBe(3)
+  })
+  it('the joins themselves never reach the memory model, however many there are', () => {
+    const many = Array.from({ length: 30 }, (_, i) => AB('independent', NOW - (40 - i) * H))
+    const d = deriveState({ reviews: [], flows: [], parts: many, declarations: [] })
+    expect(d.memory.size).toBe(0); expect(d.recallEventCount).toBe(0)
   })
 })
 

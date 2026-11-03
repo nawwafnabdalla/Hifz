@@ -5,6 +5,7 @@ import { Coach } from './Coach'
 import { useApp } from '@/app/store'
 import { wordsOfAyah } from '@/lib/quran/data'
 import type { Grade, PartEvent } from '@/lib/engine/types'
+import { hintWordFor } from '@/lib/engine/hints'
 
 const GRADES: { g: Grade; title: string; sub: string; cls: string }[] = [
   { g: 'independent', title: 'On my own', sub: 'Accurate, without help', cls: 'btn-primary' },
@@ -18,10 +19,15 @@ const GRADES: { g: Grade; title: string; sub: string; cls: string }[] = [
  * (optional) and the app practises exactly that spot. The result is saved as evidence for those words only: it never counts as having
  * memorised the ayah. The first word may be shown as a hint, which lowers the evidence and rules out "on my own".
  */
-export function SpanRecall({ surah, ayah, from, to, label, onDone }: {
+export function SpanRecall({ surah, ayah, from, to, label, hintFrom, hintName, onDone }: {
   surah: number; ayah: number; from: number; to: number; label: string
+  /** The word the first-word hint reveals (absolute index in the ayah): the first word of the part being added. Defaults to the first word of the range. */
+  hintFrom?: number
+  /** Name of the part that hint belongs to ("B"), shown on the button when it is not the start of the range. */
+  hintName?: string
   onDone: (e: PartEvent) => void
 }) {
+  const hintWord = hintWordFor(from, to, hintFrom)
   const logPart = useApp((s) => s.logPart)
   const [revealed, setRevealed] = useState(false)
   const [hint, setHint] = useState(false)
@@ -51,7 +57,7 @@ export function SpanRecall({ surah, ayah, from, to, label, onDone }: {
       </div>
       <div className="card px-4 py-5">
         <p className="arabic center" lang="ar" dir="rtl">
-          <AyahWords surah={surah} ayah={ayah} only={[from, to]} cue={revealed ? 0 : hint ? 3 : 4}
+          <AyahWords surah={surah} ayah={ayah} only={[from, to]} cue={revealed ? 0 : 4} revealWords={!revealed && hint ? [hintWord] : undefined}
             onWord={revealed ? (i) => setSlip(slip === i ? null : i) : undefined} marked={slip} />
         </p>
         {revealed && <Coach id="span-slip" className="mt-2 text-center text-xs text-muted" full="Slipped somewhere? Tap that word and I’ll practise that exact spot." short="Tap the word where you slipped." />}
@@ -59,7 +65,7 @@ export function SpanRecall({ surah, ayah, from, to, label, onDone }: {
       {!revealed ? (
         <div className="mt-4 space-y-2">
           <button className="btn btn-primary btn-lg w-full" onClick={() => setRevealed(true)} data-testid="span-reveal"><Icon name="eye" size={18} /> Show text</button>
-          <button className="btn btn-quiet w-full" onClick={() => setHint(true)} disabled={hint} data-testid="span-hint">{hint ? 'First word shown' : 'Hint: first word'}</button>
+          <button className="btn btn-quiet w-full" onClick={() => setHint(true)} disabled={hint} data-testid="span-hint">{hint ? 'First word shown' : hintWord > from && hintName ? `Hint: first word of ${hintName}` : 'Hint: first word'}</button>
           {hint && <p className="text-center text-xs text-muted">Hints count as weaker evidence, so “on my own” isn’t available.</p>}
         </div>
       ) : (

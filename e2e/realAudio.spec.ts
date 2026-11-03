@@ -160,7 +160,6 @@ test('real recording: a long ayah, heard part by part', async ({ page }) => {
     }
     await page.getByRole('button', { name: 'Skip to recall' }).click()
     await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click()
-    if (c >= 1 && c < phrases.length - 1) { await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click() }
     if (c < limit - 1) { await expect(page.getByTestId('stage-partdone')).toBeVisible(); await page.getByTestId('next-part').click() }
   }
   writeFileSync(join(OUT, 'meta.json'), JSON.stringify(meta, null, 1))

@@ -72,32 +72,38 @@ export function outcomeFor(e: PartEvent, p: Span): boolean | undefined {
 
 export function partProgress(phrases: Span[], events: PartEvent[], now: number): PartProgress {
   const evs = [...events].sort((a, b) => a.occurredAt - b.occurredAt)
-  const states: PhraseState[] = phrases.map((p, index) => {
-    let secured = false, attempted = false, weak = false, lastAt: number | null = null, joinedAt: number | null = null
-    let firstGood: number | null = null, held = false
-    for (const e of evs) {
+  const st = phrases.map((_, index) => ({ index, secured: false, attempted: false, weak: false, heldOverBreak: false, joinedAt: null as number | null, lastAt: null as number | null, firstGood: null as number | null }))
+  for (const e of evs) {
+    const covered = phrases.map((p, i) => ({ p, i })).filter(({ p }) => e.fromWord <= p.from && e.toWord >= p.to)
+    if (!covered.length) continue
+    // A recitation of the growing sequence that went wrong with no slip marked cannot say where. If everything before its last part was already secured,
+    // the newly added part is the likely culprit, so only that part is reopened: what was already learned is not thrown away.
+    let keep: Set<number> | null = null
+    if (!isGood(e) && e.cueLevel >= 3 && e.slipWord === undefined && covered.length >= 2) {
+      const prefix = covered.slice(0, -1)
+      if (prefix.every(({ i }) => st[i]!.secured)) keep = new Set(prefix.map(({ i }) => i))
+    }
+    for (const { p, i } of covered) {
+      if (keep?.has(i)) continue
       const o = outcomeFor(e, p)
       if (o === undefined) continue
-      attempted = true
-      lastAt = e.occurredAt
-      secured = o
-      weak = !o
+      const x = st[i]!
+      x.attempted = true; x.lastAt = e.occurredAt; x.secured = o; x.weak = !o
       if (o) {
-        if (firstGood === null) firstGood = e.occurredAt
-        else if (e.occurredAt - firstGood >= REFRESH_AFTER_MS) held = true
-        const spans = phrases.filter((q) => e.fromWord <= q.from && e.toWord >= q.to).length
-        if (spans >= 2) joinedAt = e.occurredAt
+        if (x.firstGood === null) x.firstGood = e.occurredAt
+        else if (e.occurredAt - x.firstGood >= REFRESH_AFTER_MS) x.heldOverBreak = true
+        if (covered.length >= 2) x.joinedAt = e.occurredAt
       }
     }
-    return { index, secured, attempted, weak, heldOverBreak: held, joinedAt, lastAt }
-  })
+  }
+  const states: PhraseState[] = st.map((x) => ({ index: x.index, secured: x.secured, attempted: x.attempted, weak: x.weak, heldOverBreak: x.heldOverBreak, joinedAt: x.joinedAt, lastAt: x.lastAt }))
   let reach = 0
   while (reach < states.length && states[reach]!.secured) reach++
   const lastAt = evs.length ? evs[evs.length - 1]!.occurredAt : null
   return {
     phraseCount: phrases.length, phrases: states, reach, next: reach < states.length ? reach : null, allSecured: reach === states.length,
     started: evs.length > 0, lastAt, refreshDue: reach > 0 && lastAt !== null && now - lastAt >= REFRESH_AFTER_MS,
-    weak: states.filter((s) => s.weak).map((s) => s.index),
+    weak: states.filter((x) => x.weak).map((x) => x.index),
   }
 }
 
