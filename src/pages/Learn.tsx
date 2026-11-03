@@ -132,7 +132,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const spans = useMemo(() => phrases.map((p) => ({ from: p.from, to: p.to })), [phrases])
   // An ayah already recalled successfully is not learned from scratch: it keeps the ordinary ladder (and its slip repair).
   const alreadyRecalled = derived.memory.get(ayahKey(range.surah, ayah))?.firstDemonstratedAt != null
-  const partsAyah = !methodA && !alreadyRecalled && isPartsLayout(spans)
+  const partsAyah = !methodA && !alreadyRecalled && isPartsLayout(spans, !!marker && marker.boundaries.length > 0)
   const partEvents = derived.parts.get(ayahKey(range.surah, ayah))
   const prog = useMemo(() => (partsAyah ? partProgress(spans, partEvents ?? [], Date.now()) : null), [partsAyah, spans, partEvents])
   const partsActive = partsAyah && part !== null

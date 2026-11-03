@@ -19,7 +19,10 @@ export const PARTS_MIN_WORDS = 20
 export const REFRESH_AFTER_MS = 6 * 3600 * 1000
 
 export interface Span { from: number; to: number }
-export const isPartsLayout = (phrases: Span[]) => phrases.length >= PARTS_MIN_PHRASES && phrases[phrases.length - 1]!.to + 1 > PARTS_MIN_WORDS
+/** When the LEARNER has set the breaks themselves they have asked for the ayah to be split, so it need only be longer than an ayah the app always keeps whole (12 words). */
+export const PARTS_MIN_WORDS_OWN_BREAKS = 12
+export const isPartsLayout = (phrases: Span[], ownBreaks = false) =>
+  phrases.length >= PARTS_MIN_PHRASES && phrases[phrases.length - 1]!.to + 1 > (ownBreaks ? PARTS_MIN_WORDS_OWN_BREAKS : PARTS_MIN_WORDS)
 
 /** An accurate recall that did not lean on more than the first word. */
 export const isGood = (e: Pick<PartEvent, 'grade' | 'cueLevel'>) => (e.grade === 'independent' || e.grade === 'hesitant') && e.cueLevel >= 3

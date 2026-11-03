@@ -155,6 +155,13 @@ describe('which ayahs are learned part by part', () => {
     expect(isPartsLayout([{ from: 0, to: 11 }, { from: 12, to: 23 }])).toBe(false)   // two phrases
     expect(isPartsLayout([{ from: 0, to: 6 }, { from: 7, to: 13 }, { from: 14, to: 20 }])).toBe(true)
   })
+  it('breaks the learner set themselves are enough for an ayah just over the always-whole length (13+ words, 3+ parts); the automatic layout still needs 21+ words', () => {
+    const own = [{ from: 0, to: 2 }, { from: 3, to: 5 }, { from: 6, to: 8 }, { from: 9, to: 12 }, { from: 13, to: 17 }]   // Ta-Ha 10: 18 words in five parts
+    expect(isPartsLayout(own)).toBe(false)
+    expect(isPartsLayout(own, true)).toBe(true)
+    expect(isPartsLayout([{ from: 0, to: 3 }, { from: 4, to: 7 }, { from: 8, to: 11 }], true)).toBe(false)          // 12 words: always whole
+    expect(isPartsLayout([{ from: 0, to: 8 }, { from: 9, to: 17 }], true)).toBe(false)                              // two parts: ordinary ladder
+  })
   it('Ayat al-Kursi and the longest ayah of al-Baqarah are split into several parts, all words covered exactly once', () => {
     for (const [s, a] of [[2, 255], [2, 282]] as const) {
       const sp = layoutOf(s, a)

@@ -254,4 +254,22 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await page.getByTestId(`know-to-${k - 1}`).click()
     await expect(page.getByTestId('stage-recall')).toHaveAttribute('data-recall-kind', 'whole')
   })
+
+  test('an ayah the app leaves whole (Ta-Ha 10, 18 words, no printed stop signs) is learned part by part once the learner sets their own breaks', async ({ page }) => {
+    await page.goto('/learn/20/10/10')
+    await expect(page.getByTestId('learn-flow')).toBeVisible()
+    await expect(page.getByTestId('part-dots')).toHaveCount(0)                       // as shipped: one piece, the ordinary flow
+    await seed(page, 'markers', [{ id: '20:10', surah: 20, ayah: 10, boundaries: [2, 5, 8, 12], source: 'user', updatedAt: Date.now() }])
+    await page.goto('/learn/20/10/10')
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    expect((await dots(page)).length).toBe(5)
+    await learnPart(page)
+    await page.getByTestId('finish-today').click()
+    const parts = await idbRows(page, 'parts')
+    expect(parts).toHaveLength(1)
+    expect(parts[0]).toMatchObject({ surah: 20, ayah: 10, fromWord: 0, toWord: 2 })
+    expect(await idbRows(page, 'reviews')).toHaveLength(0)
+    await page.goto('/learn/20/10/10')
+    await expect(page.getByTestId('part-caption')).toContainText('Part B')           // saved, and it continues
+  })
 })

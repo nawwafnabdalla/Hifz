@@ -25,7 +25,7 @@ export function computePlan(snap: Snapshot, derived: Derived, now: number, setti
       const w = wordsOfAyah(surah, ayah)
       const m = snap.markers.find((x) => x.id === `${surah}:${ayah}`)
       const spans = buildPhrases(w, m ? m.boundaries : suggestBoundaries(w).boundaries).map((p) => ({ from: p.from, to: p.to }))
-      return isPartsLayout(spans) ? spans : null
+      return isPartsLayout(spans, !!m && m.boundaries.length > 0) ? spans : null
     },
   })
 }

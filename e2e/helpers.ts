@@ -52,7 +52,7 @@ export async function completeLearning(page: Page, opts: { grade?: 'independent'
 
 
 /** Insert rows straight into the app's IndexedDB (as unsynced local data), then reload so the app rebuilds its state. */
-export async function seed(page: Page, table: 'reviews' | 'flows' | 'declarations' | 'parts', rows: Record<string, unknown>[]) {
+export async function seed(page: Page, table: 'reviews' | 'flows' | 'declarations' | 'parts' | 'markers', rows: Record<string, unknown>[]) {
   await page.evaluate(async ({ table, rows }) => {
     const db: IDBDatabase = await new Promise((res, rej) => { const r = indexedDB.open('hifz-os'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
     await new Promise<void>((res, rej) => { const tx = db.transaction(table, 'readwrite'); const st = tx.objectStore(table); rows.forEach((x) => st.put({ ...x, synced: 0 })); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error) })
