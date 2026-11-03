@@ -13,3 +13,4 @@ test-results
 
 # corpus-derived (GPL) developer-only outputs: never committed, never bundled
 data/gpl/
+scripts/meaning/.cache/

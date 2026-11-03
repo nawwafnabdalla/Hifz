@@ -1,0 +1,1489 @@
+{
+ "reference": {
+  "ayahs": 11,
+  "majorBoundaries": 45
+ },
+ "heldOutReference": {
+  "ayahs": 7,
+  "majorBoundaries": 21
+ },
+ "byMethod": {
+  "printed stop signs only": {
+   "precision": 1,
+   "recall": 0.33,
+   "f1": 0.5,
+   "tp": 15,
+   "fp": 0,
+   "fn": 30,
+   "meanPieceWords": 10.8,
+   "piecesOver12Words": 11,
+   "per": {
+    "20:10": {
+     "got": [],
+     "missed": [
+      2,
+      5,
+      8,
+      12
+     ],
+     "extra": []
+    },
+    "20:77": {
+     "got": [],
+     "missed": [
+      3,
+      6,
+      12
+     ],
+     "extra": []
+    },
+    "20:94": {
+     "got": [],
+     "missed": [
+      1,
+      6,
+      10,
+      14
+     ],
+     "extra": []
+    },
+    "20:63": {
+     "got": [],
+     "missed": [
+      3,
+      9
+     ],
+     "extra": []
+    },
+    "18:60": {
+     "got": [],
+     "missed": [
+      3,
+      9
+     ],
+     "extra": []
+    },
+    "20:40": {
+     "got": [
+      16,
+      23
+     ],
+     "missed": [
+      3,
+      8,
+      11,
+      28
+     ],
+     "extra": []
+    },
+    "20:71": {
+     "got": [],
+     "missed": [
+      6,
+      11,
+      16,
+      20
+     ],
+     "extra": []
+    },
+    "20:86": {
+     "got": [
+      5,
+      12
+     ],
+     "missed": [
+      15,
+      23
+     ],
+     "extra": []
+    },
+    "2:20": {
+     "got": [
+      12,
+      18
+     ],
+     "missed": [
+      3,
+      8
+     ],
+     "extra": []
+    },
+    "2:26": {
+     "got": [
+      10,
+      27,
+      33
+     ],
+     "missed": [
+      18
+     ],
+     "extra": []
+    },
+    "2:255": {
+     "got": [
+      6,
+      11,
+      18,
+      25,
+      39,
+      46
+     ],
+     "missed": [
+      31,
+      43
+     ],
+     "extra": []
+    }
+   }
+  },
+  "Arabic grammar + stop signs (the current splitter)": {
+   "precision": 0.96,
+   "recall": 0.53,
+   "f1": 0.69,
+   "tp": 24,
+   "fp": 1,
+   "fn": 21,
+   "meanPieceWords": 7.8,
+   "piecesOver12Words": 2,
+   "per": {
+    "20:10": {
+     "got": [
+      10
+     ],
+     "missed": [
+      2,
+      5,
+      8,
+      12
+     ],
+     "extra": [
+      10
+     ]
+    },
+    "20:77": {
+     "got": [
+      6
+     ],
+     "missed": [
+      3,
+      12
+     ],
+     "extra": []
+    },
+    "20:94": {
+     "got": [
+      10
+     ],
+     "missed": [
+      1,
+      6,
+      14
+     ],
+     "extra": []
+    },
+    "20:63": {
+     "got": [],
+     "missed": [
+      3,
+      9
+     ],
+     "extra": []
+    },
+    "18:60": {
+     "got": [],
+     "missed": [
+      3,
+      9
+     ],
+     "extra": []
+    },
+    "20:40": {
+     "got": [
+      8,
+      16,
+      23,
+      28
+     ],
+     "missed": [
+      3,
+      11
+     ],
+     "extra": []
+    },
+    "20:71": {
+     "got": [
+      6,
+      16
+     ],
+     "missed": [
+      11,
+      20
+     ],
+     "extra": []
+    },
+    "20:86": {
+     "got": [
+      5,
+      15
+     ],
+     "missed": [
+      12,
+      23
+     ],
+     "extra": []
+    },
+    "2:20": {
+     "got": [
+      8,
+      12,
+      18
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:26": {
+     "got": [
+      10,
+      18,
+      27,
+      33
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "2:255": {
+     "got": [
+      6,
+      11,
+      18,
+      25,
+      31,
+      39,
+      43
+     ],
+     "missed": [
+      46
+     ],
+     "extra": []
+    }
+   }
+  },
+  "same, but smaller pieces (no translation)": {
+   "precision": 0.88,
+   "recall": 0.62,
+   "f1": 0.73,
+   "tp": 28,
+   "fp": 4,
+   "fn": 17,
+   "meanPieceWords": 6.4,
+   "piecesOver12Words": 0,
+   "per": {
+    "20:10": {
+     "got": [
+      10
+     ],
+     "missed": [
+      2,
+      5,
+      8,
+      12
+     ],
+     "extra": [
+      10
+     ]
+    },
+    "20:77": {
+     "got": [
+      6,
+      12
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "20:94": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [
+      1,
+      6,
+      14
+     ],
+     "extra": []
+    },
+    "20:63": {
+     "got": [
+      9
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "18:60": {
+     "got": [
+      3
+     ],
+     "missed": [
+      9
+     ],
+     "extra": []
+    },
+    "20:40": {
+     "got": [
+      3,
+      8,
+      16,
+      23,
+      28
+     ],
+     "missed": [
+      11
+     ],
+     "extra": []
+    },
+    "20:71": {
+     "got": [
+      6,
+      13,
+      20
+     ],
+     "missed": [
+      11,
+      16
+     ],
+     "extra": [
+      13
+     ]
+    },
+    "20:86": {
+     "got": [
+      5,
+      9,
+      15,
+      20
+     ],
+     "missed": [
+      12,
+      23
+     ],
+     "extra": [
+      9,
+      20
+     ]
+    },
+    "2:20": {
+     "got": [
+      8,
+      12,
+      18
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:26": {
+     "got": [
+      10,
+      18,
+      27,
+      33
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "2:255": {
+     "got": [
+      6,
+      11,
+      18,
+      25,
+      31,
+      39,
+      43
+     ],
+     "missed": [
+      46
+     ],
+     "extra": []
+    }
+   }
+  },
+  "smaller pieces + Arabic clause-opener rules (no translation)": {
+   "precision": 0.91,
+   "recall": 0.71,
+   "f1": 0.8,
+   "tp": 32,
+   "fp": 3,
+   "fn": 13,
+   "meanPieceWords": 6,
+   "piecesOver12Words": 0,
+   "per": {
+    "20:10": {
+     "got": [
+      5,
+      12
+     ],
+     "missed": [
+      2,
+      8
+     ],
+     "extra": []
+    },
+    "20:77": {
+     "got": [
+      6,
+      12
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "20:94": {
+     "got": [
+      6,
+      10
+     ],
+     "missed": [
+      1,
+      14
+     ],
+     "extra": []
+    },
+    "20:63": {
+     "got": [
+      9
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "18:60": {
+     "got": [
+      3
+     ],
+     "missed": [
+      9
+     ],
+     "extra": []
+    },
+    "20:40": {
+     "got": [
+      3,
+      8,
+      16,
+      23,
+      28
+     ],
+     "missed": [
+      11
+     ],
+     "extra": []
+    },
+    "20:71": {
+     "got": [
+      6,
+      11,
+      20
+     ],
+     "missed": [
+      16
+     ],
+     "extra": []
+    },
+    "20:86": {
+     "got": [
+      5,
+      9,
+      15,
+      20
+     ],
+     "missed": [
+      12,
+      23
+     ],
+     "extra": [
+      9,
+      20
+     ]
+    },
+    "2:20": {
+     "got": [
+      3,
+      8,
+      12,
+      18
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "2:26": {
+     "got": [
+      10,
+      14,
+      21,
+      27,
+      33
+     ],
+     "missed": [
+      18
+     ],
+     "extra": [
+      21
+     ]
+    },
+    "2:255": {
+     "got": [
+      6,
+      11,
+      18,
+      25,
+      31,
+      39,
+      43
+     ],
+     "missed": [
+      46
+     ],
+     "extra": []
+    }
+   }
+  },
+  "smaller pieces + clause openers + 3-word clauses allowed (no translation)": {
+   "precision": 0.92,
+   "recall": 0.76,
+   "f1": 0.83,
+   "tp": 34,
+   "fp": 3,
+   "fn": 11,
+   "meanPieceWords": 5.7,
+   "piecesOver12Words": 0,
+   "per": {
+    "20:10": {
+     "got": [
+      5,
+      12
+     ],
+     "missed": [
+      2,
+      8
+     ],
+     "extra": []
+    },
+    "20:77": {
+     "got": [
+      6,
+      12
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "20:94": {
+     "got": [
+      6,
+      10
+     ],
+     "missed": [
+      1,
+      14
+     ],
+     "extra": []
+    },
+    "20:63": {
+     "got": [
+      9
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "18:60": {
+     "got": [
+      3,
+      9
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "20:40": {
+     "got": [
+      3,
+      8,
+      16,
+      23,
+      28
+     ],
+     "missed": [
+      11
+     ],
+     "extra": []
+    },
+    "20:71": {
+     "got": [
+      6,
+      11,
+      20
+     ],
+     "missed": [
+      16
+     ],
+     "extra": []
+    },
+    "20:86": {
+     "got": [
+      5,
+      9,
+      15,
+      20
+     ],
+     "missed": [
+      12,
+      23
+     ],
+     "extra": [
+      9,
+      20
+     ]
+    },
+    "2:20": {
+     "got": [
+      3,
+      8,
+      12,
+      18
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "2:26": {
+     "got": [
+      10,
+      14,
+      21,
+      27,
+      33
+     ],
+     "missed": [
+      18
+     ],
+     "extra": [
+      21
+     ]
+    },
+    "2:255": {
+     "got": [
+      6,
+      11,
+      18,
+      25,
+      31,
+      39,
+      43,
+      46
+     ],
+     "missed": [],
+     "extra": []
+    }
+   }
+  },
+  "Arabic + clause openers + translation clauses (new)": {
+   "precision": 0.93,
+   "recall": 0.84,
+   "f1": 0.88,
+   "tp": 38,
+   "fp": 3,
+   "fn": 7,
+   "meanPieceWords": 5.3,
+   "piecesOver12Words": 0,
+   "per": {
+    "20:10": {
+     "got": [
+      5,
+      8,
+      12
+     ],
+     "missed": [
+      2
+     ],
+     "extra": []
+    },
+    "20:77": {
+     "got": [
+      6,
+      12
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "20:94": {
+     "got": [
+      6,
+      10,
+      14
+     ],
+     "missed": [
+      1
+     ],
+     "extra": []
+    },
+    "20:63": {
+     "got": [
+      9
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "18:60": {
+     "got": [
+      3,
+      9
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "20:40": {
+     "got": [
+      3,
+      8,
+      16,
+      23,
+      28
+     ],
+     "missed": [
+      11
+     ],
+     "extra": []
+    },
+    "20:71": {
+     "got": [
+      6,
+      11,
+      16,
+      20
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "20:86": {
+     "got": [
+      5,
+      9,
+      15,
+      20
+     ],
+     "missed": [
+      12,
+      23
+     ],
+     "extra": [
+      9,
+      20
+     ]
+    },
+    "2:20": {
+     "got": [
+      3,
+      8,
+      12,
+      18
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "2:26": {
+     "got": [
+      10,
+      14,
+      18,
+      21,
+      27,
+      33
+     ],
+     "missed": [],
+     "extra": [
+      21
+     ]
+    },
+    "2:255": {
+     "got": [
+      6,
+      11,
+      18,
+      25,
+      31,
+      39,
+      43,
+      46
+     ],
+     "missed": [],
+     "extra": []
+    }
+   }
+  }
+ },
+ "heldOutByMethod": {
+  "printed stop signs only": {
+   "precision": 1,
+   "recall": 0.24,
+   "f1": 0.38,
+   "tp": 5,
+   "fp": 0,
+   "fn": 16,
+   "meanPieceWords": 11.1,
+   "piecesOver12Words": 5,
+   "per": {
+    "2:261": {
+     "got": [
+      16,
+      20
+     ],
+     "missed": [
+      6,
+      11
+     ],
+     "extra": []
+    },
+    "12:4": {
+     "got": [],
+     "missed": [
+      4,
+      11
+     ],
+     "extra": []
+    },
+    "18:10": {
+     "got": [],
+     "missed": [
+      4,
+      10
+     ],
+     "extra": []
+    },
+    "19:4": {
+     "got": [],
+     "missed": [
+      5,
+      8
+     ],
+     "extra": []
+    },
+    "28:7": {
+     "got": [],
+     "missed": [
+      3,
+      5,
+      11,
+      15
+     ],
+     "extra": []
+    },
+    "2:285": {
+     "got": [
+      7,
+      19
+     ],
+     "missed": [
+      13,
+      22
+     ],
+     "extra": []
+    },
+    "3:8": {
+     "got": [
+      11
+     ],
+     "missed": [
+      3,
+      6
+     ],
+     "extra": []
+    }
+   }
+  },
+  "Arabic grammar + stop signs (the current splitter)": {
+   "precision": 0.75,
+   "recall": 0.43,
+   "f1": 0.55,
+   "tp": 9,
+   "fp": 3,
+   "fn": 12,
+   "meanPieceWords": 7,
+   "piecesOver12Words": 0,
+   "per": {
+    "2:261": {
+     "got": [
+      8,
+      16
+     ],
+     "missed": [
+      6,
+      11,
+      20
+     ],
+     "extra": [
+      8
+     ]
+    },
+    "12:4": {
+     "got": [
+      10
+     ],
+     "missed": [
+      4,
+      11
+     ],
+     "extra": [
+      10
+     ]
+    },
+    "18:10": {
+     "got": [
+      10
+     ],
+     "missed": [
+      4
+     ],
+     "extra": []
+    },
+    "19:4": {
+     "got": [
+      8
+     ],
+     "missed": [
+      5
+     ],
+     "extra": []
+    },
+    "28:7": {
+     "got": [
+      5,
+      11,
+      15
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:285": {
+     "got": [
+      7,
+      11,
+      19
+     ],
+     "missed": [
+      13,
+      22
+     ],
+     "extra": [
+      11
+     ]
+    },
+    "3:8": {
+     "got": [
+      6
+     ],
+     "missed": [
+      3,
+      11
+     ],
+     "extra": []
+    }
+   }
+  },
+  "same, but smaller pieces (no translation)": {
+   "precision": 0.75,
+   "recall": 0.43,
+   "f1": 0.55,
+   "tp": 9,
+   "fp": 3,
+   "fn": 12,
+   "meanPieceWords": 7,
+   "piecesOver12Words": 0,
+   "per": {
+    "2:261": {
+     "got": [
+      8,
+      16
+     ],
+     "missed": [
+      6,
+      11,
+      20
+     ],
+     "extra": [
+      8
+     ]
+    },
+    "12:4": {
+     "got": [
+      9
+     ],
+     "missed": [
+      4,
+      11
+     ],
+     "extra": [
+      9
+     ]
+    },
+    "18:10": {
+     "got": [
+      10
+     ],
+     "missed": [
+      4
+     ],
+     "extra": []
+    },
+    "19:4": {
+     "got": [
+      8
+     ],
+     "missed": [
+      5
+     ],
+     "extra": []
+    },
+    "28:7": {
+     "got": [
+      5,
+      11,
+      15
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:285": {
+     "got": [
+      7,
+      11,
+      19
+     ],
+     "missed": [
+      13,
+      22
+     ],
+     "extra": [
+      11
+     ]
+    },
+    "3:8": {
+     "got": [
+      6
+     ],
+     "missed": [
+      3,
+      11
+     ],
+     "extra": []
+    }
+   }
+  },
+  "smaller pieces + Arabic clause-opener rules (no translation)": {
+   "precision": 0.79,
+   "recall": 0.52,
+   "f1": 0.63,
+   "tp": 11,
+   "fp": 3,
+   "fn": 10,
+   "meanPieceWords": 6.3,
+   "piecesOver12Words": 0,
+   "per": {
+    "2:261": {
+     "got": [
+      8,
+      16
+     ],
+     "missed": [
+      6,
+      11,
+      20
+     ],
+     "extra": [
+      8
+     ]
+    },
+    "12:4": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [
+      11
+     ],
+     "extra": [
+      10
+     ]
+    },
+    "18:10": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "19:4": {
+     "got": [
+      8
+     ],
+     "missed": [
+      5
+     ],
+     "extra": []
+    },
+    "28:7": {
+     "got": [
+      5,
+      11,
+      15
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:285": {
+     "got": [
+      7,
+      11,
+      19
+     ],
+     "missed": [
+      13,
+      22
+     ],
+     "extra": [
+      11
+     ]
+    },
+    "3:8": {
+     "got": [
+      6
+     ],
+     "missed": [
+      3,
+      11
+     ],
+     "extra": []
+    }
+   }
+  },
+  "smaller pieces + clause openers + 3-word clauses allowed (no translation)": {
+   "precision": 0.81,
+   "recall": 0.62,
+   "f1": 0.7,
+   "tp": 13,
+   "fp": 3,
+   "fn": 8,
+   "meanPieceWords": 5.8,
+   "piecesOver12Words": 0,
+   "per": {
+    "2:261": {
+     "got": [
+      8,
+      16,
+      20
+     ],
+     "missed": [
+      6,
+      11
+     ],
+     "extra": [
+      8
+     ]
+    },
+    "12:4": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [
+      11
+     ],
+     "extra": [
+      10
+     ]
+    },
+    "18:10": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "19:4": {
+     "got": [
+      8
+     ],
+     "missed": [
+      5
+     ],
+     "extra": []
+    },
+    "28:7": {
+     "got": [
+      5,
+      11,
+      15
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:285": {
+     "got": [
+      7,
+      11,
+      19
+     ],
+     "missed": [
+      13,
+      22
+     ],
+     "extra": [
+      11
+     ]
+    },
+    "3:8": {
+     "got": [
+      6,
+      11
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    }
+   }
+  },
+  "Arabic + clause openers + translation clauses (new)": {
+   "precision": 0.88,
+   "recall": 0.71,
+   "f1": 0.79,
+   "tp": 15,
+   "fp": 2,
+   "fn": 6,
+   "meanPieceWords": 5.5,
+   "piecesOver12Words": 0,
+   "per": {
+    "2:261": {
+     "got": [
+      8,
+      16,
+      20
+     ],
+     "missed": [
+      6,
+      11
+     ],
+     "extra": [
+      8
+     ]
+    },
+    "12:4": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [
+      11
+     ],
+     "extra": [
+      10
+     ]
+    },
+    "18:10": {
+     "got": [
+      4,
+      10
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "19:4": {
+     "got": [
+      8
+     ],
+     "missed": [
+      5
+     ],
+     "extra": []
+    },
+    "28:7": {
+     "got": [
+      5,
+      11,
+      15
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    },
+    "2:285": {
+     "got": [
+      7,
+      13,
+      19,
+      22
+     ],
+     "missed": [],
+     "extra": []
+    },
+    "3:8": {
+     "got": [
+      6,
+      11
+     ],
+     "missed": [
+      3
+     ],
+     "extra": []
+    }
+   }
+  }
+ },
+ "pauseAgreement": {
+  "dossary": {
+   "printed stop signs only": {
+    "breaks": 1153,
+    "onPause100ms": 0.617,
+    "onPause40ms": 0.851
+   },
+   "Arabic grammar + stop signs (the current splitter)": {
+    "breaks": 2186,
+    "onPause100ms": 0.445,
+    "onPause40ms": 0.656
+   },
+   "same, but smaller pieces (no translation)": {
+    "breaks": 2399,
+    "onPause100ms": 0.411,
+    "onPause40ms": 0.62
+   },
+   "smaller pieces + Arabic clause-opener rules (no translation)": {
+    "breaks": 2516,
+    "onPause100ms": 0.418,
+    "onPause40ms": 0.628
+   },
+   "smaller pieces + clause openers + 3-word clauses allowed (no translation)": {
+    "breaks": 2674,
+    "onPause100ms": 0.42,
+    "onPause40ms": 0.631
+   },
+   "Arabic + clause openers + translation clauses (new)": {
+    "breaks": 2950,
+    "onPause100ms": 0.411,
+    "onPause40ms": 0.623
+   }
+  },
+  "maher": {
+   "printed stop signs only": {
+    "breaks": 812,
+    "onPause100ms": 0.507,
+    "onPause40ms": 0.757
+   },
+   "Arabic grammar + stop signs (the current splitter)": {
+    "breaks": 1555,
+    "onPause100ms": 0.376,
+    "onPause40ms": 0.577
+   },
+   "same, but smaller pieces (no translation)": {
+    "breaks": 1699,
+    "onPause100ms": 0.344,
+    "onPause40ms": 0.539
+   },
+   "smaller pieces + Arabic clause-opener rules (no translation)": {
+    "breaks": 1778,
+    "onPause100ms": 0.35,
+    "onPause40ms": 0.544
+   },
+   "smaller pieces + clause openers + 3-word clauses allowed (no translation)": {
+    "breaks": 1884,
+    "onPause100ms": 0.345,
+    "onPause40ms": 0.537
+   },
+   "Arabic + clause openers + translation clauses (new)": {
+    "breaks": 2114,
+    "onPause100ms": 0.336,
+    "onPause40ms": 0.518
+   }
+  }
+ },
+ "coverage": {
+  "printed stop signs only": {
+   "ayahsOver12Words": 2451,
+   "split": 1454,
+   "threeOrMoreParts": 491,
+   "medianPiece": 10,
+   "p90Piece": 20,
+   "piecesOver14Words": 1253,
+   "piecesUnder3Words": 70
+  },
+  "Arabic grammar + stop signs (the current splitter)": {
+   "ayahsOver12Words": 2451,
+   "split": 2284,
+   "threeOrMoreParts": 1466,
+   "medianPiece": 6,
+   "p90Piece": 10,
+   "piecesOver14Words": 43,
+   "piecesUnder3Words": 0
+  },
+  "same, but smaller pieces (no translation)": {
+   "ayahsOver12Words": 2451,
+   "split": 2375,
+   "threeOrMoreParts": 1587,
+   "medianPiece": 6,
+   "p90Piece": 9,
+   "piecesOver14Words": 26,
+   "piecesUnder3Words": 0
+  },
+  "smaller pieces + Arabic clause-opener rules (no translation)": {
+   "ayahsOver12Words": 2451,
+   "split": 2400,
+   "threeOrMoreParts": 1664,
+   "medianPiece": 6,
+   "p90Piece": 9,
+   "piecesOver14Words": 15,
+   "piecesUnder3Words": 0
+  },
+  "smaller pieces + clause openers + 3-word clauses allowed (no translation)": {
+   "ayahsOver12Words": 2451,
+   "split": 2400,
+   "threeOrMoreParts": 1766,
+   "medianPiece": 6,
+   "p90Piece": 9,
+   "piecesOver14Words": 15,
+   "piecesUnder3Words": 0
+  },
+  "Arabic + clause openers + translation clauses (new)": {
+   "ayahsOver12Words": 2451,
+   "split": 2414,
+   "threeOrMoreParts": 1905,
+   "medianPiece": 5,
+   "p90Piece": 9,
+   "piecesOver14Words": 13,
+   "piecesUnder3Words": 0
+  }
+ }
+}

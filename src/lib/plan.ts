@@ -5,7 +5,7 @@ import type { Derived } from '@/lib/engine/derive'
 import { DAY, type Settings } from '@/lib/engine/types'
 import type { Snapshot } from '@/lib/store/repo'
 import { corpus, surahInfo, wordsOfAyah } from '@/lib/quran/data'
-import { defaultBoundaries } from '@/lib/engine/breakdown'
+import { meaningBreakdown } from '@/lib/engine/breakdown'
 import { buildPhrases } from '@/lib/engine/phrases'
 import { isPartsLayout } from '@/lib/engine/parts'
 
@@ -26,8 +26,8 @@ export function computePlan(snap: Snapshot, derived: Derived, now: number, setti
     partsLayout: (surah, ayah) => {
       const w = wordsOfAyah(surah, ayah)
       const m = snap.markers.find((x) => x.id === `${surah}:${ayah}`)
-      const spans = buildPhrases(w, m ? m.boundaries : defaultBoundaries(surah, ayah, w)).map((p) => ({ from: p.from, to: p.to }))
-      return isPartsLayout(spans) ? spans : null
+      const spans = buildPhrases(w, m ? m.boundaries : meaningBreakdown(surah, ayah, w).boundaries).map((p) => ({ from: p.from, to: p.to }))
+      return isPartsLayout(spans, !!m && m.boundaries.length > 0) ? spans : null
     },
   })
 }

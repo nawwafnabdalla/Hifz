@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "what": "A small reference set of practice-phrase boundaries, written by the assistant from its own reading of the Arabic and the English. It measures whether a method finds boundaries that follow the meaning. It is NOT the work of a qualified Qur'an reader, it is not a ruling on waqf or ibtida', and it is small (11 ayahs): treat all scores as indicative. Boundary i = a break after word i (0-based). 'major' boundaries are clear meaning breaks; 'acceptable' ones are also reasonable but not required.",
+  "ayahs": {
+    "20:10": { "major": [2, 5, 8, 12], "acceptable": [4], "units": "When he saw a fire | said to his family 'Stay here' | Indeed I perceived a fire | Perhaps I can bring you a torch from it | or find guidance at the fire (the five units given by the owner)" },
+    "20:77": { "major": [3, 6, 12], "acceptable": [9, 15] },
+    "20:94": { "major": [1, 6, 10, 14], "acceptable": [4] },
+    "20:63": { "major": [3, 9], "acceptable": [] },
+    "18:60": { "major": [3, 9], "acceptable": [] },
+    "20:40": { "major": [3, 8, 11, 16, 23, 28], "acceptable": [18, 21] },
+    "20:71": { "major": [6, 11, 16, 20], "acceptable": [0, 9] },
+    "20:86": { "major": [5, 12, 15, 23], "acceptable": [7, 19] },
+    "2:20":  { "major": [3, 8, 12, 18], "acceptable": [15] },
+    "2:26":  { "major": [10, 18, 27, 33], "acceptable": [3, 14, 22, 30] },
+    "2:255": { "major": [6, 11, 18, 25, 31, 39, 43, 46], "acceptable": [14, 28] }
+  }
+}

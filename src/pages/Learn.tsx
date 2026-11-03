@@ -8,7 +8,8 @@ import { PhraseEditor } from '@/components/PhraseEditor'
 import { HearThisPart, PhraseChips } from '@/components/PhraseAudio'
 import { usePhraseTiming } from '@/lib/audio/usePhraseTiming'
 import { reciterPauses } from '@/lib/audio/timings'
-import { defaultBreakdown } from '@/lib/engine/breakdown'
+import { meaningBreakdown } from '@/lib/engine/breakdown'
+import { phraseMeanings } from '@/lib/engine/meaning'
 import { RungPractice } from '@/components/RungPractice'
 import { RecallCard } from '@/components/RecallCard'
 import { SpanRecall } from '@/components/SpanRecall'
@@ -129,7 +130,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const marker = snap.markers.find((m) => m.id === `${range.surah}:${ayah}`)
   // Your own breaks win. Otherwise: stop signs, plus practice breaks inside any stretch too long to learn in one piece, preferring places
   // where the reciter really pauses when timings are available. These are for practice only, never rulings on where to stop.
-  const auto = useMemo(() => defaultBreakdown(range.surah, ayah, words, pt.timing ? reciterPauses(pt.timing) : []), [range.surah, ayah, words, pt.timing])
+  const auto = useMemo(() => meaningBreakdown(range.surah, ayah, words, pt.timing ? reciterPauses(pt.timing) : []), [range.surah, ayah, words, pt.timing])
   const boundaries = marker ? marker.boundaries : auto.boundaries
   const phrases = useMemo(() => buildPhrases(words, boundaries), [words, boundaries])
   const methodA = arm === 'A'
@@ -138,9 +139,12 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const spans = useMemo(() => phrases.map((p) => ({ from: p.from, to: p.to })), [phrases])
   // An ayah already recalled successfully is not learned from scratch: it keeps the ordinary ladder (and its slip repair).
   const alreadyRecalled = derived.memory.get(ayahKey(range.surah, ayah))?.firstDemonstratedAt != null
-  const partsAyah = !methodA && !alreadyRecalled && isPartsLayout(spans)
+  const partsAyah = !methodA && !alreadyRecalled && isPartsLayout(spans, !!marker && marker.boundaries.length > 0)
   const partEvents = derived.parts.get(ayahKey(range.surah, ayah))
   const prog = useMemo(() => (partsAyah ? partProgress(spans, partEvents ?? [], Date.now()) : null), [partsAyah, spans, partEvents])
+  // The meaning of each phrase, verbatim from the translation the learner reads (when it can be matched with confidence). One setting (Show translation) controls it.
+  const patchSettings = useApp((s) => s.patchSettings)
+  const meanings = useMemo(() => (snap.settings.translation && tr?.[ayah - 1] ? phraseMeanings(range.surah, ayah, tr[ayah - 1]!, spans) : []), [snap.settings.translation, tr, range.surah, ayah, spans])
   const partsActive = partsAyah && part !== null
   const P = part ?? 0
   const stepR = useMemo(() => (partsActive ? stepRungs(P) : null), [partsActive, P])
@@ -228,6 +232,9 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   if (!armReady || pt.status === 'loading') return <div className="grid min-h-[60dvh] place-items-center text-muted">Preparing…</div>
 
   // One quiet way to learn an automatically phrased ayah whole (and back). The phrases themselves are never something the learner has to set.
+  // A medium ayah (13-20 words) with three or more meaningful pieces keeps the ordinary ladder, but the learner can choose to learn it part by part with one tap.
+  const offerParts = !methodA && !alreadyRecalled && !marker && !partsAyah && auto.boundaries.length >= 2 && words.length > 12 && isPartsLayout(buildPhrases(words, auto.boundaries).map((p) => ({ from: p.from, to: p.to })), true)
+  const byPartsLink = offerParts ? <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-by-parts">Learn it part by part</button></div> : null
   const wholeToggle = !methodA && auto.boundaries.length > 0 ? (
     boundaries.length > 0
       ? <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
@@ -254,6 +261,11 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
               <>
                 <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} only={[0, phrases[P]!.to]} dimOutside={spanWords(P, P)} highlight={spanWords(P, P)} gaps={boundaries} /></p>
                 <p className="mt-2 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words{P > 0 ? ' · earlier parts dimmed' : ''}</p>
+                {/* The meaning helps the sound stick; it fades once the part has been recalled again after a break, so it never becomes the prompt. */}
+                {meanings[P] && !prog?.phrases[P]?.heldOverBreak && (
+                  <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2" data-testid="part-meaning"><span className="text-xs text-muted">Meaning: </span>{meanings[P]}{' '}
+                    <button className="text-xs text-muted underline" onClick={() => void patchSettings({ translation: false })} data-testid="hide-meaning">hide</button></p>
+                )}
               </>
             ) : (
               <>
@@ -270,6 +282,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             </div>
           )}
           {wholeToggle}
+          {byPartsLink}
           {!methodA && !partsActive && <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} />}
           {snap.settings.practiceMode === 'echo'
             ? <Coach id="sound-echo" className="mt-3 text-center text-sm text-ink-2" full="Echo is on: listen, then say it in the pause." short="Listen, then say it." />
@@ -303,6 +316,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((rungIdx + 1) / rungs.length) * 100}%` }} /></div>
           <RungPractice surah={range.surah} ayah={ayah} words={words} phrases={phrases} boundaries={boundaries} from={rung.from} to={rung.to}
             focusOnly={focusOnly} dimOthers={!methodA} resetKey={`${ayah}:${rungIdx}:${rung.label}`} onRate={rate} />
+          {partsActive && rung.from === rung.to && meanings[rung.from] && !prog?.phrases[rung.from]?.heldOverBreak && <p className="mt-2 text-center text-sm text-ink-2" data-testid="flow-meaning">{meanings[rung.from]}</p>}
           {!methodA && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />}
           <div className="mt-3 flex items-center justify-center gap-1">
             <button className="btn btn-ghost btn-sm" onClick={() => setHear((h) => !h)}><Icon name="headphones" size={15} />Hear it</button>

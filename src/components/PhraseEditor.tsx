@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Sheet } from './ui'
 import { wordsOfAyah } from '@/lib/quran/data'
 import { suggestBoundaries } from '@/lib/engine/phrases'
-import { defaultBoundaries } from '@/lib/engine/breakdown'
+import { meaningBreakdown } from '@/lib/engine/breakdown'
 import { wordFontClass } from './Arabic'
 import { drawnWord, useMushaf } from '@/lib/quran/script'
 
@@ -33,7 +33,7 @@ export function PhraseEditor({ open, onClose, surah, ayah, boundaries, onSave }:
         </p>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button className="chip" onClick={() => setB(defaultBoundaries(surah, ayah, words))} data-testid="use-automatic">Use the automatic phrases</button>
+        <button className="chip" onClick={() => setB(meaningBreakdown(surah, ayah, words).boundaries)} data-testid="use-automatic">Use the automatic phrases</button>
         <button className="chip" onClick={() => setB(suggestBoundaries(words).boundaries)}>Use stop-sign suggestions</button>
         <button className="chip" onClick={() => setB(suggestBoundaries(words, { includeWeak: true }).boundaries)}>Include weaker signs</button>
         <button className="chip" onClick={() => setB([])}>No splits</button>

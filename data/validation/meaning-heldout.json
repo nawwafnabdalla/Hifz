@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "what": "Held-out reference set: annotated by the assistant BEFORE the method was run on it, with the same principles as meaning-reference.json (a reporting clause stays with its quotation; a unit is a meaningful clause of roughly 3 to 12 words). Same caveats: not a qualified reader, small, indicative only. Boundary i = a break after word i (0-based).",
+  "ayahs": {
+    "2:261":  { "major": [6, 11, 16, 20], "acceptable": [] },
+    "12:4":   { "major": [4, 11], "acceptable": [3] },
+    "18:10":  { "major": [4, 10], "acceptable": [] },
+    "19:4":   { "major": [5, 8], "acceptable": [1] },
+    "28:7":   { "major": [3, 5, 11, 15], "acceptable": [13] },
+    "2:285":  { "major": [7, 13, 19, 22], "acceptable": [24] },
+    "3:8":    { "major": [3, 6, 11], "acceptable": [] }
+  }
+}

@@ -250,4 +250,51 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await page.getByTestId(`know-to-${k - 1}`).click()
     await expect(page.getByTestId('stage-recall')).toHaveAttribute('data-recall-kind', 'whole')
   })
+
+  test('the meaning of the part in hand is shown (verbatim from the translation) in Sound and Flow, and never during recall', async ({ page }) => {
+    await page.goto(AK)
+    await expect(page.getByTestId('part-meaning')).toContainText('Allah - there is no deity except Him')
+    await page.getByTestId('to-flow').click()
+    await expect(page.getByTestId('flow-meaning')).toContainText('Allah - there is no deity except Him')
+    await page.getByRole('button', { name: 'Skip to recall' }).click()
+    await expect(page.getByTestId('span-recall')).toBeVisible()
+    await expect(page.getByText('there is no deity except Him')).toHaveCount(0)                              // not on screen while recalling: it is never the prompt
+  })
+
+  test('one tap hides the meaning, and it stays hidden (it is the one translation setting)', async ({ page }) => {
+    await page.goto(AK)
+    await page.getByTestId('hide-meaning').click()
+    await expect(page.getByTestId('part-meaning')).toHaveCount(0)
+    await page.reload()
+    await expect(page.getByTestId('part-caption')).toBeVisible()
+    await expect(page.getByTestId('part-meaning')).toHaveCount(0)
+  })
+
+  test('the meaning is not shown while recalling, and it fades for a part that has held over a break', async ({ page }) => {
+    await page.goto('/')
+    await page.goto(AK)
+    const w = await page.evaluate(() => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(2, 255, []))
+    const t = Date.now()
+    await seed(page, 'parts', [
+      part({ fromWord: w[0]![0], toWord: w[0]![1], occurredAt: t - 30 * 3600e3 }),
+      part({ fromWord: w[0]![0], toWord: w[0]![1], occurredAt: t - 10 * 3600e3 }),                          // accurate again 20 hours later: it held
+      part({ fromWord: w[0]![0], toWord: w[0]![1], grade: 'failed', occurredAt: t - 3600e3 }),              // then went wrong, so part A is in hand again
+    ])
+    await page.goto(AK)
+    await expect(page.getByTestId('part-caption')).toContainText('Part A')
+    await expect(page.getByTestId('part-meaning')).toHaveCount(0)                                            // faded: it must not become the prompt
+  })
+
+  test('Ta-Ha 10 (18 words) keeps the ordinary ladder, with its meaningful pieces, and one tap makes it part-by-part with the meaning of each part', async ({ page }) => {
+    await page.goto('/learn/20/10/10')
+    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('part-dots')).toHaveCount(0)
+    await page.getByTestId('learn-by-parts').click()
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    expect((await dots(page)).length).toBeGreaterThanOrEqual(4)
+    await expect(page.getByTestId('part-meaning')).toContainText('When he saw a fire')
+    await learnPart(page)
+    await page.getByTestId('next-part').click()
+    await expect(page.getByTestId('part-meaning')).toContainText('indeed, I have perceived a fire')
+  })
 })
