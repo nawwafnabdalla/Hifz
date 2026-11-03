@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { HifzDB } from '@/lib/store/db'
 import {
-  clearLocalData, exportBackup, importBackup, loadAll, recordDeclaration, recordFlow, recordReview, saveExperiment, saveMarker, saveSession, saveSettings, saveTarget, type Snapshot,
+  clearLocalData, exportBackup, importBackup, loadAll, recordDeclaration, recordFlow, recordPart, recordReview, saveExperiment, saveMarker, saveSession, saveSettings, saveTarget, type Snapshot,
 } from '@/lib/store/repo'
 import { OwnerMismatchError, pendingCount, syncOnce } from '@/lib/store/sync'
 import { cloudConfigured, supabase, supabaseRemote } from '@/lib/store/remote'
 import { deriveState, type Derived } from '@/lib/engine/derive'
-import { DEFAULT_SETTINGS, rangeKey, type Declaration, type Experiment, type FlowEvent, type LearningTarget, type PhraseMarker, type Range, type ReviewEvent, type Settings, type Strategy } from '@/lib/engine/types'
+import { DEFAULT_SETTINGS, rangeKey, type Declaration, type Experiment, type FlowEvent, type LearningTarget, type PartEvent, type PhraseMarker, type Range, type ReviewEvent, type Settings, type Strategy } from '@/lib/engine/types'
 import type { Plan, PlanItem } from '@/lib/engine/planner'
 import { assignArm, armOfAyah, isActive, newExperiment, withAssignment } from '@/lib/engine/experiment'
 import { computePlan } from '@/lib/plan'
@@ -28,10 +28,11 @@ export interface ActiveSession {
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error' | 'mismatch'
 export interface SyncState { status: SyncStatus; pending: number; lastSyncAt: number | null; error: string | null; quarantined: number }
 
-const EMPTY: Snapshot = { reviews: [], flows: [], declarations: [], sessions: [], targets: [], markers: [], experiments: [], settings: DEFAULT_SETTINGS }
+const EMPTY: Snapshot = { reviews: [], flows: [], parts: [], declarations: [], sessions: [], targets: [], markers: [], experiments: [], settings: DEFAULT_SETTINGS }
 const SESSION_KEY = 'hifz.activeSession'
 
 type ReviewInput = Omit<ReviewEvent, 'id' | 'occurredAt' | 'sessionId' | 'strategy' | 'experimentId'> & { occurredAt?: number }
+type PartInput = Omit<PartEvent, 'id' | 'occurredAt' | 'sessionId'> & { occurredAt?: number }
 type FlowInput = Omit<FlowEvent, 'id' | 'occurredAt' | 'sessionId' | 'strategy' | 'experimentId'> & { occurredAt?: number }
 
 interface State {
@@ -52,6 +53,8 @@ interface State {
 
   logReview(input: ReviewInput): Promise<ReviewEvent>
   logFlow(input: FlowInput): Promise<FlowEvent>
+  /** Record a recall of part of an ayah. Evidence of position in a long ayah; never counts as memorising the ayah. */
+  logPart(input: PartInput): Promise<PartEvent>
   declare(range: Range, level: Declaration['level']): Promise<void>
   addTarget(range: Range, label?: string): Promise<void>
   setTargetStatus(id: string, status: LearningTarget['status']): Promise<void>
@@ -83,7 +86,7 @@ interface State {
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let initDone = false
 
-const rebuild = (snap: Snapshot): Derived => deriveState({ reviews: snap.reviews, flows: snap.flows, declarations: snap.declarations })
+const rebuild = (snap: Snapshot): Derived => deriveState({ reviews: snap.reviews, flows: snap.flows, parts: snap.parts, declarations: snap.declarations })
 
 function applyTheme(s: Settings) {
   const root = document.documentElement
@@ -186,6 +189,12 @@ export const useApp = create<State>((set, get) => {
       await recordFlow(db, e)
       commit({ ...get().snap, flows: [...get().snap.flows, e] })
       scheduleSync()
+      return e
+    },
+    async logPart(input) {
+      const e: PartEvent = { ...input, id: newId(), occurredAt: input.occurredAt ?? Date.now(), sessionId: get().session?.id }
+      await recordPart(db, e)
+      commit({ ...get().snap, parts: [...get().snap.parts, e] })
       return e
     },
     async declare(range, level) {

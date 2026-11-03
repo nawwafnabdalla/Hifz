@@ -41,6 +41,21 @@ export const flowEventSchema = z.object({
   listenedFirst: z.boolean().optional(),
 }).refine((e) => e.toPhrase >= e.fromPhrase && e.toPhrase < e.phraseCount, 'bad phrase range')
 
+export const partEventSchema = z.object({
+  id: z.string().uuid(),
+  surah, ayah,
+  fromWord: z.number().int().min(0).max(400),
+  toWord: z.number().int().min(0).max(400),
+  wordCount: z.number().int().min(1).max(400),
+  grade,
+  cueLevel: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  slipWord: z.number().int().min(0).max(400).optional(),
+  durationMs: z.number().int().min(0).max(86_400_000),
+  occurredAt: ms,
+  sessionId: z.string().uuid().optional(),
+}).refine((e) => e.toWord >= e.fromWord && e.toWord < e.wordCount, 'bad word span')
+  .refine((e) => e.slipWord === undefined || (e.slipWord >= e.fromWord && e.slipWord <= e.toWord), 'slip outside span')
+
 export const declarationSchema = z.object({
   id: z.string().uuid(),
   range,
@@ -110,6 +125,8 @@ export const backupSchema = z.object({
   exportedAt: z.string(),
   reviews: z.array(reviewEventSchema),
   flows: z.array(flowEventSchema),
+  /** Part-of-ayah recalls. Absent in backups made before part-by-part learning existed. */
+  parts: z.array(partEventSchema).default([]),
   declarations: z.array(declarationSchema),
   sessions: z.array(sessionSchema).default([]),
   targets: z.array(targetSchema).default([]),

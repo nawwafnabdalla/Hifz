@@ -68,6 +68,31 @@ export interface FlowEvent {
   listenedFirst?: boolean
 }
 
+/**
+ * A recall of PART of an ayah, from memory. Kept apart from ReviewEvent on purpose: this is evidence about a span of words,
+ * never about the ayah as a whole, so it can feed the learner's place in a long ayah but can never make an ayah "memorised"
+ * (only a ReviewEvent over the whole ayah does that). Spans are in words, not phrase numbers, so they stay meaningful if the
+ * phrase layout later changes.
+ */
+export interface PartEvent {
+  id: string
+  surah: number
+  ayah: number
+  /** Words recalled, 0-based inclusive. */
+  fromWord: number
+  toWord: number
+  /** Words in the ayah when this was recorded. */
+  wordCount: number
+  grade: Grade
+  /** How much of the span was visible before reciting: 4 = nothing, 3 = the first word only. */
+  cueLevel: 0 | 1 | 2 | 3 | 4
+  /** First word (0-based) the learner marked as a slip, if any. Words before it were recited; words after it were not reached. */
+  slipWord?: number
+  durationMs: number
+  occurredAt: number
+  sessionId?: string
+}
+
 /** A user's statement about prior knowledge. Distinct from demonstrated recall. */
 export interface Declaration {
   id: string

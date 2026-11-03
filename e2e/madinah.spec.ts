@@ -92,7 +92,7 @@ test.describe('reciter verification on the device', () => {
 
 test('a slip repair is not followed by a second, duplicate repair prompt', async ({ page }) => {
   await mockAudio(page); await freshStart(page)
-  await page.goto('/learn/2/255/255')
+  await page.goto('/learn/2/110/110')                                              // 17 words: the ordinary ladder (a long ayah with several printed stop signs is learned part by part, see parts.spec.ts)
   await page.getByTestId('to-flow').click()
   const saidIt = page.getByTestId('said-it'), reveal = page.getByTestId('reveal')
   for (let i = 0; i < 40; i++) {                                                   // walk the ladder until the recall step shows

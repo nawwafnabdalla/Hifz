@@ -5,6 +5,7 @@
 import { ayahKey, DAY, type Corpus, type LearningTarget, type Range } from './types'
 import { ayahStatus, junctionNeedsRepair, type Derived } from './derive'
 import { PARAMS, retrievability, dueAt, type AyahMemory } from './memory'
+import { isPartsLayout, partProgress, wordsToGo, type Span } from './parts'
 
 export type PlanKind = 'sabqi' | 'repair' | 'new' | 'manzil' | 'verify'
 
@@ -20,6 +21,8 @@ export interface PlanItem {
   title: string
   /** 'junction' = a short transition drill (end of one ayah into the start of the next) instead of a full recitation. */
   drill?: 'junction'
+  /** A long ayah learned part by part: where the learner is in it. */
+  partial?: { next: number; of: number; refresh: boolean; started: boolean }
 }
 
 export interface Plan {
@@ -50,6 +53,8 @@ export interface PlannerInput {
   learningSecPerWord: number | null
   lastSessionAt: number | null
   surahName?: (s: number) => string
+  /** Word spans of the practice phrases of an ayah, or null if it is not learned part by part. Absent = no part-by-part learning. */
+  partsLayout?: (surah: number, ayah: number) => Span[] | null
 }
 
 const KIND_ORDER: PlanKind[] = ['sabqi', 'repair', 'new', 'manzil', 'verify']
@@ -179,7 +184,7 @@ export function buildPlan(input: PlannerInput): Plan {
   const recovery = hasHistory && ((gapDays >= 3 && backlogMinutes > B) || backlogMinutes > 2.5 * B)
 
   // ── 4. Budget split ──────────────────────────────────────────────────────
-  const nextNew = input.planNew && !recovery ? nextNewChunk(activeTargets, derived, corpus, now, input.newPerDayCap - input.learnedToday, Infinity, sec, name) : null
+  const nextNew = input.planNew && !recovery ? nextNewChunk(activeTargets, derived, corpus, now, input.newPerDayCap - input.learnedToday, Infinity, sec, name, input.partsLayout) : null
   let newBudget = 0
   const notes: string[] = []
   if (nextNew && !recovery) {
@@ -230,7 +235,7 @@ export function buildPlan(input: PlannerInput): Plan {
   // ── 7. The new-memorisation item, sized to its budget ────────────────────
   let newItem: PlanItem | null = null
   if (input.planNew && !recovery && newBudget >= 1) {
-    const chunk = nextNewChunk(activeTargets, derived, corpus, now, input.newPerDayCap - input.learnedToday, newBudget, sec, name)
+    const chunk = nextNewChunk(activeTargets, derived, corpus, now, input.newPerDayCap - input.learnedToday, newBudget, sec, name, input.partsLayout)
     if (chunk) {
       newItem = chunk
       if (reviewBudget < B - newBudget) reviewBudget = B - newBudget
@@ -345,7 +350,11 @@ function reasonsFor(cs: Cand[], kind: PlanKind, d: Derived, now: number): string
 
 interface NewChunk extends PlanItem {}
 
-/** The next stretch of an active goal that has no accurate independent recall yet. */
+/**
+ * The next stretch to learn. A long ayah is learned part by part, so the item is that ayah and its time estimate is only the parts
+ * that fit the budget (at least the next one): a short session can be "learn the next phrase", and what was learned is kept.
+ * An ayah with part progress that is not inside an active goal is still continued (the learner started it, so it comes back).
+ */
 export function nextNewChunk(
   targets: LearningTarget[],
   d: Derived,
@@ -355,22 +364,72 @@ export function nextNewChunk(
   budgetMinutes: number,
   secPerWord: number,
   name?: (s: number) => string,
+  layout?: (surah: number, ayah: number) => Span[] | null,
 ): NewChunk | null {
   if (capLeft <= 0) return null
+  const isOpen = (surah: number, x: number) => {
+    const st = ayahStatus(d.memory.get(ayahKey(surah, x)), d.flow.get(ayahKey(surah, x)), now).stage
+    return st === 'not_started' || st === 'learning'
+  }
+  const partItem = (surah: number, a: number, t?: LearningTarget): NewChunk | null => {
+    const spans = layout?.(surah, a)
+    if (!spans || !isPartsLayout(spans)) return null
+    const prog = partProgress(spans, d.parts.get(ayahKey(surah, a)) ?? [], now)
+    if (prog.next === null) {
+      // Every part is secured but the whole ayah has not been recited from memory yet: joining them is what remains.
+      if (!prog.started) return null
+      const range: Range = { surah, start: a, end: a }
+      const total = corpus.wordCount(surah, a)
+      return { id: `new:${surah}:${a}-${a}`, kind: 'new', range, ayahs: 1, words: total, estMinutes: Math.max(1.5, reviewMinutes(total, 'sabqi')), priority: 1,
+        reasons: [`Every part of ${formatRange(range, name)} is learned. Now join them: recite the whole ayah from memory.`], title: formatRange(range, name),
+        partial: { next: spans.length, of: spans.length, refresh: false, started: true } }
+    }
+    const sizes = spans.map((s) => s.to - s.from + 1)
+    // Parts that fit the budget, at least the next one. A check of what is already learned comes first when it is due.
+    let words = prog.refreshDue ? Math.round(0.5 * spans.slice(0, prog.reach).reduce((n, s) => n + s.to - s.from + 1, 0)) : 0
+    let upto = prog.next
+    words += sizes[upto]!
+    while (upto + 1 < sizes.length && learningMinutes(words + sizes[upto + 1]!, secPerWord) <= budgetMinutes) { upto++; words += sizes[upto]! }
+    const cost = learningMinutes(words, secPerWord)
+    if (budgetMinutes !== Infinity && budgetMinutes < 3 && budgetMinutes < 0.6 * cost) return null
+    const range: Range = { surah, start: a, end: a }
+    const L = (i: number) => String.fromCharCode(65 + (i % 26))
+    const reasons = [
+      prog.started
+        ? `Continuing ${formatRange(range, name)}${t?.label ? ` (“${t.label}”)` : ''}: ${prog.reach} of ${spans.length} parts learned${prog.reach ? ` (${L(0)}${prog.reach > 1 ? `–${L(prog.reach - 1)}` : ''})` : ''}.`
+        : `${formatRange(range, name)} is a long ayah, so it is learned part by part. You can stop after any part and pick up here.`,
+    ]
+    if (prog.refreshDue) reasons.push(`First a quick check of what you learned ${agoText(prog.lastAt!, now)}, then the next part.`)
+    else if (prog.started) reasons.push('Next: ' + (upto > prog.next ? `parts ${L(prog.next)}–${L(upto)}` : `part ${L(prog.next)}`) + '.')
+    if (prog.weak.length) reasons.push(`Part ${prog.weak.map(L).join(', ')} went wrong last time, so it is practised first.`)
+    reasons.push(`Rest of the ayah: ${wordsToGo(spans, prog)} words in ${spans.length - prog.next} part${spans.length - prog.next > 1 ? 's' : ''}.`)
+    return {
+      id: `new:${surah}:${a}-${a}`, kind: 'new', range, ayahs: 1, words: wordsToGo(spans, prog), estMinutes: cost, priority: 1, reasons, title: formatRange(range, name),
+      partial: { next: prog.next, of: spans.length, refresh: prog.refreshDue, started: prog.started },
+    }
+  }
+
+  // 1. Long ayahs the learner has already started part by part, outside any active goal (inside a goal they are found in order, below).
+  if (layout) {
+    const inGoal = (surah: number, a: number) => targets.some((t) => t.range.surah === surah && a >= t.range.start && a <= t.range.end)
+    const started = [...d.parts.entries()].map(([k, evs]) => ({ k, last: evs[evs.length - 1]!.occurredAt, surah: evs[0]!.surah, ayah: evs[0]!.ayah }))
+      .filter((x) => !inGoal(x.surah, x.ayah) && isOpen(x.surah, x.ayah)).sort((x, y) => y.last - x.last)
+    for (const x of started) { const it = partItem(x.surah, x.ayah); if (it) return it }
+  }
+
   for (const t of targets) {
     const { surah, start, end } = t.range
     let a = start
-    const open = (x: number) => {
-      const st = ayahStatus(d.memory.get(ayahKey(surah, x)), d.flow.get(ayahKey(surah, x)), now).stage
-      return st === 'not_started' || st === 'learning'
-    }
-    while (a <= end && !open(a)) a++
+    while (a <= end && !isOpen(surah, a)) a++
     if (a > end) continue
+    const asParts = partItem(surah, a, t)
+    if (asParts) return asParts
     let b = a
     let words = corpus.wordCount(surah, a)
     let cost = learningMinutes(words, secPerWord)
-    // Grow the chunk while it fits the budget and the daily cap.
-    while (b + 1 <= end && open(b + 1) && b + 1 - a + 1 <= capLeft) {
+    // Grow the chunk while it fits the budget and the daily cap. A long ayah learned in parts is never joined to a neighbour.
+    const longParts = (x: number) => { const s = layout?.(surah, x); return !!s && isPartsLayout(s) }
+    while (b + 1 <= end && isOpen(surah, b + 1) && !longParts(b + 1) && b + 1 - a + 1 <= capLeft) {
       const w2 = words + corpus.wordCount(surah, b + 1)
       const c2 = learningMinutes(w2, secPerWord)
       if (c2 > budgetMinutes) break

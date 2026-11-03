@@ -30,7 +30,7 @@ export function SessionPage() {
 
   useEffect(() => { if (!s) nav('/', { replace: true }) }, [s, nav])
   const finished = !!s && !s.queue[s.index]
-  const summary = useMemo(() => (s && finished ? summariseSession({ sessionId: s.id, queue: s.queue, completed: s.completed, skipped: s.skipped, startedAt: s.startedAt, reviews: snap.reviews, flows: snap.flows, derived, now: Date.now() }) : null), [s, finished, snap.reviews, snap.flows, derived])
+  const summary = useMemo(() => (s && finished ? summariseSession({ sessionId: s.id, queue: s.queue, completed: s.completed, skipped: s.skipped, startedAt: s.startedAt, reviews: snap.reviews, flows: snap.flows, parts: snap.parts, derived, now: Date.now() }) : null), [s, finished, snap.reviews, snap.flows, snap.parts, derived])
   const tomorrow = useMemo(() => (finished ? computePlan(snap, derived, Date.now() + 20 * 3600 * 1000) : null), [finished, snap, derived])
   if (!s) return null
   const item = s.queue[s.index]
