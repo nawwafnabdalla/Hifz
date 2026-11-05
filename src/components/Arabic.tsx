@@ -38,7 +38,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
   revealCount?: number
   /** Makes each word tappable (used to mark where a recitation slipped). */
   onWord?: (index: number) => void
-  marked?: number | null
+  marked?: number | number[] | null
   /** Words outside [from, to] are dimmed (used by the phrase ladder). */
   dimOutside?: [number, number]
   /** Word indices after which to show a small gap (phrase boundaries). */
@@ -47,6 +47,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
   const words = wordsOfAyah(surah, ayah)
   const mushaf = useMushaf()
   const gapSet = useMemo(() => new Set(gaps ?? []), [gaps])
+  const isMarked = (i: number) => (Array.isArray(marked) ? marked.includes(i) : marked === i)
   return (
     <>
       {words.map((w, i) => {
@@ -59,7 +60,7 @@ export function AyahWords({ surah, ayah, cue = 0, dimOutside, gaps, revealCount,
           <span key={i}>
             {shown ? (
               onWord ? (
-                <span className={`w wordtap${marked === i ? ' marked' : ''}${alt}`} role="button" tabIndex={0} aria-label={`Word ${i + 1}`} aria-pressed={marked === i} data-word={i}
+                <span className={`w wordtap${isMarked(i) ? ' marked' : ''}${alt}`} role="button" tabIndex={0} aria-label={`Word ${i + 1}`} aria-pressed={isMarked(i)} data-word={i}
                   onClick={() => onWord(i)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onWord(i))}>{drawn}</span>
               ) : (
                 <span className={`w${dim ? ' dim' : ''}${highlight && i >= highlight[0] && i <= highlight[1] ? ' hl' : ''}${alt}`} data-w={i}>{drawn}</span>

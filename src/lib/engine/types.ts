@@ -4,6 +4,10 @@
 export type Grade = 'independent' | 'hesitant' | 'prompted' | 'failed'
 export type FlowRating = 'tangled' | 'improving' | 'natural'
 export type StumbleKind = 'hesitated' | 'prompted' | 'wrong' | 'blank'
+/** What the learner found when comparing a word with the text: marked but not yet classified, a forgotten word, a wrong word or vowel, or a pronunciation / tajweed concern. */
+export type IssueKind = 'slip' | 'forgot' | 'wrong' | 'pronunciation'
+/** A word flagged while checking. `word` is 0-based in the ayah. */
+export interface WordIssue { ayah: number; word: number; kind: IssueKind }
 
 /** What kind of study the user was doing, as recorded when the event happened. */
 export type PracticeContext = 'new' | 'sabqi' | 'manzil' | 'repair' | 'verify' | 'free' | 'probe'
@@ -48,6 +52,13 @@ export interface ReviewEvent {
   experimentId?: string
   /** Whether the user listened to the recitation first in this learning episode. */
   listenedFirst?: boolean
+  /**
+   * Only set when some ayahs inside the range were NOT compared with the text afterwards (the learner checked ayah by ayah and left a gap):
+   * exactly the ayahs that were. Absent = every ayah up to `completedTo` was checked (every older event). Ayahs outside it carry no evidence.
+   */
+  checked?: number[]
+  /** Words the learner flagged while checking, and what went wrong. Pronunciation / tajweed concerns are recorded here and are not memory failures. */
+  wordIssues?: WordIssue[]
 }
 
 export interface FlowEvent {
