@@ -55,6 +55,9 @@ export function attribute(e: ReviewEvent): Attribution {
   const { surah, start, end } = e.range
   const n = end - start + 1
   const reach = Math.min(e.completedTo ?? end, end)
+  // An attempt checked ayah by ayah may leave some unchecked: only the ayahs compared with the text carry evidence (fluent recitation is not proof of accuracy).
+  const checked = e.checked ? new Set(e.checked) : null
+  const counts = (a: number) => (checked ? checked.has(a) : a <= reach)
   const base = { surah, at: e.occurredAt, eventId: e.id }
 
   if (e.kind === 'junction') {
@@ -75,7 +78,7 @@ export function attribute(e: ReviewEvent): Attribution {
   const overallSuccess = e.grade === 'independent' || e.grade === 'hesitant'
 
   for (let a = start; a <= end; a++) {
-    if (a > reach) continue
+    if (!counts(a)) continue
     const kind = flagged.get(a)
     let outcome: Outcome
     let weight: number
@@ -100,7 +103,8 @@ export function attribute(e: ReviewEvent): Attribution {
     out.ayahs.push({ ...base, ayah: a, outcome, weight, scope, passageLength: n })
   }
 
-  for (let a = start; a < reach; a++) {
+  for (let a = start; a < (checked ? end : reach); a++) {
+    if (checked && !(checked.has(a) && checked.has(a + 1))) continue
     const next = flagged.get(a + 1)
     const entryFailed = next === 'prompted' || next === 'blank' || next === 'wrong'
     const shaky = e.shakyJunctions.includes(a) || entryFailed

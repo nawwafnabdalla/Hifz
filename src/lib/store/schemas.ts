@@ -23,6 +23,8 @@ export const reviewEventSchema = z.object({
   strategy: z.enum(['A', 'B']).optional(),
   experimentId: z.string().uuid().optional(),
   listenedFirst: z.boolean().optional(),
+  checked: z.array(ayah).max(300).optional(),
+  wordIssues: z.array(z.object({ ayah, word: z.number().int().min(0).max(300), kind: z.enum(['slip', 'forgot', 'wrong', 'pronunciation']) })).max(300).optional(),
 }).refine((e) => e.range.end >= e.range.start, 'range end before start')
 
 export const flowEventSchema = z.object({
