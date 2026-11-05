@@ -168,10 +168,10 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await expect(page.getByTestId('part-caption')).toContainText('Part B')
     await expect(page.getByTestId('part-meaning')).toContainText('Neither drowsiness overtakes Him nor sleep')   // B arrives with its meaning
     await toRecitation(page)                                                // B: practised, then A + B from the beginning
-    await expect(page.getByTestId('recite-intro')).toContainText('A → B from the beginning')
+    await expect(page.getByTestId('span-recall')).toContainText('A → B, from the beginning')
     await expect(page.getByTestId('span-recall')).toContainText('A → B, from the beginning')
     expect(await shown(page)).toEqual([])
-    await expect(page.getByTestId('span-hint')).toHaveText('Hint: first word of B')
+    await expect(page.getByTestId('span-hint')).toHaveAttribute('aria-label', 'Hint: first word of B')
     await page.getByTestId('span-hint').click()
     expect(await shown(page)).toEqual([lay[1]![0]])                         // the first word of B — not word 0 of the ayah
     await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-hesitant').click()
@@ -187,7 +187,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     const lay = await layoutOf(page, 2, 255), k = lay.length
     for (let p = 0; p < k - 1; p++) {
       await toRecitation(page)
-      if (p > 0) await expect(page.getByTestId('recite-intro')).toContainText(`A → ${String.fromCharCode(65 + p)} from the beginning`)
+      if (p > 0) await expect(page.getByTestId('span-recall')).toContainText(`A → ${String.fromCharCode(65 + p)}, from the beginning`)
       await page.getByTestId('span-hint').click()
       expect(await shown(page), `part ${String.fromCharCode(65 + p)}`).toEqual([lay[p]![0]])
       await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-hesitant').click()
@@ -296,6 +296,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('H: the part screen says the whole ayah plays (parts have no audio of their own) and the ordinary player is there', async ({ page }) => {
     await page.goto(AK)
+    await page.getByTestId('part-info-toggle').click()                                       // the explanation is one tap away, not on every screen
     await expect(page.getByTestId('part-audio-note')).toContainText('whole ayah plays')
     await expect(page.getByTestId('audio-play')).toBeVisible()
   })
@@ -340,7 +341,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await expect(page.locator('.arabic .hl').first()).toBeVisible()                 // the part in hand is highlighted
     await page.getByTestId('know-up-to').click()
     await page.getByTestId('know-to-2').click()                                       // up to C
-    await expect(page.getByTestId('refresh-intro')).toContainText('up to part C')
+    await expect(page.getByTestId('refresh-intro')).toContainText('Up to part C')
     await page.getByTestId('span-reveal').click()
     await page.getByTestId('span-grade-independent').click()
     await expect(page.getByTestId('part-caption')).toContainText('Part D')           // straight on to D

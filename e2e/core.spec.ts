@@ -85,6 +85,7 @@ test.describe('core hifz loop', () => {
   test('multi-ayah recall records where you slipped; a failed passage does not credit every ayah', async ({ page }) => {
     await page.goto('/review/112/1/4?ctx=free')
     await page.getByTestId('reveal').click()
+    await page.getByTestId('more-toggle').click()
     await expect(page.getByTestId('stumble-tools')).toBeVisible()
     await page.getByRole('button', { name: /^Ayah 3: fine/ }).click()      // hesitated
     await page.getByRole('button', { name: /^Ayah 3: hesitated/ }).click() // prompted

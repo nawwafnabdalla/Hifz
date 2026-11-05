@@ -8,11 +8,11 @@ Core principle: **fluency is not proof of accuracy.** Hifz OS helps you remember
 * A single ayah keeps its first-word / three-more-words hints and the Meaning option; it can also be hidden and shown again.
 
 ## What you can do once an ayah is revealed
-* **Compare with the text**: a short prompt asks you to read each word against what you said (letters, vowels, endings).
-* **Flag the word**: tap it, then say what happened: **Forgot it · Wrong word or vowel · Pronunciation / tajweed** (or "Not a problem" to clear). A bare tap marks the word and is treated as before.
-* **Hear the reference**: plays that exact ayah with the app's existing player and reciter setting.
-* **Record yourself (optional)**: see below.
-* **I read it before reciting**: marks an ayah as assisted, not recall.
+* **Compare with the text**: for the first days a single line says to recite, then tap the text to check it; after that it gets out of the way.
+* **Flag the word**: tap it, then (optionally) say what happened: **Forgot · Wrong word · Pronunciation** (the full names are Forgot it, Wrong word or vowel, Pronunciation / tajweed), or ✕ to clear. A bare tap marks the word and is treated as before.
+* **Hear the reference**: the headphones in the toolbar play the ayah you are flagging a word in, or the whole passage, with the app's existing player and reciter setting.
+* **Record yourself (optional)**: the microphone in the toolbar; see below.
+* **Read before reciting / slips / shaky transitions / stopped early**: behind "⋯". An ayah marked "read before reciting" is assisted, not recall.
 
 ## Recall vs verification (how it is recorded)
 | What happened | Recorded as |

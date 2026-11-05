@@ -32,6 +32,7 @@ test.describe('part-by-part learning: the capability is present and complete', (
     await page.getByTestId('learn-by-parts').click()                                                     // and the tap takes you straight into the breakdown
     await expect(page.getByTestId('part-dots')).toBeVisible()
     expect(await dots(page)).toHaveLength(5)
+    await page.getByTestId('part-info-toggle').click()
     await expect(page.getByTestId('part-basis')).toContainText('reviewed list')
     await expect(page.getByTestId('part-basis')).toContainText('not places to stop')
     const lay = await layoutOf(page, 20, 10)
@@ -41,7 +42,7 @@ test.describe('part-by-part learning: the capability is present and complete', (
       await expect(page.getByTestId('part-caption')).toContainText(`Part ${String.fromCharCode(65 + p)}`)
       await expect(page.getByTestId('part-meaning')).toContainText(meanings[p]!)                         // the English matches its Arabic part
       await toRecitation(page)
-      if (p > 0) await expect(page.getByTestId('recite-intro')).toContainText(`A → ${String.fromCharCode(65 + p)} from the beginning`)
+      if (p > 0) await expect(page.getByTestId('span-recall')).toContainText(`A → ${String.fromCharCode(65 + p)}, from the beginning`)
       expect(await shown(page)).toEqual([])
       await page.getByTestId('span-hint').click()
       expect(await shown(page)).toEqual([lay[p]![0]])                                                      // the first word of THIS part (0, 3, 6, 9)
@@ -123,6 +124,7 @@ test.describe('part-by-part learning: existing learners and saved state', () => 
     await page.goto(TAHA10)
     await expect(page.getByTestId('part-dots')).toBeVisible()
     expect(await dots(page)).toHaveLength(4)
+    await page.getByTestId('part-info-toggle').click()
     await expect(page.getByTestId('part-basis')).toContainText('Your own breaks')
   })
 

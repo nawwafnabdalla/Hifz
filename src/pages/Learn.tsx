@@ -1,4 +1,3 @@
-import { Coach } from '@/components/Coach'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ensureArm, useApp } from '@/app/store'
@@ -44,11 +43,10 @@ function Stepper({ stage, multi }: { stage: Stage; multi: boolean }) {
 /** Where you are in a long ayah: A B C D, the ones you have in already filled, the one in hand highlighted. */
 function PartDots({ states, current }: { states: { secured: boolean }[]; current: number | null }) {
   return (
-    <div className="mt-2 flex items-center justify-center gap-1.5" data-testid="part-dots" aria-label={current === null ? 'All parts learned' : `Part ${current + 1} of ${states.length}`}>
+    <div className="mt-3 flex items-center justify-center gap-1.5" data-testid="part-dots" aria-label={current === null ? 'All parts learned' : `Part ${current + 1} of ${states.length}`}>
       {states.map((s, i) => (
         <span key={i} data-secured={s.secured ? '1' : '0'} data-current={i === current ? '1' : '0'} className={`grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[0.7rem] font-bold ${i === current ? 'bg-brass text-bg' : s.secured ? 'bg-accent-soft text-accent-strong' : 'bg-surface-2 text-muted'}`}>{String.fromCharCode(65 + (i % 26))}</span>
       ))}
-      <span className="ml-1 text-xs text-muted tabular">{current === null ? 'whole ayah' : `part ${current + 1} of ${states.length}`}</span>
     </div>
   )
 }
@@ -94,6 +92,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   // "I know up to here": the last part the learner says they already have, to be tested from the start up to it.
   const [testTo, setTestTo] = useState<number | null>(null)
   const [picking, setPicking] = useState(false)
+  const [info, setInfo] = useState(false)       // the one place that says where the parts come from and that they are not places to stop
   // Only a saved part-by-part position (a number) skips the entry step; a position saved before the part was chosen is not one.
   const entered = useRef<string | null>(null)
   const [tr, setTr] = useState<string[] | null>(null)
@@ -239,8 +238,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const basisNote = ownBreaks ? 'Your own breaks' : validated ? 'Follows the mushaf’s printed signs or a reviewed list' : 'Prepared automatically, not yet reviewed'
   const wholeToggle = !methodA && auto.boundaries.length > 0 ? (
     boundaries.length > 0
-      ? <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
-      : <div className="mt-2 text-center"><button className="text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">Learn it in phrases</button></div>
+      ? <div className="text-center"><button className="min-h-[44px] text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
+      : <div className="text-center"><button className="min-h-[44px] text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">Learn it in phrases</button></div>
   ) : null
 
   return (
@@ -248,13 +247,13 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
       {embedded ? (
         n > 1 && stage !== 'connect' && stage !== 'done' && <div className="pt-3 text-center text-xs text-muted tabular">ayah {idx + 1} of {n}</div>
       ) : (
-        <div className="safe-top flex items-center justify-between px-4 pt-4">
+        <div className="safe-top flex items-center justify-between px-4 pt-3">
           <button className="btn btn-ghost btn-sm" onClick={onExit} aria-label="Leave"><Icon name="x" size={18} /></button>
-          <div className="text-center"><div className="eyebrow">{rangeTitle(range)}</div>{n > 1 && stage !== 'connect' && stage !== 'done' && <div className="text-xs text-muted tabular">ayah {idx + 1} of {n}</div>}</div>
+          <div className="eyebrow text-center">{rangeTitle(range)}{n > 1 && stage !== 'connect' && stage !== 'done' && <span className="tabular normal-case tracking-normal"> · {idx + 1}/{n}</span>}</div>
           <span className="w-10" />
         </div>
       )}
-      <div className="mt-3 mb-5 px-4">{methodA ? <div className="text-center text-xs text-muted">Method A · repeated recitation</div> : <Stepper stage={stage} multi={hasConnect} />}{partsActive && prog && stage !== 'done' && <PartDots states={prog.phrases} current={P} />}</div>
+      <div className="mt-2 mb-4 px-4">{methodA ? <div className="text-center text-xs text-muted">Method A · repeated recitation</div> : <Stepper stage={stage} multi={hasConnect} />}{partsActive && prog && stage !== 'done' && <PartDots states={prog.phrases} current={P} />}</div>
 
       {stage === 'sound' && (
         <section className="enter px-4" data-testid="stage-sound">
@@ -262,11 +261,17 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             {partsActive ? (
               <>
                 <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} only={[0, phrases[P]!.to]} dimOutside={spanWords(P, P)} highlight={spanWords(P, P)} gaps={boundaries} /></p>
-                <p className="mt-2 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words{P > 0 ? ' · earlier parts dimmed' : ''}</p>
-                <p className="mt-0.5 text-[0.7rem] text-muted" data-testid="part-basis">{basisNote} · for learning, not places to stop</p>
+                <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words
+                  <button className="tool !min-h-[36px] !min-w-[36px] !px-0" onClick={() => setInfo((v) => !v)} aria-expanded={info} aria-label="About these parts" title="About these parts" data-testid="part-info-toggle"><Icon name="info" size={15} /></button></p>
+                {info && (
+                  <div className="mx-auto mt-1 max-w-sm space-y-1 text-xs text-muted" data-testid="part-info">
+                    <p data-testid="part-basis">{basisNote} · for learning, not places to stop</p>
+                    <p data-testid="part-audio-note">The whole ayah plays. Listen for part {L(P)}, highlighted above.</p>
+                  </div>
+                )}
                 {/* The meaning helps the sound stick; it fades once the part has been recalled again after a break, so it never becomes the prompt. */}
                 {meanings[P] && !prog?.phrases[P]?.heldOverBreak && (
-                  <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2" data-testid="part-meaning"><span className="text-xs text-muted">Meaning: </span>{meanings[P]}{' '}
+                  <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2" data-testid="part-meaning">{meanings[P]}{' '}
                     <button className="text-xs text-muted underline" onClick={() => void patchSettings({ translation: false })} data-testid="hide-meaning">hide</button></p>
                 )}
               </>
@@ -278,23 +283,22 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             )}
           </div>
           <div className="mt-3">
-            {partsActive && <p className="mb-1 text-center text-xs text-muted" data-testid="part-audio-note">The whole ayah plays. Listen for part {L(P)}, highlighted above.</p>}
             <AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`s-${ayah}`} onListened={() => setListened(true)} />
           </div>
           {wholeToggle}
           {byPartsLink}
-          {partsActive && <Coach id="parts-note" className="mt-3 text-center text-xs text-muted" full="These parts are only a way to learn. They are not places to stop when you recite: keep the ayah joined, as one recitation." short="Parts are for learning, not for stopping." />}
-          {snap.settings.practiceMode === 'echo'
-            ? <Coach id="sound-echo" className="mt-3 text-center text-sm text-ink-2" full="Echo is on: listen, then say it in the pause." short="Listen, then say it." />
-            : <Coach id="sound-listen" className="mt-3 text-center text-sm text-ink-2" full="Listen first, with the text in front of you. Notice the sounds and where the voice rests." short="Listen with the text." />}
-          <button className="btn btn-primary btn-lg mt-4 w-full" onClick={() => setStage('flow')} data-testid="to-flow">{listened ? 'Continue to flow' : 'Continue'} <Icon name="right" size={16} /></button>
-          {partsActive && <button className="btn btn-ghost mt-2 w-full" onClick={() => setStage('recall')} data-testid="know-this-part">I know this part already: test me from the start</button>}
+          <button className="btn btn-primary btn-lg mt-4 w-full" onClick={() => setStage('flow')} data-testid="to-flow">Continue <Icon name="right" size={16} /></button>
+          {partsActive && (
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5 text-sm text-muted">
+              <button className="min-h-[44px] underline" onClick={() => setStage('recall')} data-testid="know-this-part">I know this part</button>
+              {P < lastPart && <button className="min-h-[44px] underline" onClick={() => setPicking((v) => !v)} data-testid="know-up-to" aria-expanded={picking}>I know further</button>}
+            </div>
+          )}
           {partsActive && P < lastPart && (
-            <div className="mt-1 text-center">
-              <button className="text-sm text-muted underline" onClick={() => setPicking((v) => !v)} data-testid="know-up-to" aria-expanded={picking}>I already know further than this</button>
+            <div className="text-center">
               {picking && (
                 <div className="mt-2" data-testid="know-up-to-picker">
-                  <p className="mb-1 text-xs text-muted">Tap the last part you are sure of. I’ll test you from the start up to it.</p>
+                  <p className="mb-1 text-xs text-muted">The last part you are sure of:</p>
                   <div className="flex flex-wrap justify-center gap-2">
                     {spans.map((_, i) => i > P && (
                       <button key={i} className="chip" onClick={() => { setPicking(false); if (i === lastPart) { setPart(null); setStage('recall') } else { setTestTo(i); setStage('refresh') } }} data-testid={`know-to-${i}`}>{i === lastPart ? 'all of it' : `up to ${L(i)}`}</button>
@@ -309,11 +313,11 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'flow' && (
         <section className="enter px-4" data-testid="stage-flow">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <div><span className="eyebrow">{partsActive ? `Part ${L(P)}` : ladder?.repair ? 'Repairing the tricky part' : methodA ? 'Method A' : phrases.length > 1 ? 'Chain' : 'Say it'}</span><div className="font-display text-lg">{rung.label}</div></div>
-            <div className="tabular text-muted">{Math.min(rungIdx + 1, rungs.length)} of {rungs.length}</div>
-          </div>
-          <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((rungIdx + 1) / rungs.length) * 100}%` }} /></div>
+          {(rungs.length > 1 || partsActive || ladder?.repair) && <div className="mb-3 flex items-baseline justify-between">
+            <div className="font-display text-lg">{partsActive ? `Part ${rung.label}` : rung.label}{ladder?.repair && !partsActive ? <span className="ml-2 text-sm font-normal text-muted">tricky spot</span> : null}</div>
+            {rungs.length > 1 && <div className="tabular text-sm text-muted">{Math.min(rungIdx + 1, rungs.length)}/{rungs.length}</div>}
+          </div>}
+          {rungs.length > 1 && <div className="mb-3 h-1 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((rungIdx + 1) / rungs.length) * 100}%` }} /></div>}
           <RungPractice surah={range.surah} ayah={ayah} words={words} phrases={phrases} boundaries={boundaries} from={rung.from} to={rung.to}
             focusOnly={focusOnly} dimOthers={!methodA} resetKey={`${ayah}:${rungIdx}:${rung.label}`} onRate={rate} />
           {partsActive && rung.from === rung.to && meanings[rung.from] && !prog?.phrases[rung.from]?.heldOverBreak && <p className="mt-2 text-center text-sm text-ink-2" data-testid="flow-meaning">{meanings[rung.from]}</p>}
@@ -323,7 +327,6 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             <button className="btn btn-ghost btn-sm" onClick={() => setStage('recall')}>Skip to recall</button>
           </div>
           {hear && <div className="mt-2"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`f-${ayah}`} onListened={() => setListened(true)} /></div>}
-          <Coach id="flow-note" className="mt-3 text-center text-xs text-muted" full="Flow is about the mouth, memory is separate: this rating never changes your retention estimate." />
           {wholeToggle}
           {byPartsLink}
           <PhraseEditor open={edit} onClose={() => setEdit(false)} surah={range.surah} ayah={ayah} boundaries={boundaries} onSave={(b) => { entered.current = null; void setMarker(range.surah, ayah, b); setLadder(null); setRungIdx(0); say('Phrases saved') }} />
@@ -337,7 +340,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
             const label = last > 0 ? `${L(0)} → ${L(last)} from memory` : `Part ${L(0)} from memory`
             return (
               <>
-                <p className="mb-3 px-6 text-center text-sm text-ink-2" data-testid="refresh-intro">{testTo !== null ? `You said you know up to part ${L(testTo)}. Say it from the start, from memory.` : `Welcome back. Before adding part ${L(P)}, say what you already have${prog.reach > 1 ? ` (${L(0)}–${L(prog.reach - 1)})` : ''}.`}</p>
+                <p className="mb-3 px-6 text-center text-sm text-ink-2" data-testid="refresh-intro">{testTo !== null ? `Up to part ${L(testTo)}, from the start.` : `Welcome back. Say what you already have before adding part ${L(P)}.`}</p>
                 <SpanRecall key={`refresh-${ayah}-${testTo}`} surah={range.surah} ayah={ayah} from={spanWords(0, last)[0]} to={spanWords(0, last)[1]} label={label} onDone={(e) => void afterRefresh(e)} />
                 <div className="mt-3 text-center">
                   {testTo !== null
@@ -352,7 +355,6 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'recall' && !repair && !wholeRecall && (
         <section className="enter" data-testid="stage-recall" data-recall-kind="part">
-          {P > 0 && <p className="mb-3 px-6 text-center text-sm text-ink-2" data-testid="recite-intro">Now recite {L(0)} → {L(P)} from the beginning, as one recitation.</p>}
           <SpanRecall key={`p-${ayah}-${P}-${attempt}-${phrases[0]!.from}-${phrases[P]!.to}`} surah={range.surah} ayah={ayah}
             from={spanWords(0, P)[0]} to={spanWords(0, P)[1]} hintFrom={phrases[P]!.from} hintName={L(P)}
             label={P > 0 ? `${L(0)} → ${L(P)}, from the beginning` : `Part ${L(0)} from memory`} onDone={(e) => void afterSpan(e)} />
@@ -360,16 +362,13 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
       )}
       {stage === 'recall' && !repair && wholeRecall && (
         <section className="enter" data-testid="stage-recall" data-recall-kind="whole">
-          {partsActive && <p className="mb-3 px-6 text-center text-sm text-ink-2">Every part is in. Now the whole ayah, as one recitation.</p>}
-          <RecallCard key={`r-${ayah}`} range={single} context={context} listenedFirst={listened} title={`Ayah ${ayah} from memory`} onDone={(e, info) => { if ((e.grade === 'prompted' || e.grade === 'failed') && !info?.repaired) setRepair(true); else nextAyah() }} />
+          <RecallCard key={`r-${ayah}`} range={single} context={context} listenedFirst={listened} hideTitle={n > 1 || partsActive} onDone={(e, info) => { if ((e.grade === 'prompted' || e.grade === 'failed') && !info?.repaired) setRepair(true); else nextAyah() }} />
         </section>
       )}
       {stage === 'recall' && repair && partsActive && !wholeRecall && fix && (
         <section className="enter px-4" data-testid="stage-repair" data-repair-kind="part">
           <div className="mb-3 text-center">
-            <div className="eyebrow">Fix the spot</div>
-            <h2 className="font-display mt-1 text-xl">Say {fix.from === fix.to ? `part ${L(fix.from)}` : `${L(fix.from)} → ${L(fix.to)}`} until it flows</h2>
-            <Coach id="part-repair" className="mt-1 text-sm text-ink-2" full={`Just this joint, then back to reciting ${L(0)} → ${L(P)} from the start. Nothing you already learned is repeated.`} short="Then back to reciting from the start." />
+            <h2 className="font-display text-xl">Say {fix.from === fix.to ? `part ${L(fix.from)}` : `${L(fix.from)} → ${L(fix.to)}`} until it flows</h2>
           </div>
           <RungPractice surah={range.surah} ayah={ayah} words={words} phrases={phrases} boundaries={boundaries} from={fix.from} to={fix.to} focusOnly dimOthers resetKey={`fix-${ayah}-${fix.from}-${fix.to}-${attempt}`}
             onRate={async (rating, st) => {
@@ -392,10 +391,9 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'partdone' && partsActive && prog && (
         <section className="enter px-4" data-testid="stage-partdone">
-          <div className="card p-6 text-center">
-            <h2 className="font-display text-xl">{P === 0 ? `Part ${L(0)} is in` : `${L(0)} → ${L(P)} is joined`}</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">{prog.next === null ? 'Every part is learned.' : `Next is part ${L(prog.next)}. You can stop here: it is all saved, and you will pick up from here.`}</p>
-            <div className="mt-4 grid gap-2">
+          <div className="pt-8 text-center">
+            <h2 className="font-display text-2xl">{P === 0 ? `Part ${L(0)} is in` : `${L(0)} → ${L(P)} is joined`}</h2>
+            <div className="mt-6 grid gap-2">
               <button className="btn btn-primary btn-lg" onClick={() => { if (prog.next === null) { setPart(null); setStage('recall') } else { setPart(prog.next); setRungIdx(0); setStage('sound') } }} data-testid="next-part">{prog.next === null ? 'Recite the whole ayah' : `Next: part ${L(prog.next)}`}</button>
               <button className="btn btn-quiet" onClick={finishToday} data-testid="finish-today">Finish for today</button>
             </div>
@@ -405,17 +403,16 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'connect' && (
         <section className="enter" data-testid="stage-connect">
-          <p className="mb-3 px-6 text-center text-sm text-ink-2">{leadIn > 0 ? `Now join it to what comes before: ${leadIn === 1 ? 'the previous ayah' : 'the two ayahs before'} and then the new ${n === 1 ? 'ayah' : 'ayahs'}, as one recitation.` : 'Now join them. Individual ayahs are not the same as a continuous passage; mark any transition that wobbles.'}</p>
           <RecallCard key="connect" range={connectRange} context={context} listenedFirst={listened} title={leadIn > 0 ? `Ayah ${connectRange.start} → ${connectRange.end}` : 'The whole passage'} onDone={() => setStage('done')} />
         </section>
       )}
 
       {stage === 'done' && (
         <section className="enter px-4" data-testid="stage-done">
-          <div className="card p-6 text-center">
+          <div className="pt-8 text-center">
             <h2 className="font-display text-2xl">Well done</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">{rangeTitle(range)} is recorded. Its first check is scheduled.</p>
-            <button className="btn btn-primary btn-lg mt-4 w-full" onClick={onDone} data-testid="learn-finish">Continue</button>
+            <p className="mt-1 text-sm text-muted">{rangeTitle(range)} is recorded.</p>
+            <button className="btn btn-primary btn-lg mt-6 w-full" onClick={onDone} data-testid="learn-finish">Continue</button>
           </div>
         </section>
       )}

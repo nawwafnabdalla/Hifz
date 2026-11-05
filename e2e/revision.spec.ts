@@ -14,10 +14,11 @@ const open = (page: Page, path = '/review/20/7/9?ctx=sabqi') => page.goto(path).
 test.describe('ayah-by-ayah revision', () => {
   test.beforeEach(async ({ page }) => { await mockAudio(page); await freshStart(page) })
 
-  test('Ta-Ha 7–9: ayah 6 is the run-up, 7–9 start hidden, and each has its own Check button', async ({ page }) => {
+  test('Ta-Ha 7–9: ayah 6 is the run-up, 7–9 start hidden, and each concealed ayah can be tapped', async ({ page }) => {
     await open(page)
     await expect(page.getByTestId('lead-in')).toHaveAttribute('data-lead-ayah', '6')
-    for (const a of [7, 8, 9]) { expect(await visibleWords(page, a)).toBe(0); await expect(page.getByTestId(`check-${a}`)).toBeVisible() }
+    for (const a of [7, 8, 9]) { expect(await visibleWords(page, a)).toBe(0); await expect(page.getByRole('button', { name: `Reveal ayah ${a}` })).toBeVisible() }
+    await expect(page.getByText(/Check ayah|Show all ayahs/)).toHaveCount(0)                  // no per-ayah buttons: the text is the control
     expect(await shownRows(page)).toEqual([])
     await expect(page.getByTestId('grades')).toHaveCount(0)                                 // nothing to grade until something is checked
   })
@@ -86,7 +87,7 @@ test.describe('ayah-by-ayah revision', () => {
   test('checking only ayah 7 counts only ayah 7: the others are not credited because they were never compared with the text', async ({ page }) => {
     await open(page)
     await page.getByTestId('check-7').click()
-    await expect(page.getByTestId('unchecked-note')).toContainText('Ayahs 8, 9 aren’t counted as recalled')
+    await expect(page.getByTestId('unchecked-note')).toContainText('Ayahs 8, 9 not checked, so not counted')
     await page.getByTestId('grade-independent').click()
     const rs = await idbRows(page, 'reviews')
     expect(rs).toHaveLength(1)
@@ -104,9 +105,9 @@ test.describe('ayah-by-ayah revision', () => {
   test('"I read it before reciting" is assisted, not recall: that ayah carries no recall evidence, and the others are unaffected', async ({ page }) => {
     await open(page)
     await page.getByTestId('reveal').click()
+    await page.getByTestId('more-toggle').click()
     await page.getByTestId('read-first-8').click()
-    await expect(page.getByTestId('read-first-note-8')).toContainText('Not counted as recall')
-    await expect(page.getByTestId('unchecked-note')).toContainText('Ayah 8 isn’t counted')
+    await expect(page.getByTestId('unchecked-note')).toContainText('Ayah 8 not checked, so not counted')
     await page.getByTestId('grade-independent').click()
     const r = (await idbRows(page, 'reviews'))[0]
     expect(r).toMatchObject({ checked: [7, 9], completedTo: 7 })
@@ -114,7 +115,7 @@ test.describe('ayah-by-ayah revision', () => {
 
   test('revealing after reciting is NOT a hint; the first-word hint (before the attempt) is, and is still the first word of each of 7, 8, 9', async ({ page }) => {
     await open(page)
-    await page.getByRole('button', { name: /Need a hint\? Show the first words/ }).click()
+    await page.getByTestId('first-words').click()
     for (const a of [7, 8, 9]) expect(await row(page, a).locator('[data-w]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-w'))))).toEqual([0])
     await page.getByTestId('check-8').click()
     expect(await visibleWords(page, 8)).toBe(words(20, 8).length)                          // the checked ayah is shown in full
@@ -132,8 +133,7 @@ test.describe('ayah-by-ayah revision', () => {
     await expect(page.getByTestId('grade-independent')).toBeDisabled()
     await page.getByTestId('hide-7').click()                                              // a single ayah can be hidden again too
     expect(await shownRows(page)).toEqual([])
-    await expect(page.getByTestId('check-7')).toContainText('Show text again')
-    await page.getByTestId('check-7').click()
+    await page.getByTestId('check-7').click()                                              // tap the concealed ayah again to show it
     await page.getByTestId('grade-hesitant').click()
     expect((await idbRows(page, 'reviews'))[0]).toMatchObject({ range: { surah: 20, start: 7, end: 7 }, cueLevel: 3 })
   })
@@ -146,7 +146,7 @@ test.describe('finding what went wrong', () => {
     await open(page)
     await page.getByTestId('reveal').click()
     await row(page, 8).locator('[data-word="2"]').click()
-    await expect(page.getByTestId('issue-picker')).toContainText('Word 3')
+    await expect(page.getByRole('group', { name: /What went wrong with word 3 of ayah 8/ })).toBeVisible()
     await page.getByTestId('issue-forgot').click()
     await expect(page.getByTestId('issue-forgot')).toHaveAttribute('aria-pressed', 'true')
     await page.getByTestId('grade-independent').click()                                    // the other ayahs were fine; the flag localises the problem
@@ -174,7 +174,6 @@ test.describe('finding what went wrong', () => {
     await open(page)
     await page.getByTestId('reveal').click()
     await row(page, 8).locator('[data-word="1"]').click(); await page.getByTestId('issue-pronunciation').click()
-    await expect(page.getByTestId('issue-picker')).toContainText('The app can’t hear this')
     await page.getByTestId('grade-independent').click()
     const r = (await idbRows(page, 'reviews'))[0]
     expect(r.stumbles).toEqual([]); expect(r.grade).toBe('independent')
@@ -255,8 +254,9 @@ test.describe('reference recording and your own recording', () => {
     page.on('request', (r) => { if (/\.mp3/.test(r.url())) urls.push(r.url()) })
     await open(page)
     await page.getByTestId('check-8').click()
-    await expect(page.getByTestId('hear-8')).toHaveAccessibleName(/reference recording of ayah 8/)
-    await page.getByTestId('hear-8').click()
+    await row(page, 8).locator('[data-word="1"]').click()                                   // flagging a word scopes the reference to that ayah
+    await expect(page.getByTestId('hear-check')).toHaveAccessibleName(/reference recording of ayah 8/)
+    await page.getByTestId('hear-check').click()
     await expect(page.getByTestId('audio-bar')).toBeVisible()
     await page.getByTestId('audio-play').click()
     await expect.poll(() => urls.length).toBeGreaterThan(0)
@@ -269,7 +269,7 @@ test.describe('reference recording and your own recording', () => {
     test.use({ permissions: ['microphone'] })      // the fake microphone itself comes from the browser flags in playwright.config.ts
     test('record, listen back, discard: nothing is stored anywhere, and the recall record is unaffected', async ({ page }) => {
       await open(page)
-      await expect(page.getByTestId('self-recorder')).toContainText('Stays on this device')
+      await expect(page.getByTestId('record-start')).toHaveAccessibleName(/stays on this device/i)
       await page.getByTestId('record-start').click()
       await expect(page.getByTestId('record-stop')).toBeVisible()
       await page.waitForTimeout(700)
@@ -295,7 +295,7 @@ test.describe('reference recording and your own recording', () => {
     await page.addInitScript(() => { navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('no', 'NotAllowedError')) })
     await open(page)
     await page.getByTestId('record-start').click()
-    await expect(page.getByTestId('record-denied')).toContainText('Nothing was recorded')
+    await expect(page.getByTestId('record-denied')).toContainText('nothing was recorded')
     await page.getByTestId('reveal').click(); await page.getByTestId('grade-independent').click()
     expect(await idbRows(page, 'reviews')).toHaveLength(1)
   })
@@ -311,7 +311,7 @@ test.describe('phone layout and accessibility', () => {
       await page.getByTestId('check-7').click(); await row(page, 8).scrollIntoViewIfNeeded()
       await row(page, 7).locator('[data-word="1"]').click()
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-      for (const id of ['check-8', 'hide-7', 'hear-7', 'read-first-7', 'issue-forgot', 'issue-pronunciation']) {
+      for (const id of ['check-8', 'hide-7', 'issue-forgot', 'issue-pronunciation', 'issue-clear', 'reveal', 'hear-check', 'record-start', 'more-toggle']) {
         const box = await page.getByTestId(id).boundingBox()
         expect(box!.height, id).toBeGreaterThanOrEqual(40)
         expect(box!.x + box!.width, id).toBeLessThanOrEqual(width)
@@ -322,11 +322,10 @@ test.describe('phone layout and accessibility', () => {
 
   test('controls have meaningful names and states, and the word tap works from the keyboard', async ({ page }) => {
     await open(page)
-    await expect(page.getByRole('button', { name: 'Check ayah 8' })).toBeVisible()
-    await page.getByRole('button', { name: 'Check ayah 8' }).click()
-    await expect(page.getByRole('group', { name: 'Ayah 8' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Hide ayah 8 again' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'I read it before reciting' })).toHaveAttribute('aria-pressed', 'false')
+    await expect(page.getByRole('button', { name: 'Reveal ayah 8' })).toBeVisible()
+    await page.getByRole('button', { name: 'Reveal ayah 8' }).focus(); await page.keyboard.press('Enter')       // the concealed ayah works from the keyboard too
+    await expect(page.getByRole('button', { name: 'Hide ayah 8' })).toBeVisible()
+    await expect(page.getByRole('toolbar', { name: 'Recall tools' })).toBeVisible()
     const w = row(page, 8).locator('[data-word="0"]')
     await w.focus(); await page.keyboard.press('Enter')
     await expect(w).toHaveAttribute('aria-pressed', 'true')

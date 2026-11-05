@@ -83,6 +83,11 @@ export function Medallion({ n }: { n: number }) {
   return <span className="medallion" aria-label={`ayah ${n}`}>{arabicIndic(n)}</span>
 }
 
+/** The end-of-ayah mark as a control (hide this ayah again). Same look as the mark; a comfortable touch target. */
+export function MedallionButton({ n, onClick, label, testId }: { n: number; onClick: () => void; label: string; testId?: string }) {
+  return <button type="button" className="medallion-btn" onClick={onClick} aria-label={label} title={label} data-testid={testId}><Medallion n={n} /></button>
+}
+
 export interface PassageProps {
   surah: number
   ayahs: number[]

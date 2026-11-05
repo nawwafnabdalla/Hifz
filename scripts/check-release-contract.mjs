@@ -13,6 +13,7 @@ const must = [
   ['the first-word hint of the part being added', 'Hint: first word of'], ['the run-up into revised passages', 'lead-in'], ['the note that parts are not places to stop', 'not places to stop'],
   ['checking one ayah at a time in revision', 'Show all ayahs'], ['flagging what went wrong with a word', 'Wrong word or vowel'],
   ['pronunciation / tajweed as its own kind of concern', 'Pronunciation / tajweed'], ['assisted vs recall (read before reciting)', 'I read it before reciting'], ['the optional self-recording', 'Record my recitation'],
+  ['tapping the concealed text to reveal it', 'Reveal ayah'], ['the one-tap explanation of the parts', 'About these parts'],
 ]
 const mustNot = [['browser-test hook', '__hifzPhrases'], ['private test-access gate', 'hifz.testCode'], ['third-party recording host', 'audio-cdn.tarteel.ai'], ['per-recording timing data', '--qua_']]
 const bad = []

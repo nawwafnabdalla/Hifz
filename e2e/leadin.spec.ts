@@ -15,7 +15,7 @@ test.describe('contextual lead-in for revision', () => {
     await expect(page.getByTestId('lead-in')).toHaveAttribute('data-lead-ayah', '6')
     expect(await leadWords(page)).toEqual(Array.from({ length: words(20, 6).length }, (_, i) => i))      // all of ayah 6, readable
     await expect(page.getByTestId('recall-text').locator('[data-w]')).toHaveCount(0)                      // 7–9: nothing visible
-    await expect(page.getByTestId('lead-in')).toContainText('It isn’t tested')
+    await expect(page.getByTestId('lead-in')).toContainText('not tested')
     await page.getByTestId('reveal').click()
     await expect(page.getByTestId('lead-in')).toBeVisible()                                                // still there for context after the check
     await page.getByTestId('grade-independent').click()
@@ -35,7 +35,7 @@ test.describe('contextual lead-in for revision', () => {
 
   test('the first-words hint still works, and still refers to the passage (the first word of each of ayahs 7, 8 and 9), not to the run-up', async ({ page }) => {
     await page.goto('/review/20/7/9?ctx=sabqi')
-    await page.getByRole('button', { name: /Need a hint\? Show the first words/ }).click()
+    await page.getByTestId('first-words').click()
     expect(await page.getByTestId('recall-text').locator('[data-w]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-w'))))).toEqual([0, 0, 0])
     await expect(page.getByTestId('recall-text').locator('[data-w]')).toHaveCount(3)
     expect(await leadWords(page)).toHaveLength(words(20, 6).length)                                        // the run-up is unchanged

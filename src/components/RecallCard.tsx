@@ -1,9 +1,10 @@
-import { Coach } from './Coach'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AyahWords, Medallion, type Cue } from './Arabic'
+import { Coach } from './Coach'
+import { AyahWords, Medallion, MedallionButton, type Cue } from './Arabic'
 import { AudioBar } from './AudioBar'
 import { RungPractice } from './RungPractice'
-import { SelfRecorder } from './SelfRecorder'
+import { RecorderButton, RecorderPlayback, useSelfRecorder } from './SelfRecorder'
+import { GradeGrid } from './GradeGrid'
 import { Icon } from './Icon'
 import { useApp } from '@/app/store'
 import { rangeTitle } from '@/lib/format'
@@ -18,32 +19,25 @@ import { leadInFor, type LeadIn } from '@/lib/engine/leadin'
 const KINDS: StumbleKind[] = ['hesitated', 'prompted', 'wrong', 'blank']
 const KIND_LABEL: Record<StumbleKind, string> = { hesitated: 'hesitated', prompted: 'needed a prompt', wrong: 'words wrong', blank: 'blank' }
 const KIND_STYLE: Record<StumbleKind, string> = { hesitated: 'bg-amber-soft', prompted: 'bg-clay-soft', wrong: 'bg-clay-soft', blank: 'bg-clay-soft' }
-
-const GRADES: { g: Grade; title: string; sub: string; cls: string }[] = [
-  { g: 'independent', title: 'On my own', sub: 'Matched the text, no help', cls: 'btn-primary' },
-  { g: 'hesitant', title: 'Hesitated', sub: 'Accurate, but unsure', cls: 'btn-quiet' },
-  { g: 'prompted', title: 'Needed a prompt', sub: 'Partly right', cls: 'btn-quiet' },
-  { g: 'failed', title: 'Couldn’t recall', sub: 'Not yet', cls: 'btn-quiet' },
-]
+/** Shorter words for the flag chips (the full wording is the accessible name). */
+const ISSUE_SHORT: Record<IssueKind, string> = { slip: 'Marked', forgot: 'Forgot', wrong: 'Wrong word', pronunciation: 'Pronunciation' }
 
 export interface RecallResult { event: ReviewEvent }
 
-/** The run-up before a passage that is revised from memory: readable, never tested, never recorded. */
+/** The run-up before a passage that is revised from memory: readable, never tested, never recorded. Quiet on purpose: the verse mark says which ayah it is. */
 function LeadInBlock({ lead }: { lead: LeadIn }) {
   if (lead.kind === 'surah-start') {
     const s = surahInfo(lead.surah)
     return (
-      <div className="mb-3 rounded-2xl bg-surface-2/60 px-4 py-3 text-center" data-testid="lead-in" data-lead-kind="surah-start">
-        <div className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted">Run-up</div>
-        <p className="mt-1 text-ink-2">Surah {s.tr} <span lang="ar" dir="rtl" className="font-[family-name:var(--font-arabic)]">{s.ar}</span> begins here{lead.basmala ? ', after the Basmala' : ''}.</p>
-      </div>
+      <p className="mb-3 text-center text-sm text-muted" data-testid="lead-in" data-lead-kind="surah-start">
+        <span className="sr-only">Run-up, not tested. </span>Surah {s.tr} <span lang="ar" dir="rtl" className="font-[family-name:var(--font-arabic)]">{s.ar}</span> begins here{lead.basmala ? ', after the Basmala' : ''}.
+      </p>
     )
   }
   return (
-    <div className="mb-3 rounded-2xl bg-surface-2/60 px-4 py-3 text-center" data-testid="lead-in" data-lead-kind="ayah" data-lead-ayah={lead.ayah}>
-      <div className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted">Run-up · ayah {lead.ayah}</div>
-      <p className="arabic center mt-1 opacity-90" lang="ar" dir="rtl" data-testid="lead-in-text">{lead.truncated ? '… ' : ''}<AyahWords surah={lead.surah} ayah={lead.ayah} only={[lead.from, lead.to]} /> <Medallion n={lead.ayah} /></p>
-      <Coach id="lead-in" className="mt-1 text-xs text-muted" full={`Read it to get into the rhythm, then continue from memory. It isn’t tested${lead.truncated ? ' (just its last words)' : ''}.`} short="Not tested: just the run-up." />
+    <div className="mb-2 border-b border-line/70 pb-3 text-center" data-testid="lead-in" data-lead-kind="ayah" data-lead-ayah={lead.ayah} role="group" aria-label={`Run-up: ayah ${lead.ayah}, not tested`}>
+      <p className="arabic center opacity-60" lang="ar" dir="rtl" data-testid="lead-in-text">{lead.truncated ? '… ' : ''}<AyahWords surah={lead.surah} ayah={lead.ayah} only={[lead.from, lead.to]} />{'\u00a0'}<Medallion n={lead.ayah} /></p>
+      <span className="sr-only">Run-up, not tested.</span>
     </div>
   )
 }
@@ -59,16 +53,15 @@ export function cueForHints(revealed: number, total: number, meaning: boolean): 
 export const nextReveal = (current: number, total: number) => Math.min(total, current === 0 ? 1 : current + 3)
 
 /**
- * Recite from memory, then check against the text, and grade with one tap.
+ * Recite from memory, then check against the text. The text itself is the control: tap a concealed ayah to reveal it, tap its verse mark to hide it again,
+ * tap a word of a revealed ayah to flag it. Recite the whole passage first and check afterwards, or check one ayah at a time.
  *
- * Checking is ayah by ayah: each ayah of a passage has its own "Check" button, so one ayah can be compared without revealing the rest, and a revealed ayah can
- * be hidden again. Reciting several ayahs in one go and checking them afterwards works too ("Show all"). Revealing an ayah after reciting it is feedback, not a hint:
- * only the first-word hint (before the attempt) makes a recall assisted. An ayah that was never compared with the text, or that was read before it was recited,
- * carries no recall evidence. While checking, tap any word that was wrong and say what happened (forgot it / wrong word or vowel / pronunciation or tajweed): the app
- * practises that exact spot with you and schedules it. It never grades pronunciation or tajweed and never certifies a recitation.
+ * Revealing an ayah after reciting it is feedback, not a hint: only the first-word hint (before the attempt) makes a recall assisted. An ayah that was never
+ * compared with the text, or that was read before it was recited, carries no recall evidence. Flagged words (forgot / wrong word or vowel / pronunciation or
+ * tajweed) are practised at that exact spot and scheduled. The app never grades pronunciation or tajweed and never certifies a recitation.
  */
-export function RecallCard({ range, context, listenedFirst, onDone, title, fixedCue }: {
-  range: Range; context: PracticeContext; listenedFirst?: boolean; onDone: (e: ReviewEvent, info?: { repaired: boolean }) => void; title?: string; fixedCue?: Cue
+export function RecallCard({ range, context, listenedFirst, onDone, title, hideTitle, fixedCue }: {
+  range: Range; context: PracticeContext; listenedFirst?: boolean; onDone: (e: ReviewEvent, info?: { repaired: boolean }) => void; title?: string; hideTitle?: boolean; fixedCue?: Cue
 }) {
   const logReview = useApp((s) => s.logReview)
   const logFlow = useApp((s) => s.logFlow)
@@ -85,17 +78,18 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   const [readFirst, setReadFirst] = useState<Set<number>>(new Set())     // ayahs the learner read before reciting them: no recall evidence
   const [issues, setIssues] = useState<WordIssue[]>([])
   const [pick, setPick] = useState<{ ayah: number; word: number } | null>(null)
-  const [hearAyah, setHearAyah] = useState<number | null>(null)
   const [hintWords, setHintWords] = useState(0)
   const [meaning, setMeaning] = useState(false)
   const [firstWords, setFirstWords] = useState(false)       // passages only
   const [hear, setHear] = useState(false)
+  const [more, setMore] = useState(false)
   const [flags, setFlags] = useState<Map<number, StumbleKind>>(new Map())
   const [shaky, setShaky] = useState<Set<number>>(new Set())
   const [stopAt, setStopAt] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [repair, setRepair] = useState<{ event: ReviewEvent; items: { ayah: number; word: number; kind: IssueKind }[]; i: number } | null>(null)
   const [tr, setTr] = useState<string[] | null>(null)
+  const rec = useSelfRecorder()
   const started = useRef(Date.now())
   const ayahs = useMemo(() => Array.from({ length: n }, (_, i) => range.start + i), [range.start, n])
 
@@ -109,6 +103,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   const hintCue = single ? cueForHints(hintWords, total, meaning) : (firstWords ? 3 : 4) as Cue
   const eventCue: Cue = fixedCue ?? hintCue
   const cue: Cue = fixedCue ?? (firstWords ? 3 : 4)
+  const blocked = (g: Grade) => (usedHelp && g === 'independent') || (single && contradicts && (g === 'independent' || g === 'hesitant'))
 
   const cycle = (a: number) => setFlags((m) => {
     const x = new Map(m)
@@ -121,6 +116,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   const checkAyah = (a: number) => { setViewed((v) => new Set(v).add(a)); setShown((v) => new Set(v).add(a)) }
   const hideAyah = (a: number) => { setShown((v) => { const x = new Set(v); x.delete(a); return x }); setPick((p) => (p?.ayah === a ? null : p)) }
   const showAll = () => { setViewed(new Set(ayahs)); setShown(new Set(ayahs)) }
+  const hideAll = () => { setShown(new Set()); setPick(null) }
   const toggleReadFirst = (a: number) => setReadFirst((r) => { const x = new Set(r); x.has(a) ? x.delete(a) : x.add(a); return x })
   const issueAt = (a: number, w: number) => issues.find((i) => i.ayah === a && i.word === w)
   function tapWord(a: number, w: number) {
@@ -138,9 +134,7 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
   }
 
   async function grade(g: Grade) {
-    if (busy || !evidence.length) return
-    if (usedHelp && g === 'independent') return          // a hinted recall can never be claimed as unaided
-    if (single && contradicts && (g === 'independent' || g === 'hesitant')) return   // a forgotten or wrong word contradicts "accurate"
+    if (busy || !evidence.length || blocked(g)) return
     setBusy(true)
     // Only ayahs that were recited and then compared with the text carry evidence. All of them: the record is exactly what it always was.
     let evRange = range, checked: number[] | undefined, completedTo = stopAt ?? undefined
@@ -177,11 +171,10 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
     const next = () => { if (last) onDone(repair.event, { repaired: true }); else setRepair({ ...repair, i: repair.i + 1 }) }
     return (
       <div className="px-4" data-testid="repair-panel" data-repair-ayah={it.ayah} data-repair-kind={it.kind}>
-        <div className="mb-3 text-center"><div className="eyebrow">Repair the exact spot{repair.items.length > 1 ? ` · ${repair.i + 1} of ${repair.items.length}` : ''}</div>
-          <h2 className="font-display mt-1 text-xl">{n > 1 ? `Ayah ${it.ayah}: ` : ''}Practise {label}</h2>
-          {it.kind === 'pronunciation'
-            ? <p className="mt-1 text-sm text-ink-2" data-testid="repair-pronunciation">Listen to the reference, then say just this part until it flows. The app can’t hear pronunciation or tajweed: compare carefully, or ask a teacher.</p>
-            : <Coach id="repair-intro" className="mt-1 text-sm text-ink-2" full="Say just this part until it flows. The rest of the ayah is already in your history." short="Say just this part until it flows." />}</div>
+        <div className="mb-3 text-center">
+          <h2 className="font-display text-xl">{n > 1 ? `Ayah ${it.ayah}: ` : ''}Practise {label}{repair.items.length > 1 ? <span className="ml-2 text-sm font-normal text-muted">{repair.i + 1} of {repair.items.length}</span> : null}</h2>
+          {it.kind === 'pronunciation' && <p className="mt-1 text-sm text-ink-2" data-testid="repair-pronunciation">Listen, then say it until it flows. The app can’t hear pronunciation or tajweed: compare carefully, or ask a teacher.</p>}
+        </div>
         {it.kind === 'pronunciation' && <div className="mb-3"><AudioBar queue={[{ surah: range.surah, ayah: it.ayah }]} autoKey={`repair-${range.surah}:${it.ayah}`} /></div>}
         <RungPractice key={`${it.ayah}-${repair.i}`} surah={range.surah} ayah={it.ayah} words={words} phrases={phrases} boundaries={boundaries} from={r.from} to={r.to} resetKey={`repair-${it.ayah}`} focusOnly={words.length > 28}
           onRate={async (rating: FlowRating, s) => {
@@ -189,138 +182,110 @@ export function RecallCard({ range, context, listenedFirst, onDone, title, fixed
             if (rating === 'natural') next()
           }} />
         <button className="btn btn-ghost mt-3 w-full" onClick={() => onDone(repair.event, { repaired: true })} data-testid="repair-skip">Done for now</button>
-        <Coach id="repair-outro" className="mt-2 text-center text-xs text-muted" full="Until it feels natural it stays marked as tricky and is practised first next time." />
       </div>
     )
   }
 
-  const eyebrow = !revealed ? 'From memory' : n > 1 && notCounted.length ? 'Checking' : 'How was that?'
+  const flaggedWords = (a: number) => issues.filter((i) => i.ayah === a).map((i) => i.word)
+  const onKey = (fn: () => void) => (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn() } }
+  const pickedIssue = pick ? issueAt(pick.ayah, pick.word) : undefined
+  // The reference plays the ayah you are flagging a word in, or else the whole passage.
+  const hearAyahs = pick ? [pick.ayah] : ayahs
+  const anyShown = shown.size > 0
+  const headline = hideTitle ? null : <h2 className="mb-3 text-center text-sm font-semibold tracking-wide text-muted">{title ?? rangeTitle(range)}</h2>
+
   return (
     <div className="px-4" data-testid="recall-card">
-      <div className="mb-3 text-center">
-        <div className="eyebrow">{eyebrow}</div>
-        <h2 className="font-display mt-1 text-xl">{title ?? rangeTitle(range)}</h2>
-        {!revealed && (n > 1
-          ? <Coach id="recall-intro-multi" className="mt-1 text-sm text-ink-2" full={`Recite aloud, all ${n} ayahs in order. Then check them one at a time, or show them all.`} short="Recite, then check ayah by ayah." />
-          : <Coach id="recall-intro" className="mt-1 text-sm text-ink-2" full="Recite aloud, then show the text to check." short="" />)}
-      </div>
-
+      {headline}
       {lead && <LeadInBlock lead={lead} />}
-      <div className="card px-4 py-5" data-testid="recall-text">
-        <div className={n > 1 ? 'divide-y divide-line' : ''}>
+      <div className="py-2" data-testid="recall-text">
+        <p className="arabic" lang="ar" dir="rtl">
           {ayahs.map((a) => {
             const isShown = shown.has(a)
-            const mine = issues.filter((i) => i.ayah === a)
-            const cur = pick && pick.ayah === a ? issueAt(a, pick.word) : undefined
             return (
-              <section key={a} role="group" aria-label={`Ayah ${a}`} className={n > 1 ? 'py-3 first:pt-0 last:pb-0' : ''} data-testid={`ayah-row-${a}`} data-shown={isShown} data-counts={evidence.includes(a)}>
-                <p className="arabic" lang="ar" dir="rtl">
-                  <span className="ayah" data-ayah={a}>
-                    <AyahWords surah={range.surah} ayah={a} cue={isShown ? 0 : cue} revealCount={single && !isShown ? hintWords : undefined}
-                      onWord={isShown ? (w) => tapWord(a, w) : undefined} marked={mine.map((i) => i.word)} />{' '}<Medallion n={a} />
-                  </span>
-                </p>
-                {!isShown && (n > 1 || viewed.has(a)) && (
-                  <div className="mt-2 text-center">
-                    <button className="btn btn-quiet" onClick={() => checkAyah(a)} data-testid={`check-${a}`} aria-label={viewed.has(a) ? (n > 1 ? `Show ayah ${a} again` : 'Show the text again') : `Check ayah ${a}`}>
-                      <Icon name="eye" size={15} />{viewed.has(a) ? (n > 1 ? `Show ayah ${a} again` : 'Show text again') : `Check ayah ${a}`}
-                    </button>
-                  </div>
-                )}
-                {isShown && (
-                  <div className="mt-2 space-y-2" data-testid={`tools-${a}`}>
-                    <div className="flex flex-wrap items-center justify-center gap-1.5">
-                      <button className="chip !min-h-[40px]" onClick={() => hideAyah(a)} data-testid={`hide-${a}`} aria-label={`Hide ayah ${a} again`}><Icon name="eyeoff" size={14} />Hide</button>
-                      <button className="chip !min-h-[40px]" aria-pressed={hearAyah === a} onClick={() => setHearAyah((h) => (h === a ? null : a))} data-testid={`hear-${a}`} aria-label={`Hear the reference recording of ayah ${a}`}><Icon name="headphones" size={14} />Hear reference</button>
-                      {n > 1 && <button className="chip !min-h-[40px]" aria-pressed={readFirst.has(a)} onClick={() => toggleReadFirst(a)} data-testid={`read-first-${a}`}>I read it before reciting</button>}
-                    </div>
-                    {readFirst.has(a) && <p className="text-center text-xs text-muted" data-testid={`read-first-note-${a}`}>Not counted as recall: you saw it first. It still helps you learn it.</p>}
-                    {hearAyah === a && <AudioBar queue={[{ surah: range.surah, ayah: a }]} autoKey={`check-${range.surah}:${a}`} />}
-                    {cur && (
-                      <div className="rounded-2xl bg-surface-2/70 px-3 py-2.5" role="group" aria-label={`What went wrong with word ${cur.word + 1} of ayah ${a}`} data-testid="issue-picker">
-                        <div className="text-center text-xs font-semibold text-ink-2">Word {cur.word + 1}: what happened?</div>
-                        <div className="mt-1.5 flex flex-wrap justify-center gap-1.5">
-                          {ISSUE_CHOICES.map((k) => <button key={k} className="chip !min-h-[40px]" aria-pressed={cur.kind === k} onClick={() => setKind(a, cur.word, k)} data-testid={`issue-${k}`}>{ISSUE_LABEL[k]}</button>)}
-                          <button className="chip !min-h-[40px]" onClick={() => clearIssue(a, cur.word)} data-testid="issue-clear">Not a problem</button>
-                        </div>
-                        {cur.kind === 'pronunciation' && <p className="mt-1.5 text-center text-xs text-muted">The app can’t hear this. Compare with the reference recording, or ask a teacher.</p>}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </section>
+              <span key={a} data-testid={`ayah-row-${a}`} data-shown={isShown} data-counts={evidence.includes(a)}>
+                <span className={`ayah${isShown ? '' : ' concealed'}`} data-ayah={a} data-testid={isShown ? undefined : `check-${a}`}
+                  {...(isShown ? {} : { role: 'button', tabIndex: 0, 'aria-label': viewed.has(a) ? `Show ayah ${a} again` : `Reveal ayah ${a}`, onClick: () => checkAyah(a), onKeyDown: onKey(() => checkAyah(a)) })}>
+                  <AyahWords surah={range.surah} ayah={a} cue={isShown ? 0 : cue} revealCount={single && !isShown ? hintWords : undefined}
+                    onWord={isShown ? (w) => tapWord(a, w) : undefined} marked={flaggedWords(a)} />{'\u00a0'}
+                  {isShown ? <MedallionButton n={a} onClick={() => hideAyah(a)} label={`Hide ayah ${a}`} testId={`hide-${a}`} /> : <Medallion n={a} />}
+                </span>{' '}
+              </span>
             )
           })}
-        </div>
-        {single && meaning && <p className="mt-3 border-t border-line pt-3 text-center text-[0.95rem] leading-relaxed text-ink-2" data-testid="meaning-line">{tr ? tr[range.start - 1] : '…'}</p>}
-        {revealed && <Coach id="verify-tip" className="mt-3 text-center text-xs text-muted" full="Fluent isn’t the same as exact. Read each word against what you said: letters, vowels, endings. Tap any word you got wrong." short="Check every word, not just the flow." />}
-        {revealed && n > 1 && (
-          <div className="mt-3 space-y-3 border-t border-line pt-3" data-testid="stumble-tools">
-            <Coach id="stumble-tip" className="text-xs text-muted" full="Optional: tap an ayah where you slipped. Tap again to change how." short="Tap an ayah where you slipped." />
-            <div className="flex flex-wrap gap-1.5">
-              {ayahs.map((a) => { const k = flags.get(a); return <button key={a} className={`chip tabular ${k ? KIND_STYLE[k] : ''}`} onClick={() => cycle(a)} aria-label={`Ayah ${a}: ${k ? KIND_LABEL[k] : 'fine'}`}>{a}{k && <span className="text-xs">· {KIND_LABEL[k]}</span>}</button> })}
-            </div>
-            <div>
-              <div className="mb-1 text-xs text-muted">Any shaky transitions?</div>
-              <div className="flex flex-wrap gap-1.5">
-                {ayahs.slice(0, -1).map((a) => <button key={a} className="chip tabular" aria-pressed={shaky.has(a)} onClick={() => setShaky((s) => { const x = new Set(s); x.has(a) ? x.delete(a) : x.add(a); return x })}><Icon name="link" size={13} />{a}→{a + 1}</button>)}
-              </div>
-            </div>
-            <label className="flex items-center gap-2 text-sm text-ink-2">
-              <input type="checkbox" checked={stopAt !== null} onChange={(e) => setStopAt(e.target.checked ? ayahs[ayahs.length - 1]! - 1 || ayahs[0]! : null)} />
-              I stopped before the end
-              {stopAt !== null && (
-                <select className="ml-1 h-9 rounded-lg border border-line bg-bg px-2" value={stopAt} onChange={(e) => setStopAt(+e.target.value)} aria-label="Last ayah I reached">
-                  {ayahs.map((a) => <option key={a} value={a}>at ayah {a}</option>)}
-                </select>
-              )}
-            </label>
-          </div>
-        )}
-        <SelfRecorder />
+        </p>
+        {single && meaning && <p className="mt-3 text-center text-[0.95rem] leading-relaxed text-ink-2" data-testid="meaning-line">{tr ? tr[range.start - 1] : '…'}</p>}
       </div>
 
-      {!revealed ? (
-        <div className="mt-4 space-y-2">
-          <button className="btn btn-primary btn-lg w-full" onClick={showAll} data-testid="reveal"><Icon name="eye" size={18} /> {n > 1 ? 'Show all ayahs' : 'Show text'}</button>
-          {single && !fixedCue && (
-            <div className="grid grid-cols-2 gap-2">
-              <button className="btn btn-quiet" onClick={() => setHintWords((h) => nextReveal(h, total))} disabled={hintWords >= total} data-testid="hint">{hintWords === 0 ? 'Hint: first word' : 'Another hint'}</button>
-              <button className="btn btn-quiet" aria-pressed={meaning} onClick={() => setMeaning((m) => !m)} data-testid="meaning">{meaning ? 'Hide meaning' : 'Meaning'}</button>
-            </div>
-          )}
-          {!single && !fixedCue && <button className="btn btn-ghost w-full" onClick={() => setFirstWords((h) => !h)} aria-pressed={firstWords}>{firstWords ? 'First words shown (counts as weaker evidence)' : 'Need a hint? Show the first words'}</button>}
-          {usedHelp && <p className="text-center text-xs text-muted" data-testid="hint-note">Hints count as weaker evidence, so “on my own” isn’t available.</p>}
+      {pickedIssue && (
+        <div className="mb-1 flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label={`What went wrong with word ${pickedIssue.word + 1} of ayah ${pickedIssue.ayah}`} data-testid="issue-picker">
+          {ISSUE_CHOICES.map((k) => <button key={k} className="chip !min-h-[40px] !px-3" aria-pressed={pickedIssue.kind === k} aria-label={ISSUE_LABEL[k]} onClick={() => setKind(pickedIssue.ayah, pickedIssue.word, k)} data-testid={`issue-${k}`}>{ISSUE_SHORT[k]}</button>)}
+          <button className="tool" onClick={() => clearIssue(pickedIssue.ayah, pickedIssue.word)} aria-label="Not a problem: clear the mark" title="Clear" data-testid="issue-clear"><Icon name="x" size={16} /></button>
         </div>
-      ) : (
-        <>
-          {n > 1 && notCounted.length > 0 && (
-            <div className="mt-3 rounded-2xl bg-amber-soft/60 px-3 py-2.5 text-center text-xs text-ink-2" data-testid="unchecked-note">
-              {evidence.length === 0
-                ? 'Nothing to record yet: check an ayah you recited from memory.'
-                : `Ayah${notCounted.length > 1 ? 's' : ''} ${notCounted.join(', ')} ${notCounted.length > 1 ? 'aren’t' : 'isn’t'} counted as recalled, because ${notCounted.length > 1 ? 'they haven’t' : 'it hasn’t'} been checked against the text.`}
-              {' '}<button className="font-semibold underline" onClick={showAll} data-testid="show-rest">Show {evidence.length === 0 ? 'all' : 'the rest'}</button>
-            </div>
-          )}
-          {evidence.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-2.5" data-testid="grades">
-              {GRADES.map((g) => {
-                const blocked = (usedHelp && g.g === 'independent') || (single && contradicts && (g.g === 'independent' || g.g === 'hesitant'))
-                return (
-                  <button key={g.g} disabled={busy || blocked} className={`btn ${g.cls} h-auto flex-col !items-start !gap-0 py-3 text-left`} onClick={() => void grade(g.g)} data-testid={`grade-${g.g}`}>
-                    <span className="text-[0.98rem]">{g.title}</span><span className="text-xs font-normal opacity-75">{blocked ? (usedHelp && g.g === 'independent' ? 'Not with hints' : 'Not with a flagged word') : g.sub}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-          <div className="mt-3 text-center">
-            <button className="btn btn-ghost btn-sm" onClick={() => setHear((h) => !h)} data-testid="hear-check"><Icon name="headphones" size={15} />{n > 1 ? 'Hear the whole passage' : 'Hear it to check'}</button>
-          </div>
-          {hear && <div className="mt-2"><AudioBar queue={ayahs.map((a) => ({ surah: range.surah, ayah: a }))} autoKey={`check-${range.surah}:${range.start}-${range.end}`} /></div>}
-        </>
       )}
-      <p className="mt-3 text-center text-xs text-muted">Saved to your history. The app doesn’t grade you: it records what you tell it.</p>
+
+      {/* Everything secondary lives in one quiet row of small controls. */}
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-0.5" role="toolbar" aria-label="Recall tools">
+        <button className="tool" onClick={anyShown ? hideAll : showAll} data-testid="reveal" aria-label={anyShown ? 'Hide the text again' : n > 1 ? 'Show all ayahs' : 'Show the text'} title={anyShown ? 'Hide' : n > 1 ? 'Show all' : 'Show text'}><Icon name={anyShown ? 'eyeoff' : 'eye'} size={19} /></button>
+        {!revealed && single && !fixedCue && (
+          <>
+            <button className="tool" onClick={() => setHintWords((h) => nextReveal(h, total))} disabled={hintWords >= total} data-testid="hint" aria-label={hintWords === 0 ? 'Hint: first word' : 'Another hint'}>Hint</button>
+            <button className="tool" aria-pressed={meaning} onClick={() => setMeaning((m) => !m)} data-testid="meaning" aria-label={meaning ? 'Hide meaning' : 'Show meaning'}>Meaning</button>
+          </>
+        )}
+        {!revealed && !single && !fixedCue && <button className="tool" aria-pressed={firstWords} onClick={() => setFirstWords((h) => !h)} data-testid="first-words" aria-label="Show the first words of each ayah (a hint)">Hint</button>}
+        {revealed && <button className="tool" aria-pressed={hear} onClick={() => setHear((h) => !h)} data-testid="hear-check" data-scope={hearAyahs.length === 1 ? hearAyahs[0] : 'all'} aria-label={hearAyahs.length === 1 && n > 1 ? `Hear the reference recording of ayah ${hearAyahs[0]}` : n > 1 ? 'Hear the reference recording of the passage' : 'Hear the reference recording'} title="Hear the reference"><Icon name="headphones" size={19} /></button>}
+        <RecorderButton r={rec} />
+        {revealed && n > 1 && <button className="tool" aria-pressed={more} aria-expanded={more} onClick={() => setMore((m) => !m)} data-testid="more-toggle" aria-label="More: slips, transitions, stopped early, read first" title="More"><Icon name="dots" size={19} /></button>}
+      </div>
+      <RecorderPlayback r={rec} />
+      {!revealed && <Coach id="tap-hint" className="mt-2 text-center text-xs text-muted" full="Recite, then tap the text to check it." short="" />}
+      {hear && <div className="mt-2"><AudioBar queue={hearAyahs.map((a) => ({ surah: range.surah, ayah: a }))} autoKey={`check-${range.surah}:${hearAyahs[0]}-${hearAyahs[hearAyahs.length - 1]}`} /></div>}
+
+      {revealed && n > 1 && more && (
+        <div className="mt-3 space-y-3 rounded-2xl bg-surface-2/60 px-3 py-3" data-testid="stumble-tools">
+          <div>
+            <div className="mb-1 text-xs text-muted">Where did you slip? Tap to change how.</div>
+            <div className="flex flex-wrap gap-1.5">
+              {ayahs.map((a) => { const k = flags.get(a); return <button key={a} className={`chip tabular !min-h-[40px] ${k ? KIND_STYLE[k] : ''}`} onClick={() => cycle(a)} aria-label={`Ayah ${a}: ${k ? KIND_LABEL[k] : 'fine'}`}>{a}{k && <span className="text-xs">· {KIND_LABEL[k]}</span>}</button> })}
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-muted">Shaky transitions</div>
+            <div className="flex flex-wrap gap-1.5">
+              {ayahs.slice(0, -1).map((a) => <button key={a} className="chip tabular !min-h-[40px]" aria-pressed={shaky.has(a)} onClick={() => setShaky((s) => { const x = new Set(s); x.has(a) ? x.delete(a) : x.add(a); return x })}><Icon name="link" size={13} />{a}→{a + 1}</button>)}
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 text-xs text-muted">Read before reciting (not counted as recall)</div>
+            <div className="flex flex-wrap gap-1.5">
+              {ayahs.map((a) => <button key={a} className="chip tabular !min-h-[40px]" aria-pressed={readFirst.has(a)} onClick={() => toggleReadFirst(a)} data-testid={`read-first-${a}`} aria-label={`Ayah ${a}: I read it before reciting`}>{a}</button>)}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-ink-2">
+            <input type="checkbox" checked={stopAt !== null} onChange={(e) => setStopAt(e.target.checked ? ayahs[ayahs.length - 1]! - 1 || ayahs[0]! : null)} />
+            I stopped before the end
+            {stopAt !== null && (
+              <select className="ml-1 h-9 rounded-lg border border-line bg-bg px-2" value={stopAt} onChange={(e) => setStopAt(+e.target.value)} aria-label="Last ayah I reached">
+                {ayahs.map((a) => <option key={a} value={a}>at ayah {a}</option>)}
+              </select>
+            )}
+          </label>
+        </div>
+      )}
+
+      {revealed && evidence.length > 0 && (
+        <div className="mt-4" data-testid="grade-area">
+          <GradeGrid onGrade={(g) => void grade(g)} busy={busy} blocked={blocked} />
+          {(usedHelp || (single && contradicts) || (n > 1 && notCounted.length > 0)) && (
+            <p className="mt-2 text-center text-xs text-muted" data-testid="grade-note">
+              {usedHelp ? 'With a hint, “On my own” isn’t available.' : single && contradicts ? 'With a flagged word, “On my own” and “Hesitated” aren’t available.' : ''}
+              {n > 1 && notCounted.length > 0 && <span data-testid="unchecked-note">{usedHelp || (single && contradicts) ? ' ' : ''}Ayah{notCounted.length > 1 ? 's' : ''} {notCounted.join(', ')} not checked, so not counted.</span>}
+            </p>
+          )}
+        </div>
+      )}
+      {revealed && evidence.length === 0 && n > 1 && <p className="mt-3 text-center text-xs text-muted" data-testid="unchecked-note">Nothing to record yet: check an ayah you recited from memory.</p>}
     </div>
   )
 }
