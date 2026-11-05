@@ -50,9 +50,9 @@ export function RungPractice({ surah, ayah, words, phrases, boundaries, from, to
         <span className="text-xs text-muted">{reps === 0 ? '' : reps < 3 ? 'A few more times' : 'Rate how it feels'}</span>
       </button>
       <div className="mt-3 grid grid-cols-3 gap-2" role="group" aria-label="How does it feel on the tongue?">
-        <button className="btn btn-quiet h-auto flex-col !gap-0 py-2.5" onClick={() => void rate('tangled')} data-testid="rate-tangled"><span>Tangled</span><span className="text-[0.7rem] font-normal text-muted">again</span></button>
-        <button className="btn btn-quiet h-auto flex-col !gap-0 py-2.5" onClick={() => void rate('improving')} data-testid="rate-improving"><span>Improving</span><span className="text-[0.7rem] font-normal text-muted">next</span></button>
-        <button className="btn btn-primary h-auto flex-col !gap-0 py-2.5" onClick={() => void rate('natural')} data-testid="rate-natural"><span>Natural</span><span className="text-[0.7rem] font-normal opacity-80">rolls off</span></button>
+        <button className="btn btn-quiet h-12" onClick={() => void rate('tangled')} data-testid="rate-tangled" title="Tangled: again">Tangled</button>
+        <button className="btn btn-quiet h-12" onClick={() => void rate('improving')} data-testid="rate-improving" title="Improving: next">Improving</button>
+        <button className="btn btn-primary h-12" onClick={() => void rate('natural')} data-testid="rate-natural" title="Natural: it rolls off the tongue">Natural</button>
       </div>
     </>
   )

@@ -197,12 +197,11 @@ test.describe('calm, goal-first screens', () => {
 
   test('instructions teach for a few days, then shrink to a short reminder', async ({ page }) => {
     await mockAudio(page); await freshStart(page)
-    await page.goto('/learn/112/1/1')
-    await expect(page.getByTestId('stage-sound')).toContainText('Listen first, with the text in front of you.')
-    await page.evaluate(() => localStorage.setItem('hifz.coach.v1', JSON.stringify({ 'sound-listen': ['2020-01-01', '2020-01-02', '2020-01-03'] })))
+    await page.goto('/review/112/1/1?ctx=free')
+    await expect(page.getByTestId('recall-card')).toContainText('Recite, then tap the text to check it.')
+    await page.evaluate(() => localStorage.setItem('hifz.coach.v1', JSON.stringify({ 'tap-hint': ['2020-01-01', '2020-01-02', '2020-01-03'] })))
     await page.reload()
-    await expect(page.getByTestId('stage-sound')).not.toContainText('Notice the sounds')
-    await expect(page.getByTestId('stage-sound')).toContainText('Listen with the text.')
+    await expect(page.getByTestId('recall-card')).not.toContainText('tap the text to check it')      // taught for a few days, then it gets out of the way
   })
 
   test('the audio bar is one calm row at rest, with the options in a single sheet', async ({ page }) => {

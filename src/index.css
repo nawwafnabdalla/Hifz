@@ -249,3 +249,20 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 :root[data-script="madinah"] .arabic .w,
 :root[data-script="madinah"] .arabic .alt { font-family: inherit; }
 .arabic .endmark { color: var(--brass); font-size: 0.82em; margin-inline: 0.12em; white-space: nowrap; }
+
+/* Recall: the text is the control. A concealed ayah is a soft, quietly tappable region; the end-of-ayah mark hides a revealed one again. */
+.arabic .ayah.concealed { cursor: pointer; border-radius: 16px; padding: 0.12em 0.3em; -webkit-box-decoration-break: clone; box-decoration-break: clone; background: color-mix(in oklab, var(--ink) 3%, transparent); transition: background 160ms ease; -webkit-tap-highlight-color: transparent; }
+.arabic .ayah.concealed:hover { background: color-mix(in oklab, var(--accent) 9%, transparent); }
+.arabic .ayah.concealed:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.arabic .ayah.concealed:active { background: color-mix(in oklab, var(--accent) 14%, transparent); }
+.arabic .medallion-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; vertical-align: middle; background: none; border: 0; padding: 0; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.arabic .medallion-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tool { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; padding: 0 0.6rem; border-radius: 999px; color: var(--ink-2); font-size: 0.85rem; font-weight: 600; background: none; border: 0; transition: background 140ms, color 140ms; -webkit-tap-highlight-color: transparent; }
+.tool:hover { background: color-mix(in oklab, var(--ink) 6%, transparent); }
+.tool[aria-pressed="true"] { background: color-mix(in oklab, var(--accent) 14%, transparent); color: var(--accent-strong, var(--accent)); }
+.tool:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tool:disabled { opacity: 0.4; }
+.tool .row { display: inline-flex; align-items: center; gap: 0.35rem; }
+@keyframes rec-pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+.tool.recording { color: var(--clay, #b4533a); animation: rec-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .tool.recording { animation: none; } }

@@ -69,7 +69,7 @@ test.describe('recall: hints, meaning, slip-to-repair', () => {
     await page.getByTestId('repair-skip').click()                          // left it tangled
     await page.goto('/learn/2/255/255')
     await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('stage-flow')).toContainText(/Repairing the tricky part/)
+    await expect(page.getByTestId('stage-flow')).toContainText(/tricky spot/)
     await expect(page.getByTestId('stage-flow')).toContainText(/Repair:/)
   })
 })

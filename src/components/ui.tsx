@@ -101,9 +101,9 @@ export function Ring({ value, size = 64, stroke = 6, children }: { value: number
 
 export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
-    <div className="card-flat p-4">
+    <div>
       <div className="eyebrow">{label}</div>
-      <div className="font-display tabular mt-1 text-[1.9rem] leading-none">{value}</div>
+      <div className="font-display tabular mt-1 text-[2.2rem] leading-none">{value}</div>
       {hint && <div className="mt-1.5 text-xs text-muted">{hint}</div>}
     </div>
   )

@@ -44,25 +44,35 @@ export function ProgressPage() {
 
   return (
     <div>
-      <Header eyebrow="Progress" title="What the evidence shows" subtitle="From your own recorded practice only." />
+      <Header title="Progress" />
 
-      <section className="grid grid-cols-2 gap-3 px-5" data-testid="coverage">
-        <Stat label="Recalled" value={cov.demonstrated.toLocaleString()} hint={`of ${TOTAL_AYAHS.toLocaleString()} ayahs, shown by recall`} />
-        <Stat label="Marked known" value={cov.declared.toLocaleString()} hint="your statement, not yet a test" />
-        <Stat label="Recalled this week" value={cov.verifiedLast7.toLocaleString()} hint={`${cov.verifiedLast30.toLocaleString()} in 30 days`} />
-        <Stat label="Due now" value={cov.dueNow.toLocaleString()} hint={plan.backlog.minutes ? `about ${Math.round(plan.backlog.minutes)} min of review` : 'on schedule'} />
+      <section className="grid grid-cols-2 gap-x-4 gap-y-6 px-5" data-testid="coverage">
+        <Stat label="Recalled" value={cov.demonstrated.toLocaleString()} hint={`of ${TOTAL_AYAHS.toLocaleString()} ayahs`} />
+        <Stat label="Marked known" value={cov.declared.toLocaleString()} hint="not yet tested" />
+        <Stat label="This week" value={cov.verifiedLast7.toLocaleString()} hint={`${cov.verifiedLast30.toLocaleString()} in 30 days`} />
+        <Stat label="Due now" value={cov.dueNow.toLocaleString()} hint={plan.backlog.minutes ? `about ${Math.round(plan.backlog.minutes)} min` : 'on schedule'} />
       </section>
 
       {none && <p className="mx-5 mt-5 rounded-2xl bg-surface-2 p-4 text-sm text-ink-2">Nothing recorded yet. Once you recite and grade a few passages, this page fills in.</p>}
 
-      <section className="mt-8 px-5">
+      {weak.length > 0 && (
+        <section className="mt-8 px-5">
+          <h2 className="font-display text-xl">Weak spots</h2>
+          <ul className="mt-3 space-y-2" data-testid="weak">{weak.map((w) => <li key={`${w.surah}:${w.ayah}`}><Link to={`/quran/${w.surah}?a=${w.ayah}`} className="card-flat flex items-center justify-between p-3.5"><span><span className="font-semibold">{surahInfo(w.surah).tr} {w.ayah}</span><span className="block text-xs text-muted">forgotten {w.lapses}× · needed prompting {w.prompts}×</span></span><Icon name="right" className="text-muted" size={18} /></Link></li>)}</ul>
+        </section>
+      )}
+
+      <details className="mt-8 px-5 pb-8" data-testid="progress-details">
+      <summary className="cursor-pointer select-none py-3 text-sm font-semibold text-ink-2">Details and experiments</summary>
+
+      <section className="mt-4">
         <h2 className="font-display text-xl">Retention by gap</h2>
         <p className="mt-1 text-sm text-ink-2">How often recall worked, by time since you last practised.</p>
         <div className="card mt-3 space-y-3 p-4" data-testid="retention">{retention.map((b) => <Bar key={b.label} label={b.label} value={b.rate} ci={b.ci} n={b.n} />)}</div>
         <details className="mt-2 text-xs text-muted"><summary className="cursor-pointer select-none">How to read this</summary><p className="mt-1">Bars show the rate; the pale band is a 95% interval. Ayahs recited together are not independent tests, so intervals are optimistic. Long passage recitations are not counted here.</p></details>
       </section>
 
-      <section className="mt-8 px-5">
+      <section className="mt-8">
         <h2 className="font-display text-xl">Learning effort</h2>
         <div className="card mt-3 p-4">
           <div className="flex items-baseline justify-between"><span className="text-sm text-ink-2">Median active time to first accurate recall</span><span className="font-display tabular text-2xl">{pace == null ? '–' : `${pace.toFixed(1)} s/word`}</span></div>
@@ -77,7 +87,7 @@ export function ProgressPage() {
         </div>
       </section>
 
-      <section className="mt-8 px-5">
+      <section className="mt-8">
         <h2 className="font-display text-xl">Practice time</h2>
         <div className="card mt-3 p-4">
           <div className="flex h-28 items-end gap-2" role="img" aria-label="Minutes practised per week for the last eight weeks">
@@ -88,14 +98,7 @@ export function ProgressPage() {
         </div>
       </section>
 
-      <section className="mt-8 px-5">
-        <h2 className="font-display text-xl">Weak spots</h2>
-        {weak.length ? (
-          <ul className="mt-3 space-y-2" data-testid="weak">{weak.map((w) => <li key={`${w.surah}:${w.ayah}`}><Link to={`/quran/${w.surah}?a=${w.ayah}`} className="card-flat flex items-center justify-between p-3.5"><span><span className="font-semibold">{surahInfo(w.surah).tr} {w.ayah}</span><span className="block text-xs text-muted">forgotten {w.lapses}× · needed prompting {w.prompts}×</span></span><Icon name="right" className="text-muted" size={18} /></Link></li>)}</ul>
-        ) : <p className="mt-2 text-sm text-muted">No ayah has been forgotten or needed repeated prompting yet.</p>}
-      </section>
-
-      <section className="mt-8 px-5 pb-6" data-testid="experiment">
+      <section className="mt-8" data-testid="experiment">
         <h2 className="font-display text-xl">Does your method matter?</h2>
         <p className="mt-1 text-sm text-ink-2">A 14-day comparison of two ways to learn: <b>A</b> repeated recitation, <b>B</b> listen, practise phrases, then recall.</p>
         <div className="card mt-3 p-4">
@@ -131,6 +134,7 @@ export function ProgressPage() {
           )}
         </div>
       </section>
+      </details>
     </div>
   )
 }
