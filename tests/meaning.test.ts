@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clauseOpeners, defaultBreakdown, meaningBreakdown, meaningCut, meaningFor, meaningTextLength, openerKind, planBreaks, attachesBackward } from '@/lib/engine/breakdown'
+import { candidatesFor, clauseOpeners, meaningBreakdown, meaningCut, meaningFor, meaningTextLength, openerKind, planBreaks, attachesBackward } from '@/lib/engine/breakdown'
 import { phraseMeanings, tidy, MEANING_RATIO } from '@/lib/engine/meaning'
 import { buildPhrases } from '@/lib/engine/phrases'
 import { corpus, loadTranslation, wordsOfAyah } from '@/lib/quran/data'
@@ -74,13 +74,18 @@ describe('Arabic clause openers (deterministic rules)', () => {
 })
 
 describe('Ta-Ha 10, the motivating example', () => {
-  it('is no longer two long pieces: it is cut where the meaning turns, and never inside "He said to his family, Stay here"', () => {
+  it('is cut where the meaning turns, into the five units the owner specified, and never inside "He said to his family, Stay here"', () => {
     const w = wordsOfAyah(20, 10)
-    expect(defaultBreakdown(20, 10, w).boundaries).toEqual([10])                                // the previous splitter: 11 + 7 words, one cut mid-clause
-    const b = meaningBreakdown(20, 10, w).boundaries
-    expect(b).toEqual(expect.arrayContaining([5, 8, 12]))                                       // Indeed… | Perhaps… | or find…
-    expect(b).not.toContain(4)                                                                  // the speech verb, the listener and the quotation stay together
-    expect(buildPhrases(w, b).every((p) => p.words.length >= 3 && p.words.length <= 9)).toBe(true)
+    const b = meaningBreakdown(20, 10, w)
+    expect(b.boundaries).toEqual([2, 5, 8, 12])
+    expect(Object.values(b.basis).every((x) => x === 'reviewed')).toBe(true)                    // from the reviewed list (owner-specified), not guessed
+    expect(b.boundaries).not.toContain(4)                                                       // the speech verb, the listener and the quotation stay together
+    expect(buildPhrases(w, b.boundaries).map((p) => p.words.length)).toEqual([3, 3, 3, 4, 5])
+  })
+  it('the automatic splitter alone (without the reviewed list) also finds the clause openers of this ayah', () => {
+    const w = wordsOfAyah(20, 10)
+    const auto = planBreaks(w.length, [], candidatesFor(20, 10, w.length), [], [], {}, { meaning: meaningFor(20, 10, w.length), comfort: 8, comfortLong: 8, rules: clauseOpeners(w), threeWordCost: 1.2 }).boundaries
+    expect(auto).toEqual(expect.arrayContaining([5, 8, 12]))
   })
 })
 
@@ -130,10 +135,9 @@ describe('the meaning shown with a phrase', () => {
     expect(tidy(', and said, "')).toBe('and said')
     expect(tidy('We make no distinction between any of His messengers."')).toBe('We make no distinction between any of His messengers."')
   })
-  it('Ta-Ha 10 shows the five clauses of the translation against the right Arabic', async () => {
+  it('Ta-Ha 10 shows the five clauses of the translation against the right Arabic (checked by reading)', async () => {
     const tr = await loadTranslation(), w = wordsOfAyah(20, 10), ph = buildPhrases(w, meaningBreakdown(20, 10, w).boundaries)
     const m = phraseMeanings(20, 10, tr[19]![9]!, ph)
-    expect(m[1]).toBe('indeed, I have perceived a fire'); expect(m[2]).toMatch(/^perhaps I can bring you a torch/); expect(m[3]).toMatch(/^or find at the fire/)
-    expect(m[0]).toMatch(/^When he saw a fire/)
+    expect(m).toEqual(['When he saw a fire', 'and said to his family, "Stay here', 'indeed, I have perceived a fire', 'perhaps I can bring you a torch', 'or find at the fire some guidance'])
   })
 })

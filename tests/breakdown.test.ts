@@ -1,3 +1,4 @@
+import reviewList from '@/data/phrase-review.json'
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { SURAHS, wordsOfAyah } from '@/lib/quran/data'
@@ -28,6 +29,7 @@ describe('automatic practice phrases: what the engine decides', () => {
       const b = defaultBreakdown(s, a, w), stops = new Set(suggestBoundaries(w).boundaries), cands = new Map(candidatesFor(s, a, w.length).map((c) => [c.after, c.p]))
       for (const i of b.boundaries) {
         if (stops.has(i)) expect(b.basis[i]).toBe('stop sign')
+        else if (b.basis[i] === 'reviewed') expect((reviewList.ayahs as Record<string, { approved?: number[] }>)[`${s}:${a}`]?.approved ?? [], `${s}:${a} after ${i + 1} is marked reviewed but is not on the reviewed list`).toContain(i)
         else { expect(cands.get(i), `${s}:${a} after ${i + 1} has no grammatical evidence`).toBeGreaterThanOrEqual(0.03); expect(b.basis[i]).toMatch(/^grammar/) }
       }
     }
