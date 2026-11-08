@@ -8,6 +8,8 @@ import { Icon } from '@/components/Icon'
 import { KIND, rangeTitle } from '@/lib/format'
 import { minutesLabel } from '@/components/ui'
 import { dueLabel, summariseSession, type Result } from '@/lib/sessionSummary'
+import { isOpen, junctionNeeded, neededRange } from '@/lib/engine/evidence'
+import { ayahKey, type Range } from '@/lib/engine/types'
 import { computePlan } from '@/lib/plan'
 
 const RESULT: Record<Result, { label: string; cls: string }> = {
@@ -17,6 +19,7 @@ const RESULT: Record<Result, { label: string; cls: string }> = {
   difficult: { label: 'Needs another go', cls: 'bg-clay-soft text-clay' },
   practised: { label: 'Practised', cls: 'bg-surface-2 text-ink-2' },
   skipped: { label: 'Skipped', cls: 'bg-surface-2 text-muted' },
+  covered: { label: 'Already covered', cls: 'bg-surface-2 text-ink-2' },
 }
 
 export function SessionPage() {
@@ -30,7 +33,27 @@ export function SessionPage() {
 
   useEffect(() => { if (!s) nav('/', { replace: true }) }, [s, nav])
   const finished = !!s && !s.queue[s.index]
-  const summary = useMemo(() => (s && finished ? summariseSession({ sessionId: s.id, queue: s.queue, completed: s.completed, skipped: s.skipped, startedAt: s.startedAt, reviews: snap.reviews, flows: snap.flows, parts: snap.parts, derived, now: Date.now() }) : null), [s, finished, snap.reviews, snap.flows, snap.parts, derived])
+  const summary = useMemo(() => (s && finished ? summariseSession({ sessionId: s.id, queue: s.queue, completed: s.completed, skipped: s.skipped, covered: s.covered, startedAt: s.startedAt, reviews: snap.reviews, flows: snap.flows, parts: snap.parts, derived, now: Date.now() }) : null), [s, finished, snap.reviews, snap.flows, snap.parts, derived])
+  // A plan is a snapshot. When an item comes up, it is checked once against everything recorded since (in any session, goal or screen): ayahs the learner has
+  // already shown are not asked for again, and an item that is entirely covered is passed over. Checked once per item, so evidence recorded WHILE working on it
+  // never changes what is on screen.
+  const current = s?.queue[s.index]
+  const reconciled = useMemo<{ range: Range | null; covered: number[] } | null>(() => {
+    if (!current) return null
+    const now = Date.now()
+    if (current.drill === 'junction') return junctionNeeded(current.range, derived, now) ? { range: current.range, covered: [] } : { range: null, covered: [current.range.start] }
+    if (current.kind === 'new') {
+      const open = Array.from({ length: current.range.end - current.range.start + 1 }, (_, i) => current.range.start + i)
+        .some((a) => isOpen(derived.memory.get(ayahKey(current.range.surah, a)), derived.flow.get(ayahKey(current.range.surah, a)), now))
+      return open ? { range: current.range, covered: [] } : { range: null, covered: [] }
+    }
+    const inTarget = (su: number, a: number) => snap.targets.some((t) => t.status === 'active' && t.range.surah === su && a >= t.range.start && a <= t.range.end)
+    const n = neededRange(current.range, derived, now, inTarget)
+    return { range: n.range, covered: n.covered }
+  }, [current?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (current && reconciled && reconciled.range === null) { useApp.getState().say('Already covered, so it isn’t asked again'); complete(current.id, { covered: true }) }
+  }, [current?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const tomorrow = useMemo(() => (finished ? computePlan(snap, derived, Date.now() + 20 * 3600 * 1000) : null), [finished, snap, derived])
   if (!s) return null
   const item = s.queue[s.index]
@@ -78,7 +101,8 @@ export function SessionPage() {
       </div>
     )
   }
-  if (!item) return null
+  if (!item || !reconciled || reconciled.range === null) return null
+  const range = reconciled.range
 
   const k = KIND[item.kind]
   return (
@@ -93,11 +117,12 @@ export function SessionPage() {
         <details className="mt-2 text-sm"><summary className="cursor-pointer select-none text-xs text-muted">Why this, today</summary><ul className="mt-1 list-disc space-y-1 pl-5 text-ink-2">{item.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul></details>
       </div>
       <div key={item.id} className="pt-2">
+        {reconciled.covered.length > 0 && !item.drill && <p className="px-4 pb-1 text-center text-xs text-muted" data-testid="covered-note">Ayah{reconciled.covered.length > 1 ? 's' : ''} {reconciled.covered.join(', ')} already covered.</p>}
         {item.drill === 'junction'
-          ? <JunctionDrill range={item.range} onDone={() => complete(item.id)} />
+          ? <JunctionDrill range={range} onDone={() => complete(item.id)} />
           : item.kind === 'new'
-            ? <LearnFlow embedded range={item.range} context="new" onExit={() => skip(item.id)} onDone={() => complete(item.id)} />
-            : <RecallCard range={item.range} context={item.kind} title={rangeTitle(item.range)} onDone={() => complete(item.id)} />}
+            ? <LearnFlow embedded range={range} context="new" onExit={() => skip(item.id)} onDone={() => complete(item.id)} />
+            : <RecallCard range={range} context={item.kind} title={rangeTitle(range)} onDone={() => complete(item.id)} />}
       </div>
     </div>
   )

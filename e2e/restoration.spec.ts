@@ -5,18 +5,16 @@ import { randomUUID } from 'node:crypto'
 import { freshStart, idbRows, mockAudio, seed } from './helpers'
 
 const TAHA10 = '/learn/20/10/10', AK = '/learn/2/255/255'
-const stage = (page: Page) => page.getByTestId('learn-flow').getAttribute('data-stage')
 const dots = (page: Page) => page.getByTestId('part-dots').locator('[data-secured]').evaluateAll((els) => els.map((e) => ({ secured: e.getAttribute('data-secured') === '1', current: e.getAttribute('data-current') === '1' })))
 const layoutOf = async (page: Page, s: number, a: number) => { await page.waitForFunction(() => typeof (window as unknown as { __hifzPhrases?: unknown }).__hifzPhrases === 'function'); return layoutNow(page, s, a) }
 const layoutNow = (page: Page, s: number, a: number) => page.evaluate(([s, a]) => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(s as number, a as number, []), [s, a] as const)
 const shown = (page: Page) => page.locator('[data-testid="span-recall"] .arabic [data-w]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-w'))))
 async function toRecitation(page: Page) {
-  const saidIt = page.getByTestId('said-it'), recite = page.getByTestId('span-recall'), whole = page.locator('[data-recall-kind="whole"]')
-  if ((await stage(page)) === 'sound') await page.getByTestId('to-flow').click()
+  const next = page.getByTestId('practise-next'), recite = page.getByTestId('span-recall'), whole = page.locator('[data-recall-kind="whole"]')
   for (let g = 0; g < 12; g++) {
-    await expect(saidIt.or(recite).or(whole)).toBeVisible()
+    await expect(next.or(recite).or(whole)).toBeVisible()
     if ((await recite.count()) || (await whole.count())) return
-    await saidIt.click(); await page.getByTestId('rate-natural').click()
+    await next.click()
   }
 }
 const part = (surah: number, ayah: number, wordCount: number, from: number, to: number, ago: number) => ({ id: randomUUID(), surah, ayah, fromWord: from, toWord: to, wordCount, grade: 'independent', cueLevel: 4, durationMs: 9000, occurredAt: Date.now() - ago })
@@ -26,7 +24,7 @@ test.describe('part-by-part learning: the capability is present and complete', (
 
   test('Ta-Ha 20:10, fresh: a clear "Learn it part by part" button, five parts with their meanings, hints, cumulative joins and a whole-ayah finish', async ({ page }) => {
     await page.goto(TAHA10)
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('part-dots')).toHaveCount(0)                                            // an 18-word ayah opens in the ordinary Sound/Flow/Recall...
     await expect(page.getByTestId('learn-by-parts')).toContainText('Learn it part by part · 5 parts')    // ...with the capability one clear tap away
     await page.getByTestId('learn-by-parts').click()                                                     // and the tap takes you straight into the breakdown

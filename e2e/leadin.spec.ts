@@ -72,8 +72,7 @@ test.describe('contextual lead-in for revision', () => {
 
   test('first-time learning is unchanged: no run-up in its recall step', async ({ page }) => {
     await page.goto('/learn/20/7/7')
-    await page.getByTestId('to-flow').click()
-    await page.getByRole('button', { name: 'Skip to recall' }).click()
+    await page.getByTestId('practise-next').click()
     await expect(page.getByTestId('recall-card')).toBeVisible()
     await expect(page.getByTestId('lead-in')).toHaveCount(0)
   })

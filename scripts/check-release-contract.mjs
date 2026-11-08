@@ -14,6 +14,7 @@ const must = [
   ['checking one ayah at a time in revision', 'Show all ayahs'], ['flagging what went wrong with a word', 'Wrong word or vowel'],
   ['pronunciation / tajweed as its own kind of concern', 'Pronunciation / tajweed'], ['assisted vs recall (read before reciting)', 'I read it before reciting'], ['the optional self-recording', 'Record my recitation'],
   ['tapping the concealed text to reveal it', 'Reveal ayah'], ['the one-tap explanation of the parts', 'About these parts'],
+  ['Sound and Flow as one practise stage', 'Recall from memory'], ['an ayah already known is recognised, not re-taught', 'already in place'], ['a session is re-checked against evidence recorded since the plan', 'Already covered'],
 ]
 const mustNot = [['browser-test hook', '__hifzPhrases'], ['private test-access gate', 'hifz.testCode'], ['third-party recording host', 'audio-cdn.tarteel.ai'], ['per-recording timing data', '--qua_']]
 const bad = []

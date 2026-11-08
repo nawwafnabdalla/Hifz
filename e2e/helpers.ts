@@ -36,8 +36,7 @@ export async function completeLearning(page: Page, opts: { grade?: 'independent'
   for (let guard = 0; guard < 120; guard++) {
     const stage = await page.locator('[data-testid="learn-flow"]').getAttribute('data-stage')
     if (stage === 'done') return
-    if (stage === 'sound') await page.getByTestId('to-flow').click()
-    else if (stage === 'flow') { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() }
+    if (stage === 'practise') { if (await page.getByTestId('practise-next').count()) await page.getByTestId('practise-next').click(); else { await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click() } }
     else if (stage === 'refresh') { await page.getByTestId('span-reveal').click(); await page.getByTestId(`span-grade-${grade}`).click() }
     else if (stage === 'partdone') await page.getByTestId('next-part').click()
     else if (stage === 'recall' || stage === 'connect') {

@@ -68,9 +68,8 @@ test.describe('recall: hints, meaning, slip-to-repair', () => {
     await page.getByTestId('grade-hesitant').click()
     await page.getByTestId('repair-skip').click()                          // left it tangled
     await page.goto('/learn/2/255/255')
-    await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('stage-flow')).toContainText(/tricky spot/)
-    await expect(page.getByTestId('stage-flow')).toContainText(/Repair:/)
+    await expect(page.getByTestId('stage-practise')).toContainText(/tricky spot/)
+    await expect(page.getByTestId('stage-practise')).toContainText(/Repair:/)
   })
 })
 
@@ -97,7 +96,7 @@ test.describe('audio: your three reciters, echo, honesty', () => {
     await expect.poll(() => audioRequests.some((u) => /Alafasy/i.test(u))).toBe(true)
     // The saved choice survives a reload.
     await page.reload()
-    await page.getByTestId('to-flow').or(page.getByTestId('reciter-chip')).first().waitFor()
+    await page.getByTestId('practise-next').or(page.getByTestId('reciter-chip')).first().waitFor()
     await expect(page.getByTestId('reciter-chip')).toContainText('Badr Al-Turki')
   })
 
@@ -135,11 +134,10 @@ test.describe('resume, lead-in connect, scheduling window, junction repair', () 
 
   test('a reload mid-learning returns to the same stage, and never auto-grades a recall', async ({ page }) => {
     await page.goto('/learn/112/1/4')
-    await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'flow')
+    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'practise')
     await page.reload()
-    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'flow')
-    await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
+    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'practise')
+    await page.getByTestId('practise-next').click()
     await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'recall')
     await page.reload()                                                      // interrupted during recall
     await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'recall')
@@ -150,9 +148,8 @@ test.describe('resume, lead-in connect, scheduling window, junction repair', () 
   test('a new ayah is joined to the known ayahs before it (lead-in connect)', async ({ page }) => {
     await seed(page, 'declarations', [declaration(20, 1, 2)])
     await page.goto('/learn/20/3/3')
-    await page.getByTestId('to-flow').click()
-    for (let i = 0; i < 12 && (await page.getByTestId('learn-flow').getAttribute('data-stage')) === 'flow'; i++) {
-      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
+    for (let i = 0; i < 12 && (await page.getByTestId('learn-flow').getAttribute('data-stage')) === 'practise'; i++) {
+      await page.getByTestId('practise-next').click()
     }
     await page.getByTestId('reveal').click()
     await page.getByTestId('grade-independent').click()

@@ -6,7 +6,7 @@ import type { PlanItem } from '@/lib/engine/planner'
 import { ayahKey, DAY, type FlowEvent, type PartEvent, type ReviewEvent } from '@/lib/engine/types'
 import { isGood } from '@/lib/engine/parts'
 
-export type Result = 'smooth' | 'mixed' | 'difficult' | 'learned' | 'practised' | 'skipped'
+export type Result = 'smooth' | 'mixed' | 'difficult' | 'learned' | 'practised' | 'skipped' | 'covered'
 export interface ItemOutcome {
   id: string
   kind: PlanItem['kind']
@@ -38,6 +38,8 @@ export function dueLabel(at: number, now: number): string {
 export function summariseSession(opts: {
   sessionId: string; queue: PlanItem[]; completed: string[]; skipped: string[]; startedAt: number
   reviews: ReviewEvent[]; flows: FlowEvent[]; parts?: PartEvent[]; derived: Derived; now: number
+  /** Items that were not asked because earlier evidence already covered them. */
+  covered?: string[]
 }): SessionSummary {
   const { sessionId, queue, completed, skipped, reviews, flows, derived, now } = opts
   const myParts = (opts.parts ?? []).filter((p) => p.sessionId === sessionId)
@@ -47,6 +49,13 @@ export function summariseSession(opts: {
   const needsAttention: { text: string }[] = []
 
   for (const q of queue) {
+    if (opts.covered?.includes(q.id)) {
+      // Not asked again: the learner had already shown it (in another session, goal or screen). Say so, and say when it returns.
+      let next: number | null = null
+      for (let a = q.range.start; a <= q.range.end; a++) { const m = derived.memory.get(ayahKey(q.range.surah, a)); if (m && m.firstDemonstratedAt !== null) { const d = dueAt(m); next = next === null ? d : Math.min(next, d) } }
+      items.push({ id: q.id, kind: q.kind, range: q.range, drill: q.drill, result: 'covered', note: 'Already covered by your recent recall, so it wasn’t asked again.', nextReviewAt: next })
+      continue
+    }
     // Learning part of a long ayah is real progress, whether or not the learner went on to the whole ayah.
     const partsHere = myParts.filter((p) => overlaps(q.range, { surah: p.surah, start: p.ayah, end: p.ayah }))
     const wholeHere = mine.some((r) => overlaps(q.range, r.range) && r.kind === 'recall')
