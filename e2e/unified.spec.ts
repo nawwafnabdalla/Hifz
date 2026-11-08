@@ -189,3 +189,18 @@ test.describe('saved positions and the way back', () => {
     await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'done')
   })
 })
+
+test.describe('switching between whole and part by part', () => {
+  test.beforeEach(async ({ page }) => { await mockAudio(page); await freshStart(page) })
+  test('learning an ayah whole, leaving, coming back and choosing phrases again returns to part by part', async ({ page }) => {
+    await page.goto('/learn/20/40/40')
+    await expect(page.getByTestId('part-dots')).toBeVisible()
+    await page.getByTestId('learn-whole').click()
+    await expect(page.getByTestId('part-dots')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Leave', exact: true }).click()
+    await page.goto('/learn/20/40/40')
+    await expect(page.getByTestId('practise-next')).toContainText('Recall from memory')       // still whole after coming back
+    await page.getByTestId('learn-phrases').click()
+    await expect(page.getByTestId('part-dots')).toBeVisible()                                  // and back to parts, even straight after a reload
+  })
+})

@@ -171,7 +171,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
     if (!partsAyah || !prog) { setPart(null); return }
     // A saved position is honoured only if it is still the part the evidence says is next (evidence may have moved on since it was saved).
     const sv = saved.current
-    if (sv && sv.idx === idx && typeof sv.part === 'number' && sv.part === prog.next) return
+    if (sv && sv.idx === idx && typeof sv.part === 'number' && sv.part === prog.next) { setPart(sv.part); return }       // restore it (the part state may be empty, for example after learning the ayah whole and switching back)
     if (prog.allSecured) { setPart(null); setStage('recall'); return }
     setPart(prog.next)
     setStage(prog.refreshDue ? 'refresh' : 'practise')
