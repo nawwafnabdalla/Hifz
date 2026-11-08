@@ -85,17 +85,15 @@ test.describe('part-by-part learning with phrase audio', () => {
     await page.getByTestId('repeat-1').click()
     expectOnly(await hearPart(page), phrases[0]![0], phrases[0]![1], 'part A')
     // learn A
-    await page.getByTestId('to-flow').click()
-    await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
+    await page.getByTestId('practise-next').click()
     await page.getByTestId('span-reveal').click(); await page.getByTestId('span-grade-independent').click()
     await expect(page.getByTestId('stage-partdone')).toBeVisible()
     await page.getByTestId('next-part').click()
     await expect(page.getByTestId('part-caption')).toContainText('Part B')
     expectOnly(await hearPart(page), phrases[1]![0], phrases[1]![1], 'part B')
     // B alone first, then the join A → B, which plays both parts and nothing else
-    await page.getByTestId('to-flow').click()
-    await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
-    await expect(page.getByTestId('stage-flow')).toContainText('A → B')
+    await page.getByTestId('practise-next').click()
+    await expect(page.getByTestId('stage-practise')).toContainText('A → B')
     const joined = await hearPart(page)
     expectOnly(joined, phrases[0]![0], phrases[1]![1], 'A → B')
   })
@@ -105,6 +103,7 @@ test.describe('part-by-part learning with phrase audio', () => {
     await page.getByLabel('Reciter').selectOption('alafasy')
     await page.evaluate(([a]) => { history.pushState({}, '', `/learn/20/${a}/${a}`); window.dispatchEvent(new PopStateEvent('popstate')) }, [AYAH])
     await expect(page.getByTestId('part-dots')).toBeVisible()
+    await page.getByTestId('part-info-toggle').click()                                  // the explanation is one tap away
     await expect(page.getByTestId('no-phrase-audio')).toContainText('whole ayah plays')
     await expect(page.getByTestId('hear-part')).toHaveCount(0)
   })

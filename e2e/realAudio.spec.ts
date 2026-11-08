@@ -87,11 +87,10 @@ test('real recording: every phrase of the ayah, repeated, and joined', async ({ 
   }
   // Joining: through the Flow step, to the first "A → B" part.
   if (phrases.length > 1) {
-    await page.getByTestId('to-flow').click()
     for (let i = 0; i < 12; i++) {
-      const txt = await page.getByTestId('stage-flow').innerText({ timeout: 3000 }).catch(() => '')
+      const txt = await page.getByTestId('stage-practise').innerText({ timeout: 3000 }).catch(() => '')
       if (/\bA → B\b/.test(txt) && !/A → B → C/.test(txt.split('\n').slice(0, 4).join(' '))) break
-      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click(); await page.waitForTimeout(250)
+      await page.getByTestId('practise-next').click(); await page.waitForTimeout(250)
     }
     await startCapture(page); await page.getByTestId('hear-part-play').click(); await untilPlayed(page)
     const { x, rate } = await captured(page); writeFileSync(join(OUT, 'join01.wav'), wav(x, rate)); meta.join = { file: 'join01.wav', words: [phrases[0]![0], phrases[1]![1]], seconds: +(x.length / rate).toFixed(2) }
@@ -151,10 +150,9 @@ test('real recording: a long ayah, heard part by part', async ({ page }) => {
       const { x, rate } = await captured(page); writeFileSync(join(OUT, 'repeat3.wav'), wav(x, rate)); meta.repeat3 = { file: 'repeat3.wav', words: phrases[0], seconds: +(x.length / rate).toFixed(2) }
       await page.getByTestId('repeat-1').click()
     }
-    await page.getByTestId('to-flow').click()
     if (c === 1) {                                                                    // joining, in B's flow: B alone, then A → B
-      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click()
-      await expect(page.getByTestId('stage-flow')).toContainText('A → B')
+      await page.getByTestId('practise-next').click()
+      await expect(page.getByTestId('stage-practise')).toContainText('A → B')
       await startCapture(page); await page.getByTestId('hear-part-play').click(); await untilPlayed(page)
       const { x, rate } = await captured(page); writeFileSync(join(OUT, 'join01.wav'), wav(x, rate)); meta.join = { file: 'join01.wav', words: [phrases[0]![0], phrases[1]![1]], seconds: +(x.length / rate).toFixed(2) }
     }

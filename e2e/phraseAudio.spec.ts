@@ -104,7 +104,7 @@ test.describe('phrase-only audio', () => {
     const phrases = await phrasesOf(page)
     expect(phrases.length).toBeGreaterThanOrEqual(2)                                 // a long ayah is broken into ready-made phrases
     expect(phrases[0]![0]).toBe(0); expect(phrases.at(-1)![1]).toBe(N - 1)
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('phrase-chips')).toBeVisible()
     await expect(page.locator('[data-testid^="phrase-chip-"]')).toHaveCount(phrases.length)
     await page.screenshot({ path: 'test-results/shots/80-phrase-chips.png' })
@@ -129,13 +129,12 @@ test.describe('phrase-only audio', () => {
     await prepare(page)
     const phrases = await phrasesOf(page)
     await page.getByTestId('repeat-1').click()
-    await page.getByTestId('to-flow').click()
     const seen: string[] = []
     for (let i = 0; i < 12; i++) {
-      const txt = await page.getByTestId('stage-flow').innerText({ timeout: 3000 }).catch(() => '<left the flow step>')
-      seen.push(txt.split('\n').filter(Boolean).slice(0, 3).join(' | '))
-      if (/\bA → B\b/.test(txt) && !/A → B → C/.test(txt.split('\n').slice(0, 4).join(' ')) || txt.startsWith('<')) break
-      await page.getByTestId('said-it').click(); await page.getByTestId('rate-natural').click(); await page.waitForTimeout(250)
+      const txt = await page.getByTestId('stage-practise').locator('.font-display').first().innerText({ timeout: 3000 }).catch(() => '<left the practice step>')   // the step in hand
+      seen.push(txt)
+      if (txt === 'A → B' || txt.startsWith('<')) break
+      await page.getByTestId('practise-next').click(); await page.waitForTimeout(250)
     }
     expect(seen.join('  >>  ')).toContain('A → B')
     await startCapture(page)
@@ -175,7 +174,7 @@ test.describe('phrase-only audio', () => {
       await chip.click()
       await expect(page.getByTestId('phrase-fallback')).toContainText(/Playing the whole ayah instead/)
     }
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
   })
 
   test('another reciter never borrows these timings; the whole-ayah player is untouched', async ({ page }) => {
@@ -184,7 +183,7 @@ test.describe('phrase-only audio', () => {
     await page.evaluate(() => { history.pushState({}, '', '/settings'); window.dispatchEvent(new PopStateEvent('popstate')) })
     await page.getByLabel('Reciter').selectOption('husary')
     await openLearn(page, AYAH)
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('phrase-chips')).toHaveCount(0)
     await expect(page.getByTestId('audio-play')).toBeVisible()
   })
@@ -192,9 +191,8 @@ test.describe('phrase-only audio', () => {
   test('with no timings at all the Learn flow is exactly the familiar one', async ({ page }) => {
     await mockAudio(page); await freshStart(page)
     await page.goto('/learn/20/94/94')
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('phrase-chips')).toHaveCount(0)
-    await page.getByTestId('to-flow').click()
     await expect(page.getByTestId('hear-part')).toHaveCount(0)
     await expect(page.getByTestId('said-it')).toBeVisible()
   })
@@ -202,12 +200,9 @@ test.describe('phrase-only audio', () => {
   test('the learner never chooses where to split: long ayahs are prepared automatically, with one quiet way to learn them whole', async ({ page }) => {
     await mockAudio(page); await freshStart(page)
     await page.goto('/learn/20/40/40')                                                // 34 words: prepared automatically into phrases
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('breakdown-choice')).toHaveCount(0)
-    await expect(page.getByTestId('edit-phrases')).toBeHidden()
-    await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('stage-flow')).not.toContainText('Whole ayah')
-    await page.getByTestId('advanced-toggle').click()
+    await expect(page.getByTestId('part-dots')).toBeVisible()                                // a long ayah is prepared into parts automatically
     await expect(page.getByTestId('edit-phrases')).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/82-auto-phrases.png' })
   })
@@ -216,15 +211,14 @@ test.describe('phrase-only audio', () => {
     await mockAudio(page); await freshStart(page)
     await page.goto('/learn/20/40/40')
     await page.getByTestId('learn-whole').click()
-    await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')
-    await page.getByRole('button', { name: 'Leave' }).click()
+    await expect(page.getByTestId('practise-next')).toContainText('Recall from memory')       // one piece: practising it leads straight to recall
+    await page.getByRole('button', { name: 'Leave', exact: true }).click()
     await page.goto('/learn/20/40/40')
-    await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')
+    await expect(page.getByTestId('practise-next')).toContainText('Recall from memory')       // one piece: practising it leads straight to recall
     await page.getByTestId('learn-phrases').click()
     // Ta-Ha 40 is a long ayah (34 words), so "in phrases" means learning it part by part, from the first part.
     await expect(page.getByTestId('part-dots')).toBeVisible()
-    await expect(page.getByTestId('stage-flow')).toHaveCount(0)
+    await expect(page.getByTestId('stage-practise')).toHaveCount(0)
   })
 
   test('short ayahs are never broken and show no breakdown controls at all', async ({ page }) => {
@@ -232,8 +226,7 @@ test.describe('phrase-only audio', () => {
     await page.goto('/learn/20/2/2')
     await expect(page.getByTestId('learn-whole')).toHaveCount(0)
     await expect(page.getByTestId('learn-phrases')).toHaveCount(0)
-    await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('stage-flow')).toContainText('Whole ayah')
+    await expect(page.getByTestId('practise-next')).toContainText('Recall from memory')       // one piece: practising it leads straight to recall
   })
 })
 
@@ -314,7 +307,7 @@ test.describe('phrase audio from a whole-surah MP3 (byte-window decoding)', () =
     const data = surahTiming() as { ayahs: Record<string, { x?: number[]; xs?: number[][] }> }
     data.ayahs['20:94']!.x = [9]; data.ayahs['20:94']!.xs = [[3000, 4000]]                       // an abandoned take inside the ayah
     await prepareSurah(page, data, requests)
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('phrase-chips')).toHaveCount(0)
   })
 

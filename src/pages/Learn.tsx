@@ -176,7 +176,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
     if (!partsAyah || !prog) { setPart(null); return }
     // A saved position is honoured only if it is still the part the evidence says is next (evidence may have moved on since it was saved).
     const sv = saved.current
-    if (sv && sv.idx === idx && typeof sv.part === 'number' && sv.part === prog.next) return
+    if (sv && sv.idx === idx && typeof sv.part === 'number' && sv.part === prog.next) { setPart(sv.part); return }       // restore it (the part state may be empty, for example after learning the ayah whole and switching back)
     if (prog.allSecured) { setPart(null); setStage('recall'); return }
     setPart(prog.next)
     setStage(prog.refreshDue ? 'refresh' : 'practise')
@@ -321,9 +321,9 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
               ) : null}
               aside={(
                 <div className="mt-3 space-y-2">
-                  {partsActive && pt.status === 'ready' ? <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={P} to={P} /> : <AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`p-${ayah}`} onListened={() => setListened(true)} />}
-                  {!partsActive && !methodA && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />}
-                  {!methodA && !partsActive && <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} />}
+                  {partsActive && pt.status === 'ready' ? <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} /> : <AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`p-${ayah}`} onListened={() => setListened(true)} />}
+                  {/* The first step lets the learner tap any phrase to hear it; later steps play the step in hand (a phrase, or A → B joined). Never both at once. */}
+                  {!partsActive && !methodA && (rungIdx === 0 ? <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} /> : <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />)}
                 </div>
               )} />
           </div>
@@ -346,10 +346,6 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           )}
           {wholeToggle}
           {byPartsLink}
-          {!methodA && (
-            <details className="mt-2 text-center" data-testid="advanced"><summary className="cursor-pointer select-none text-xs text-muted" data-testid="advanced-toggle">Advanced</summary>
-              <button className="btn btn-ghost btn-sm mt-1" onClick={() => setEdit(true)} data-testid="edit-phrases"><Icon name="scissors" size={15} />Adjust phrases</button></details>
-          )}
           <PhraseEditor open={edit} onClose={() => setEdit(false)} surah={range.surah} ayah={ayah} boundaries={boundaries} onSave={(b) => { entered.current = null; void setMarker(range.surah, ayah, b); setLadder(null); setRungIdx(0); say('Phrases saved') }} />
         </section>
       )}

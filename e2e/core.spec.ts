@@ -145,7 +145,7 @@ test.describe('continuity and long ayahs', () => {
     await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('part-dots')).toBeVisible()                   // a long ayah is learned part by part: only the step in play (highlighted) is on screen
     await expect(page.getByTestId('said-it')).toBeInViewport()
-    await page.getByTestId('advanced-toggle').click(); await page.getByTestId('edit-phrases').click()
+    await page.getByTestId('edit-phrases').click()
     await expect(page.getByText(/not rulings on where to stop/)).toBeVisible()
     await page.screenshot({ path: 'test-results/shots/09-phrase-editor.png' })
   })
