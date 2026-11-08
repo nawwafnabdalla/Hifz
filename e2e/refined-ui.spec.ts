@@ -38,18 +38,19 @@ for (const theme of ['light', 'dark'] as const) {
       })
 
       test('learning an ayah: Sound → Flow → Recall → done, with the Arabic first and one obvious next step', async ({ page }) => {
-        await page.goto('/learn/112/1/1')
-        await expect(page.getByTestId('stage-sound')).toBeVisible()
+        await page.goto('/learn/1/2/2')                                             // an ayah that is not yet known (Al-Ikhlas is seeded as known above)
+        await expect(page.getByTestId('stage-practise')).toBeVisible()
         expect(await noSideScroll(page)).toBe(true)
-        const cont = await page.getByTestId('to-flow').boundingBox()
+        const cont = await page.getByTestId('practise-next').boundingBox()
         expect(cont!.height).toBeGreaterThanOrEqual(44)
         await shot(page, `sound-${theme}-${w}`)
-        await page.getByTestId('to-flow').click()
-        await expect(page.getByTestId('stage-flow')).toBeVisible()
-        expect(await noSideScroll(page)).toBe(true)
+        await page.getByTestId('said-it').click()
         await shot(page, `flow-${theme}-${w}`)
+        await page.getByTestId('practise-next').click()
+        await expect(page.getByTestId('stage-recall')).toBeVisible()
+        expect(await noSideScroll(page)).toBe(true)
         await completeLearning(page)
-        expect((await idbRows(page, 'reviews')).some((x) => x.range.surah === 112 && x.context === 'new')).toBe(true)
+        expect((await idbRows(page, 'reviews')).some((x) => x.range.surah === 1 && x.context === 'new')).toBe(true)
       })
 
       test('part by part: Ta-Ha 20:10 shows the part, its meaning, and one line about where the parts come from only when asked', async ({ page }) => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ensureArm, useApp } from '@/app/store'
-import { AyahWords, Medallion, Passage } from '@/components/Arabic'
+import { Passage } from '@/components/Arabic'
 import { AudioBar } from '@/components/AudioBar'
 import { PhraseEditor } from '@/components/PhraseEditor'
 import { HearThisPart, PhraseChips } from '@/components/PhraseAudio'
@@ -13,6 +13,8 @@ import { RungPractice } from '@/components/RungPractice'
 import { RecallCard } from '@/components/RecallCard'
 import { SpanRecall } from '@/components/SpanRecall'
 import { isGood, isPartsLayout, partProgress, stepRungs } from '@/lib/engine/parts'
+import { partsFor, reviewObligation } from '@/lib/engine/evidence'
+import { ayahStatus } from '@/lib/engine/derive'
 import { Icon } from '@/components/Icon'
 import { buildLadder, buildPhrases, type Rung } from '@/lib/engine/phrases'
 import { buildRepairLadder, slipRung, troubledRungs } from '@/lib/engine/repair'
@@ -20,14 +22,15 @@ import { ayahKey, type FlowRating, type PracticeContext, type Range, type Strate
 import { isValidRef, loadTranslation, wordsOfAyah } from '@/lib/quran/data'
 import { rangeTitle } from '@/lib/format'
 
-type Stage = 'sound' | 'flow' | 'recall' | 'connect' | 'done' | 'refresh' | 'partdone'
-const STEPS: { id: 'sound' | 'flow' | 'recall' | 'connect'; label: string }[] = [
-  { id: 'sound', label: 'Sound' }, { id: 'flow', label: 'Flow' }, { id: 'recall', label: 'Recall' }, { id: 'connect', label: 'Connect' },
+// Listening, reading, repeating and the overlapping transitions (A, A → B, B → C …) are one activity: practise. Recall is the test. Connect joins ayahs.
+type Stage = 'practise' | 'recall' | 'connect' | 'done' | 'refresh' | 'partdone'
+const STEPS: { id: 'practise' | 'recall' | 'connect'; label: string }[] = [
+  { id: 'practise', label: 'Practise' }, { id: 'recall', label: 'Recall' }, { id: 'connect', label: 'Connect' },
 ]
 
 function Stepper({ stage, multi }: { stage: Stage; multi: boolean }) {
-  const steps = multi ? STEPS : STEPS.slice(0, 3)
-  const shown = stage === 'refresh' ? 'sound' : stage === 'partdone' ? 'recall' : stage
+  const steps = multi ? STEPS : STEPS.slice(0, 2)
+  const shown = stage === 'refresh' ? 'practise' : stage === 'partdone' ? 'recall' : stage
   const cur = steps.findIndex((s) => s.id === shown)
   return (
     <ol className="flex items-center justify-center gap-1.5" aria-label="Learning stages">
@@ -55,14 +58,16 @@ function PartDots({ states, current }: { states: { secured: boolean }[]; current
 }
 
 const resumeKey = (r: Range) => `hifz.learn.v1.${r.surah}:${r.start}-${r.end}`
-interface Saved { idx: number; stage: Stage; rungIdx: number; listened: boolean; at: number; part?: number | null }
+// A saved position written by an older version names the stage 'sound' or 'flow' (both are practise now). This version still writes 'flow' for practise, so a
+// rollback to the older version resumes exactly where it should.
+interface Saved { idx: number; stage: Stage | 'sound' | 'flow'; rungIdx: number; listened: boolean; at: number; part?: number | null }
 function loadSaved(r: Range, n: number): Saved | null {
   try {
     const raw = localStorage.getItem(resumeKey(r))
     if (!raw) return null
     const s = JSON.parse(raw) as Saved
     if (Date.now() - s.at > 12 * 3600 * 1000 || s.idx < 0 || s.idx >= n || s.stage === 'done') return null
-    return s
+    return { ...s, stage: s.stage === 'sound' || s.stage === 'flow' ? 'practise' : s.stage }
   } catch { return null }
 }
 
@@ -75,17 +80,16 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const n = range.end - range.start + 1
   // Resume: the learning position is restored after a reload. A half-finished recall is NOT: it comes back
   // hidden and fresh, and nothing is graded on the user's behalf.
-  const saved = useRef<Saved | null | undefined>(undefined)
-  if (saved.current === undefined) saved.current = loadSaved(range, n)
+  const saved = useRef<(Omit<Saved, 'stage'> & { stage: Stage }) | null | undefined>(undefined)
+  if (saved.current === undefined) saved.current = loadSaved(range, n) as (Omit<Saved, 'stage'> & { stage: Stage }) | null
   const [idx, setIdx] = useState(saved.current?.idx ?? 0)
   const [arm, setArm] = useState<Strategy | undefined>(undefined)
   const [armReady, setArmReady] = useState(false)
-  const [stage, setStage] = useState<Stage>(saved.current?.stage ?? 'sound')
+  const [stage, setStage] = useState<Stage>(saved.current?.stage ?? 'practise')
   const [listened, setListened] = useState(saved.current?.listened ?? false)
   const [rungIdx, setRungIdx] = useState(saved.current?.rungIdx ?? 0)
   const [ladder, setLadder] = useState<{ key: string; rungs: Rung[]; repair: boolean } | null>(null)
   const [edit, setEdit] = useState(false)
-  const [hear, setHear] = useState(false)
   const [repair, setRepair] = useState(false)
   // Part-by-part learning of a long ayah: the part in hand, and whether the recall in progress is of that part alone or of everything so far.
   const [part, setPart] = useState<number | null>(saved.current?.part ?? null)
@@ -95,6 +99,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   // "I know up to here": the last part the learner says they already have, to be tested from the start up to it.
   const [testTo, setTestTo] = useState<number | null>(null)
   const [picking, setPicking] = useState(false)
+  const [quick, setQuick] = useState(false)   // this ayah is already known: it opens at recall, and practice is one tap away
+  const [worked, setWorked] = useState(false)   // something was actually recalled in this flow (as opposed to every ayah already being in place)
   const [info, setInfo] = useState(false)       // the one place that says where the parts come from and that they are not places to stop
   // Only a saved part-by-part position (a number) skips the entry step; a position saved before the part was chosen is not one.
   const entered = useRef<string | null>(null)
@@ -117,13 +123,13 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const hasConnect = n > 1 || leadIn > 0
 
   useEffect(() => {
-    void ensureArm(range).then((a) => { setArm(a); setArmReady(true); if (a === 'A' && !saved.current) setStage('flow') })
+    void ensureArm(range).then((a) => { setArm(a); setArmReady(true) })
   }, [range.surah, range.start, range.end]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (snap.settings.translation) void loadTranslation().then((t) => setTr(t[range.surah - 1] ?? null)) }, [snap.settings.translation, range.surah])
   useEffect(() => {
     try {
       if (stage === 'done') localStorage.removeItem(resumeKey(range))
-      else localStorage.setItem(resumeKey(range), JSON.stringify({ idx, stage, rungIdx, listened, at: Date.now(), part } satisfies Saved))
+      else localStorage.setItem(resumeKey(range), JSON.stringify({ idx, stage: stage === 'practise' ? 'flow' : stage, rungIdx, listened, at: Date.now(), part } satisfies Saved))
     } catch { /* private mode */ }
   }, [idx, stage, rungIdx, listened, range, part])
 
@@ -141,7 +147,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   // An ayah already recalled successfully is not learned from scratch: it keeps the ordinary ladder (and its slip repair).
   const alreadyRecalled = derived.memory.get(ayahKey(range.surah, ayah))?.firstDemonstratedAt != null
   const partsAyah = !methodA && !alreadyRecalled && isPartsLayout(spans, !!marker && marker.boundaries.length > 0)
-  const partEvents = derived.parts.get(ayahKey(range.surah, ayah))
+  const partEvents = partsFor(derived, range.surah, ayah)
   const prog = useMemo(() => (partsAyah ? partProgress(spans, partEvents ?? [], Date.now()) : null), [partsAyah, spans, partEvents])
   // The meaning of each phrase, verbatim from the translation the learner reads (when it can be matched with confidence). One setting (Show translation) controls it.
   const patchSettings = useApp((s) => s.patchSettings)
@@ -155,20 +161,32 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   useEffect(() => {
     if (!armReady || pt.status === 'loading' || entered.current === `${ayah}`) return
     entered.current = `${ayah}`
+    // The learner's demonstrated ability decides the path, not a fixed workflow. An ayah they have already recalled is not taught again: if nothing is due
+    // it is passed over, and if it is due (or being checked after being marked known) it opens straight at recall, with practice one tap away.
+    // A saved position, and an ayah that needs repair, are left alone.
+    const key = ayahKey(range.surah, ayah)
+    const mem = derived.memory.get(key)
+    const resumedHere = !!saved.current && saved.current.idx === idx
+    // A spot the learner marked as tricky is itself a reason to practise, so that is left alone too.
+    const tricky = troubledRungs(snap.flows, range.surah, ayah, phrases.length).length > 0
+    if (mem && mem.firstDemonstratedAt !== null && !resumedHere && !tricky && ayahStatus(mem, derived.flow.get(key), Date.now()).stage !== 'needs_repair') {
+      if (!reviewObligation(mem, derived.flow.get(key), Date.now(), true)) { say(`Ayah ${ayah} is already in place`); nextAyah(); return }
+      setPart(null); setQuick(true); setStage('recall'); return
+    }
     if (!partsAyah || !prog) { setPart(null); return }
     // A saved position is honoured only if it is still the part the evidence says is next (evidence may have moved on since it was saved).
     const sv = saved.current
     if (sv && sv.idx === idx && typeof sv.part === 'number' && sv.part === prog.next) return
     if (prog.allSecured) { setPart(null); setStage('recall'); return }
     setPart(prog.next)
-    setStage(prog.refreshDue ? 'refresh' : 'sound')
+    setStage(prog.refreshDue ? 'refresh' : 'practise')
     setRungIdx(0)
   }, [armReady, pt.status, ayah, idx, partsAyah, prog])
 
   // Build the ladder once when an ayah's flow starts: the normal chain, or a short repair ladder for joints that keep going wrong.
   const ladderKey = `${ayah}:${phrases.length}:${methodA}`
   useEffect(() => {
-    if (stage !== 'flow' || !armReady || partsActive || ladder?.key === ladderKey) return
+    if (stage !== 'practise' || !armReady || partsActive || ladder?.key === ladderKey) return
     if (methodA) { setLadder({ key: ladderKey, rungs: [{ from: 0, to: Math.max(0, phrases.length - 1), kind: 'full', label: 'Repeat aloud' }], repair: false }); return }
     const troubled = troubledRungs(snap.flows, range.surah, ayah, phrases.length)
     if (troubled.length) setLadder({ key: ladderKey, rungs: buildRepairLadder(phrases, troubled), repair: true })
@@ -178,15 +196,30 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const rung = rungs[Math.min(rungIdx, rungs.length - 1)]!
   const single = { surah: range.surah, start: ayah, end: ayah }
   // Very long ayahs: show only the phrases in play so the controls stay on screen.
-  const focusOnly = partsActive || (!methodA && words.length > 28 && rung.kind !== 'full')
+  const partsUpTo = partsActive && phrases[rung.to]!.to + 1 <= 40         // short enough to show the whole stretch: the step highlighted, what came before it dimmed
+  const focusOnly = (partsActive && !partsUpTo) || (!partsActive && !methodA && words.length > 28 && rung.kind !== 'full')
 
   const nextAyah = () => {
-    setRepair(false); setListened(false); setHear(false); setRungIdx(0); setPart(null)
-    if (idx < n - 1) { setIdx(idx + 1); setStage(methodA ? 'flow' : 'sound') }
+    setRepair(false); setListened(false); setRungIdx(0); setPart(null); setQuick(false)
+    if (idx < n - 1) { setIdx(idx + 1); setStage('practise') }
     else if (hasConnect) setStage('connect')
     else setStage('done')
   }
 
+  // Free practice: moving on needs no rating, because nothing is being claimed. What practice records is that it happened (reps and time, which size the
+  // plan), never that it went well: reading and repeating with the text in front of you is practice, not memory. The learner may mark a part as tricky,
+  // which is the only judgement offered and is kept so that spot is practised again; the explicit Tangled / Improving / Natural rating remains only where
+  // a rating IS the evidence (clearing a spot that was marked tricky).
+  const freePractice = !(ladder?.repair && !partsActive)
+  const lastRung = rungIdx >= rungs.length - 1
+  async function advance(st: { reps: number; durationMs: number }) {
+    if (st.reps > 0 || st.durationMs >= 4000) await logFlow({ surah: range.surah, ayah, fromPhrase: rung.from, toPhrase: rung.to, phraseCount: phrases.length, rating: 'improving', reps: st.reps, durationMs: st.durationMs, listenedFirst: listened })
+    if (lastRung) setStage('recall'); else setRungIdx(rungIdx + 1)
+  }
+  async function tricky(st: { reps: number; durationMs: number }) {
+    await logFlow({ surah: range.surah, ayah, fromPhrase: rung.from, toPhrase: rung.to, phraseCount: phrases.length, rating: 'tangled', reps: st.reps, durationMs: st.durationMs, listenedFirst: listened })
+    say('Slow it down: try the audio at 0.75×, then say it again')
+  }
   async function rate(r: FlowRating, s: { reps: number; durationMs: number }) {
     await logFlow({ surah: range.surah, ayah, fromPhrase: rung.from, toPhrase: rung.to, phraseCount: phrases.length, rating: r, reps: s.reps, durationMs: s.durationMs, listenedFirst: listened })
     if (r === 'tangled') { say('Slow it down: try the audio at 0.75×, then say it again'); return }
@@ -224,10 +257,10 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
     }
     const after = partProgress(spans, [...(partEvents ?? []), e], Date.now())
     setTestTo(null); setPicking(false); setRungIdx(0)
-    if (!isGood(e)) { const np = after.next ?? 0; setPart(np); say(`Let’s firm up part ${L(np)} first`); setStage('sound'); return }
+    if (!isGood(e)) { const np = after.next ?? 0; setPart(np); say(`Let’s firm up part ${L(np)} first`); setStage('practise'); return }
     if (claimed) say('Good. Everything up to there is counted.')
     if (after.next === null) { setPart(null); setStage('recall'); return }          // every part is in: the whole ayah is what is left
-    setPart(after.next); setStage('sound')
+    setPart(after.next); setStage('practise')
   }
 
   if (!armReady || pt.status === 'loading') return <div className="grid min-h-[60dvh] place-items-center text-muted">Preparing…</div>
@@ -243,8 +276,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
   const basisNote = ownBreaks ? 'Your own breaks' : validated ? 'Follows the mushaf’s printed signs or a reviewed list' : 'Prepared automatically, not yet reviewed'
   const wholeToggle = !methodA && auto.boundaries.length > 0 ? (
     boundaries.length > 0
-      ? <div className="text-center"><button className="min-h-[44px] text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
-      : <div className="text-center"><button className="min-h-[44px] text-sm text-muted underline" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">Learn it in phrases</button></div>
+      ? <div className="text-center"><button className="link-quiet" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, []); setLadder(null); setRungIdx(0) }} data-testid="learn-whole">Learn this ayah whole</button></div>
+      : <div className="text-center"><button className="link-quiet" onClick={() => { entered.current = null; void setMarker(range.surah, ayah, auto.boundaries); setLadder(null); setRungIdx(0) }} data-testid="learn-phrases">Learn it in phrases</button></div>
   ) : null
 
   return (
@@ -260,82 +293,57 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
       )}
       <div className="mt-2 mb-4 px-4">{methodA ? <div className="text-center text-xs text-muted">Method A · repeated recitation</div> : <Stepper stage={stage} multi={hasConnect} />}{partsActive && prog && stage !== 'done' && <PartDots states={prog.phrases} current={P} />}</div>
 
-      {stage === 'sound' && (
-        <section className="enter px-4" data-testid="stage-sound">
-          <div className="card px-4 py-6 text-center" style={words.length <= 10 ? ({ '--arabic-scale': snap.settings.arabicScale * 1.2 } as React.CSSProperties) : undefined}>
-            {partsActive ? (
-              <>
-                <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} only={[0, phrases[P]!.to]} dimOutside={spanWords(P, P)} highlight={spanWords(P, P)} gaps={boundaries} /></p>
-                <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words
-                  <button className="tool !min-h-[36px] !min-w-[36px] !px-0" onClick={() => setInfo((v) => !v)} aria-expanded={info} aria-label="About these parts" title="About these parts" data-testid="part-info-toggle"><Icon name="info" size={15} /></button></p>
-                {info && (
-                  <div className="mx-auto mt-1 max-w-sm space-y-1 text-xs text-muted" data-testid="part-info">
-                    <p data-testid="part-basis">{basisNote} · for learning, not places to stop</p>
-                    {pt.status !== 'ready' && <p data-testid="no-phrase-audio">Audio for this part on its own isn’t available for this reciter, so the whole ayah plays. Listen for part {L(P)}.</p>}
-                  </div>
-                )}
-                {/* The meaning helps the sound stick; it fades once the part has been recalled again after a break, so it never becomes the prompt. */}
-                {meanings[P] && !prog?.phrases[P]?.heldOverBreak && (
-                  <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2" data-testid="part-meaning">{meanings[P]}{' '}
-                    <button className="text-xs text-muted underline" onClick={() => void patchSettings({ translation: false })} data-testid="hide-meaning">hide</button></p>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="arabic center" lang="ar" dir="rtl"><AyahWords surah={range.surah} ayah={ayah} /> <Medallion n={ayah} /></p>
-                {snap.settings.translation && <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2">{tr?.[ayah - 1] ?? ''}</p>}
-              </>
-            )}
-          </div>
-          {partsActive && pt.status === 'ready' && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={P} to={P} />}
-          {(!partsActive || pt.status !== 'ready') && (
-            <div className="mt-3">
-              <AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`s-${ayah}`} onListened={() => setListened(true)} />
-            </div>
-          )}
-          {wholeToggle}
-          {byPartsLink}
-          {!methodA && !partsActive && <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} />}
-          <button className="btn btn-primary btn-lg mt-4 w-full" onClick={() => setStage('flow')} data-testid="to-flow">Continue <Icon name="right" size={16} /></button>
-          {partsActive && (
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5 text-sm text-muted">
-              <button className="min-h-[44px] underline" onClick={() => setStage('recall')} data-testid="know-this-part">I know this part</button>
-              {P < lastPart && <button className="min-h-[44px] underline" onClick={() => setPicking((v) => !v)} data-testid="know-up-to" aria-expanded={picking}>I know further</button>}
-            </div>
-          )}
-          {partsActive && P < lastPart && (
-            <div className="text-center">
-              {picking && (
-                <div className="mt-2" data-testid="know-up-to-picker">
-                  <p className="mb-1 text-xs text-muted">The last part you are sure of:</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {spans.map((_, i) => i > P && (
-                      <button key={i} className="chip" onClick={() => { setPicking(false); if (i === lastPart) { setPart(null); setStage('recall') } else { setTestTo(i); setStage('refresh') } }} data-testid={`know-to-${i}`}>{i === lastPart ? 'all of it' : `up to ${L(i)}`}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      {stage === 'flow' && (
-        <section className="enter px-4" data-testid="stage-flow">
+      {stage === 'practise' && (
+        <section className="enter px-4" data-testid="stage-practise" data-rung={rungIdx}>
           {(rungs.length > 1 || partsActive || ladder?.repair) && <div className="mb-3 flex items-baseline justify-between">
-            <div className="font-display text-lg">{partsActive ? `Part ${rung.label}` : rung.label}{ladder?.repair && !partsActive ? <span className="ml-2 text-sm font-normal text-muted">tricky spot</span> : null}</div>
+            <div className="font-display text-lg">{rung.label}{ladder?.repair && !partsActive ? <span className="ml-2 text-sm font-normal text-muted">tricky spot</span> : null}</div>
             {rungs.length > 1 && <div className="tabular text-sm text-muted">{Math.min(rungIdx + 1, rungs.length)}/{rungs.length}</div>}
           </div>}
           {rungs.length > 1 && <div className="mb-3 h-1 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${((rungIdx + 1) / rungs.length) * 100}%` }} /></div>}
-          <RungPractice surah={range.surah} ayah={ayah} words={words} phrases={phrases} boundaries={boundaries} from={rung.from} to={rung.to}
-            focusOnly={focusOnly} dimOthers={!methodA} resetKey={`${ayah}:${rungIdx}:${rung.label}`} onRate={rate} />
-          {partsActive && rung.from === rung.to && meanings[rung.from] && !prog?.phrases[rung.from]?.heldOverBreak && <p className="mt-2 text-center text-sm text-ink-2" data-testid="flow-meaning">{meanings[rung.from]}</p>}
-          {!methodA && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />}
-          <div className="mt-3 flex items-center justify-center gap-1">
-            <button className="btn btn-ghost btn-sm" onClick={() => setHear((h) => !h)}><Icon name="headphones" size={15} />Hear it</button>
-            <button className="btn btn-ghost btn-sm" onClick={() => setStage('recall')}>Skip to recall</button>
+          <div style={words.length <= 10 && !partsActive ? ({ '--arabic-scale': snap.settings.arabicScale * 1.2 } as React.CSSProperties) : undefined}>
+            <RungPractice surah={range.surah} ayah={ayah} words={words} phrases={phrases} boundaries={boundaries} from={rung.from} to={rung.to}
+              focusOnly={focusOnly} upTo={partsUpTo} showChips={!partsActive} dimOthers={!methodA} resetKey={`${ayah}:${rungIdx}:${rung.label}`}
+              {...(freePractice ? { onNext: advance, onTricky: tricky, nextLabel: lastRung ? 'Recall from memory' : `Next: ${rungs[rungIdx + 1]!.label}` } : { onRate: rate })}
+              meaning={partsActive
+                ? (meanings[P] && !prog?.phrases[P]?.heldOverBreak ? <p className="text-[0.95rem] leading-relaxed text-ink-2" data-testid="part-meaning">{meanings[P]}{' '}<button className="text-xs text-muted underline" onClick={() => void patchSettings({ translation: false })} data-testid="hide-meaning">hide</button></p> : null)
+                : (snap.settings.translation && tr?.[ayah - 1] ? <p className="text-[0.95rem] leading-relaxed text-ink-2">{tr[ayah - 1]}</p> : null)}
+              caption={partsActive ? (
+                <>
+                  <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted" data-testid="part-caption">Part {L(P)} · {phrases[P]!.words.length} words
+                    <button className="tool !min-h-[36px] !min-w-[36px] !px-0" onClick={() => setInfo((v) => !v)} aria-expanded={info} aria-label="About these parts" title="About these parts" data-testid="part-info-toggle"><Icon name="info" size={15} /></button></p>
+                  {info && (
+                    <div className="mx-auto mt-1 max-w-sm space-y-1 text-xs text-muted" data-testid="part-info">
+                      <p data-testid="part-basis">{basisNote} · for learning, not places to stop</p>
+                      {pt.status !== 'ready' && <p data-testid="no-phrase-audio">Audio for this part on its own isn’t available for this reciter, so the whole ayah plays. Listen for part {L(P)}.</p>}
+                    </div>
+                  )}
+                </>
+              ) : null}
+              aside={(
+                <div className="mt-3 space-y-2">
+                  {partsActive && pt.status === 'ready' ? <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={P} to={P} /> : <AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`p-${ayah}`} onListened={() => setListened(true)} />}
+                  {!partsActive && !methodA && <HearThisPart surah={range.surah} ayah={ayah} phrases={phrases} from={rung.from} to={rung.to} />}
+                  {!methodA && !partsActive && <PhraseChips surah={range.surah} ayah={ayah} phrases={phrases} />}
+                </div>
+              )} />
           </div>
-          {hear && <div className="mt-2"><AudioBar queue={[{ surah: range.surah, ayah }]} autoKey={`f-${ayah}`} onListened={() => setListened(true)} /></div>}
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 text-sm text-muted">
+            {freePractice && !lastRung && <button className="min-h-[44px] underline" onClick={() => setStage('recall')} data-testid="skip-to-recall">Skip to recall</button>}
+            {!freePractice && <button className="min-h-[44px] underline" onClick={() => setStage('recall')} data-testid="skip-to-recall">Skip to recall</button>}
+            {!methodA && <button className="min-h-[44px] underline" onClick={() => setEdit(true)} data-testid="edit-phrases">Phrases</button>}
+            {partsActive && <button className="min-h-[44px] underline" onClick={() => setStage('recall')} data-testid="know-this-part">I know this part</button>}
+            {partsActive && P < lastPart && <button className="min-h-[44px] underline" onClick={() => setPicking((v) => !v)} data-testid="know-up-to" aria-expanded={picking}>I know further</button>}
+          </div>
+          {partsActive && P < lastPart && picking && (
+            <div className="mt-1 text-center" data-testid="know-up-to-picker">
+              <p className="mb-1 text-xs text-muted">The last part you are sure of:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {spans.map((_, i) => i > P && (
+                  <button key={i} className="chip" onClick={() => { setPicking(false); if (i === lastPart) { setPart(null); setStage('recall') } else { setTestTo(i); setStage('refresh') } }} data-testid={`know-to-${i}`}>{i === lastPart ? 'all of it' : `up to ${L(i)}`}</button>
+                ))}
+              </div>
+            </div>
+          )}
           {wholeToggle}
           {byPartsLink}
           {!methodA && (
@@ -357,7 +365,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
                 <SpanRecall key={`refresh-${ayah}-${testTo}`} surah={range.surah} ayah={ayah} from={spanWords(0, last)[0]} to={spanWords(0, last)[1]} label={label} onDone={(e) => void afterRefresh(e)} />
                 <div className="mt-3 text-center">
                   {testTo !== null
-                    ? <button className="btn btn-ghost btn-sm" onClick={() => { setTestTo(null); setStage('sound') }} data-testid="claim-cancel">Never mind</button>
+                    ? <button className="btn btn-ghost btn-sm" onClick={() => { setTestTo(null); setStage('practise') }} data-testid="claim-cancel">Never mind</button>
                     : <button className="btn btn-ghost btn-sm" onClick={finishToday} data-testid="finish-today">Not now: save and finish</button>}
                 </div>
               </>
@@ -375,7 +383,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
       )}
       {stage === 'recall' && !repair && wholeRecall && (
         <section className="enter" data-testid="stage-recall" data-recall-kind="whole">
-          <RecallCard key={`r-${ayah}`} range={single} context={context} listenedFirst={listened} hideTitle={n > 1 || partsActive} onDone={(e, info) => { if ((e.grade === 'prompted' || e.grade === 'failed') && !info?.repaired) setRepair(true); else nextAyah() }} />
+          <RecallCard key={`r-${ayah}`} range={single} context={context} listenedFirst={listened} hideTitle={n > 1 || partsActive} onDone={(e, info) => { setWorked(true); if ((e.grade === 'prompted' || e.grade === 'failed') && !info?.repaired) setRepair(true); else nextAyah() }} />
+          {quick && <div className="mt-1 text-center"><button className="link-quiet" onClick={() => { setQuick(false); setStage('practise') }} data-testid="practise-first">Practise it first</button></div>}
         </section>
       )}
       {stage === 'recall' && repair && partsActive && !wholeRecall && fix && (
@@ -395,9 +404,9 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
       {stage === 'recall' && repair && !(partsActive && !wholeRecall) && (
         <section className="enter px-4" data-testid="stage-repair">
           <div className="card p-6 text-center">
-            <h2 className="font-display text-xl">One more round of flow</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">Not settled yet, which is normal. A little more sound and flow usually helps.</p>
-            <div className="mt-4 grid gap-2"><button className="btn btn-primary" onClick={() => { setRepair(false); setRungIdx(0); setLadder(null); setPart(null); setStage(methodA ? 'flow' : 'sound') }} data-testid="back-to-flow">Back to sound and flow</button><button className="btn btn-quiet" onClick={nextAyah}>Move on for now</button></div>
+            <h2 className="font-display text-xl">Practise it once more</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-ink-2">Not settled yet, which is normal. A little more practice usually helps.</p>
+            <div className="mt-4 grid gap-2"><button className="btn btn-primary" onClick={() => { setRepair(false); setRungIdx(0); setLadder(null); setPart(null); setStage('practise') }} data-testid="back-to-flow">Practise it once more</button><button className="btn btn-quiet" onClick={nextAyah}>Move on for now</button></div>
           </div>
         </section>
       )}
@@ -407,7 +416,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
           <div className="pt-8 text-center">
             <h2 className="font-display text-2xl">{P === 0 ? `Part ${L(0)} is in` : `${L(0)} → ${L(P)} is joined`}</h2>
             <div className="mt-6 grid gap-2">
-              <button className="btn btn-primary btn-lg" onClick={() => { if (prog.next === null) { setPart(null); setStage('recall') } else { setPart(prog.next); setRungIdx(0); setStage('sound') } }} data-testid="next-part">{prog.next === null ? 'Recite the whole ayah' : `Next: part ${L(prog.next)}`}</button>
+              <button className="btn btn-primary btn-lg" onClick={() => { if (prog.next === null) { setPart(null); setStage('recall') } else { setPart(prog.next); setRungIdx(0); setStage('practise') } }} data-testid="next-part">{prog.next === null ? 'Recite the whole ayah' : `Next: part ${L(prog.next)}`}</button>
               <button className="btn btn-quiet" onClick={finishToday} data-testid="finish-today">Finish for today</button>
             </div>
           </div>
@@ -416,7 +425,8 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
 
       {stage === 'connect' && (
         <section className="enter" data-testid="stage-connect">
-          <RecallCard key="connect" range={connectRange} context={context} listenedFirst={listened} title={leadIn > 0 ? `Ayah ${connectRange.start} → ${connectRange.end}` : 'The whole passage'} onDone={() => setStage('done')} />
+          <RecallCard key="connect" range={connectRange} context={context} listenedFirst={listened} title={leadIn > 0 ? `Ayah ${connectRange.start} → ${connectRange.end}` : 'The whole passage'} onDone={() => { setWorked(true); setStage('done') }} />
+          <div className="mt-1 text-center"><button className="link-quiet" onClick={() => setStage('done')} data-testid="skip-connect">Finish without joining</button></div>
         </section>
       )}
 
@@ -424,7 +434,7 @@ export function LearnFlow({ range, context, onDone, onExit, embedded }: { range:
         <section className="enter px-4" data-testid="stage-done">
           <div className="pt-8 text-center">
             <h2 className="font-display text-2xl">Well done</h2>
-            <p className="mt-1 text-sm text-muted">{rangeTitle(range)} is recorded.</p>
+            <p className="mt-1 text-sm text-muted">{rangeTitle(range)} {worked ? 'is recorded.' : 'is already in place.'}</p>
             <button className="btn btn-primary btn-lg mt-6 w-full" onClick={onDone} data-testid="learn-finish">Continue</button>
           </div>
         </section>

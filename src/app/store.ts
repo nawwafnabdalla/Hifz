@@ -24,6 +24,8 @@ export interface ActiveSession {
   index: number
   completed: string[]
   skipped: string[]
+  /** Items that were completed without being asked, because evidence recorded since the plan was made already covers them (optional: older saves lack it). */
+  covered?: string[]
 }
 export type SyncStatus = 'local' | 'idle' | 'syncing' | 'offline' | 'error' | 'mismatch'
 export interface SyncState { status: SyncStatus; pending: number; lastSyncAt: number | null; error: string | null; quarantined: number }
@@ -65,7 +67,7 @@ interface State {
 
   plan(): Plan
   startSession(plan: Plan): Promise<ActiveSession | null>
-  completeItem(id: string): void
+  completeItem(id: string, opts?: { covered?: boolean }): void
   skipItem(id: string): void
   endSession(): Promise<void>
 
@@ -86,7 +88,7 @@ interface State {
 let syncTimer: ReturnType<typeof setTimeout> | null = null
 let initDone = false
 
-const rebuild = (snap: Snapshot): Derived => deriveState({ reviews: snap.reviews, flows: snap.flows, parts: snap.parts, declarations: snap.declarations })
+const rebuild = (snap: Snapshot): Derived => deriveState({ reviews: snap.reviews, flows: snap.flows, parts: snap.parts, declarations: snap.declarations }, { corpus })
 
 function applyTheme(s: Settings) {
   const root = document.documentElement
@@ -255,10 +257,10 @@ export const useApp = create<State>((set, get) => {
       scheduleSync()
       return s
     },
-    completeItem(id) {
+    completeItem(id, opts) {
       const s = get().session
       if (!s) return
-      const next = { ...s, completed: [...s.completed, id], index: s.index + 1 }
+      const next = { ...s, completed: [...s.completed, id], index: s.index + 1, ...(opts?.covered ? { covered: [...(s.covered ?? []), id] } : {}) }
       set({ session: next })
       persistSession(next)
     },

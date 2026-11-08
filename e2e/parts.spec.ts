@@ -7,13 +7,12 @@ import { completeLearning, freshStart, idbRows, mockAudio, seed } from './helper
 const AK = '/learn/2/255/255'
 const stage = (page: Page) => page.getByTestId('learn-flow').getAttribute('data-stage')
 const dots = async (page: Page) => page.getByTestId('part-dots').locator('[data-secured]').evaluateAll((els) => els.map((e) => ({ secured: e.getAttribute('data-secured') === '1', current: e.getAttribute('data-current') === '1' })))
-/** Learn the part in hand: sound → flow (every rung) → recall of that part → (join) → "part done". */
+/** Learn the part in hand: practise (every rung) → recall of that part → (join) → "part done". */
 async function learnPart(page: Page, grade: 'independent' | 'hesitant' = 'independent') {
   for (let g = 0; g < 40; g++) {
     const s = await stage(page)
     if (s === 'partdone') return
-    if (s === 'sound') await page.getByTestId('to-flow').click()
-    else if (s === 'flow') { const said = page.getByTestId('said-it'); if (await said.isVisible()) { await said.click(); await page.getByTestId('rate-natural').click() } }
+    if (s === 'practise') { const next = page.getByTestId('practise-next'); if (await next.isVisible()) await next.click() }
     else if (s === 'recall') {
       if (await page.locator('[data-recall-kind="whole"]').count()) return          // the last part ends in the ordinary whole-ayah recall
       await page.getByTestId('span-reveal').click(); await page.getByTestId(`span-grade-${grade}`).click()
@@ -24,14 +23,13 @@ async function learnPart(page: Page, grade: 'independent' | 'hesitant' = 'indepe
 }
 const part = (over: Record<string, unknown>) => ({ id: randomUUID(), surah: 2, ayah: 255, fromWord: 0, toWord: 5, wordCount: 50, grade: 'independent', cueLevel: 4, durationMs: 9000, occurredAt: Date.now(), ...over })
 
-/** Walk the Sound -> Flow steps of the part in hand until its recitation appears. */
+/** Walk the practice rungs of the part in hand until its recitation appears. */
 async function toRecitation(page: Page) {
-  const saidIt = page.getByTestId('said-it'), recite = page.getByTestId('span-recall'), whole = page.locator('[data-recall-kind="whole"]')
-  if ((await stage(page)) === 'sound') await page.getByTestId('to-flow').click()
+  const next = page.getByTestId('practise-next'), recite = page.getByTestId('span-recall'), whole = page.locator('[data-recall-kind="whole"]')
   for (let g = 0; g < 12; g++) {
-    await expect(saidIt.or(recite).or(whole)).toBeVisible()
+    await expect(next.or(recite).or(whole)).toBeVisible()
     if ((await recite.count()) || (await whole.count())) return
-    await saidIt.click(); await page.getByTestId('rate-natural').click()
+    await next.click()
   }
 }
 const layoutOf = (page: Page, surah: number, ayah: number) => page.evaluate(([s, a]) => (window as unknown as { __hifzPhrases: (s: number, a: number, p: unknown) => [number, number][] }).__hifzPhrases(s as number, a as number, []), [surah, ayah] as const)
@@ -66,7 +64,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await learnPart(page)
     await page.getByTestId('finish-today').click()
     await page.goto(AK)
-    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'sound')
+    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'practise')
     await expect(page.getByTestId('part-caption')).toContainText('Part B')
     const d = await dots(page)
     expect(d[0]!.secured).toBe(true)
@@ -83,7 +81,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
       await expect(page.getByTestId('stage-refresh')).toContainText('Welcome back')
       await page.getByTestId('span-reveal').click()
       await page.getByTestId('span-grade-independent').click()
-      await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'sound')
+      await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'practise')
       await expect(page.getByTestId('part-caption')).toContainText('Part B')
     } else {
       // The first phrase is longer than 7 words in this layout, so nothing was secured yet: it starts at part A, as it should.
@@ -107,7 +105,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     // slip on the first word of the second part
     await page.locator(`[data-word="${w![1]![0]}"]`).click()
     await page.getByTestId('span-grade-prompted').click()
-    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'sound')
+    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'practise')
     await expect(page.getByTestId('part-caption')).toContainText('Part B')       // not part A: the first part still stands
     const d = await dots(page)
     expect(d[0]!.secured).toBe(true)
@@ -305,9 +303,9 @@ test.describe('part-by-part memorisation of a long ayah', () => {
     await page.goto(AK)
     await learnPart(page)
     await page.getByTestId('next-part').click()
-    await page.getByTestId('to-flow').click()
+    await page.getByTestId('practise-next').click()                                       // on to the next rung of part B
     await page.reload()
-    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'flow')
+    await expect(page.getByTestId('learn-flow')).toHaveAttribute('data-stage', 'practise')
     await expect(page.getByTestId('part-dots').locator('[data-current="1"]')).toHaveText('B')
     expect(await idbRows(page, 'parts')).toHaveLength(1)
   })
@@ -384,9 +382,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
   test('the meaning of the part in hand is shown (verbatim from the translation) in Sound and Flow, and never during recall', async ({ page }) => {
     await page.goto(AK)
     await expect(page.getByTestId('part-meaning')).toContainText('Allah - there is no deity except Him')
-    await page.getByTestId('to-flow').click()
-    await expect(page.getByTestId('flow-meaning')).toContainText('Allah - there is no deity except Him')
-    await page.getByRole('button', { name: 'Skip to recall' }).click()
+    await page.getByTestId('practise-next').click()
     await expect(page.getByTestId('span-recall')).toBeVisible()
     await expect(page.getByText('there is no deity except Him')).toHaveCount(0)                              // not on screen while recalling: it is never the prompt
   })
@@ -417,7 +413,7 @@ test.describe('part-by-part memorisation of a long ayah', () => {
 
   test('Ta-Ha 10 (18 words) keeps the ordinary ladder, with its meaningful pieces, and one tap makes it part-by-part with the meaning of each part', async ({ page }) => {
     await page.goto('/learn/20/10/10')
-    await expect(page.getByTestId('stage-sound')).toBeVisible()
+    await expect(page.getByTestId('stage-practise')).toBeVisible()
     await expect(page.getByTestId('part-dots')).toHaveCount(0)
     await page.getByTestId('learn-by-parts').click()
     await expect(page.getByTestId('part-dots')).toBeVisible()

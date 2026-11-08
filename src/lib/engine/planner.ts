@@ -3,9 +3,12 @@
 // recorded history and fixed default parameters. It makes no claim of being
 // personalised or scientifically validated.
 import { ayahKey, DAY, type Corpus, type LearningTarget, type Range } from './types'
-import { ayahStatus, junctionNeedsRepair, type Derived } from './derive'
+import { type Derived } from './derive'
 import { PARAMS, retrievability, dueAt, type AyahMemory } from './memory'
 import { isPartsLayout, partProgress, wordsToGo, type Span } from './parts'
+import { dueHorizonMs, isOpen as isOpenAyah, junctionDue, partsFor, reviewObligation } from './evidence'
+
+export { dueHorizonMs }
 
 export type PlanKind = 'sabqi' | 'repair' | 'new' | 'manzil' | 'verify'
 
@@ -62,17 +65,6 @@ const KIND_WEIGHT: Record<PlanKind, number> = { repair: 1.35, sabqi: 1.15, manzi
 const MAX_WORDS: Record<PlanKind, number> = { sabqi: 80, repair: 70, manzil: 160, verify: 160, new: 0 }
 const DEFAULT_SEC_PER_WORD = 10
 const NEW_SHARE = 0.4
-const HOUR = 3600 * 1000
-
-/**
- * How far ahead of its due moment an item may be pulled into today's plan. A new ayah is first due
- * 24 hours after it was learned; if you study at the same time every day it would otherwise miss
- * today's session by minutes and wait another day. Short intervals get a short window; never more than 12 hours.
- */
-export function dueHorizonMs(stability: number): number {
-  return Math.min(12 * HOUR, 0.25 * stability * DAY)
-}
-
 interface Cand {
   m: AyahMemory
   kind: PlanKind
@@ -112,24 +104,11 @@ export function buildPlan(input: PlannerInput): Plan {
   const activeTargets = targets.filter((t) => t.status === 'active').sort((a, b) => a.createdAt - b.createdAt)
   const inTarget = (s: number, a: number) => activeTargets.some((t) => t.range.surah === s && a >= t.range.start && a <= t.range.end)
   const cands: Cand[] = []
+  // One shared definition of "this ayah needs something now" (evidence.ts), the same one a session and the learning flow use: goals do not keep their own
+  // progress, so overlapping goals cannot ask for the same ayah twice.
   for (const [, m] of derived.memory) {
-    const st = ayahStatus(m, derived.flow.get(ayahKey(m.surah, m.ayah)), now)
-    if (st.stage === 'not_started') continue
-    const R = st.retrievability
-    let kind: PlanKind | null = null
-    let risk = 1 - R
-    if (st.stage === 'claimed') {
-      kind = 'verify'
-      risk = Math.min(0.5, (now - (m.claimedAt ?? now)) / DAY / 120)
-    } else if (st.stage === 'learning') {
-      if (!inTarget(m.surah, m.ayah)) kind = 'sabqi'
-    } else if (st.stage === 'needs_repair') {
-      kind = 'repair'
-    } else if (R <= PARAMS.targetRetrievability || dueAt(m) <= now + dueHorizonMs(m.stability)) {
-      const recent = m.firstDemonstratedAt !== null && now - m.firstDemonstratedAt < 14 * DAY
-      kind = recent || m.stability < 8 ? 'sabqi' : 'manzil'
-    }
-    if (kind) cands.push({ m, kind, R, risk })
+    const ob = reviewObligation(m, derived.flow.get(ayahKey(m.surah, m.ayah)), now, inTarget(m.surah, m.ayah))
+    if (ob) cands.push({ m, kind: ob.kind, R: ob.R, risk: ob.risk })
   }
   cands.sort((x, y) => x.m.surah - y.m.surah || x.m.ayah - y.m.ayah)
 
@@ -245,7 +224,7 @@ export function buildPlan(input: PlannerInput): Plan {
   // ── 7b. Short transition drills for junctions that keep going wrong ───────
   const covered = (s: number, a: number) => chosen.some((c) => c.range.surah === s && a >= c.range.start && a + 1 <= c.range.end)
   const junctionItems: PlanItem[] = []
-  const troubledJunctions = [...derived.junctions.values()].filter((j) => junctionNeedsRepair(j) && !covered(j.surah, j.from))
+  const troubledJunctions = [...derived.junctions.values()].filter((j) => junctionDue(j, now) && !covered(j.surah, j.from))
     .sort((x, y) => y.shaky - 0.5 * y.ok - (x.shaky - 0.5 * x.ok) || x.surah - y.surah || x.from - y.from)
   for (const j of troubledJunctions) {
     if (junctionItems.length >= 2) break
@@ -367,14 +346,11 @@ export function nextNewChunk(
   layout?: (surah: number, ayah: number) => Span[] | null,
 ): NewChunk | null {
   if (capLeft <= 0) return null
-  const isOpen = (surah: number, x: number) => {
-    const st = ayahStatus(d.memory.get(ayahKey(surah, x)), d.flow.get(ayahKey(surah, x)), now).stage
-    return st === 'not_started' || st === 'learning'
-  }
+  const isOpen = (surah: number, x: number) => isOpenAyah(d.memory.get(ayahKey(surah, x)), d.flow.get(ayahKey(surah, x)), now)
   const partItem = (surah: number, a: number, t?: LearningTarget): NewChunk | null => {
     const spans = layout?.(surah, a)
     if (!spans || !isPartsLayout(spans)) return null
-    const prog = partProgress(spans, d.parts.get(ayahKey(surah, a)) ?? [], now)
+    const prog = partProgress(spans, partsFor(d, surah, a), now)
     if (prog.next === null) {
       // Every part is secured but the whole ayah has not been recited from memory yet: joining them is what remains.
       if (!prog.started) return null
