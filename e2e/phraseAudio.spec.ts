@@ -218,7 +218,7 @@ test.describe('phrase-only audio', () => {
     await page.getByTestId('learn-phrases').click()
     // Ta-Ha 40 is a long ayah (34 words), so "in phrases" means learning it part by part, from the first part.
     await expect(page.getByTestId('part-dots')).toBeVisible()
-    await expect(page.getByTestId('stage-practise')).toHaveCount(0)
+    await expect(page.getByTestId('part-caption')).toContainText('Part A')
   })
 
   test('short ayahs are never broken and show no breakdown controls at all', async ({ page }) => {
